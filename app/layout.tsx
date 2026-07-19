@@ -19,9 +19,10 @@ export const metadata: Metadata = {
     description:
       "8+ years shipping premium interfaces for Rustomjee, Godrej, Kotak, Tata, Shapoorji Pallonji and more.",
     type: "website",
+    images: ["/jwala-baheliya.jpg"],
   },
-  twitter: { card: "summary_large_image" },
-  icons: { icon: "/jb-logo.png" },
+  twitter: { card: "summary_large_image", images: ["/jwala-baheliya.jpg"] },
+  icons: { icon: "/favicon.png", shortcut: "/favicon.png", apple: "/favicon.png" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

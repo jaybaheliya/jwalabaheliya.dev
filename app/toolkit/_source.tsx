@@ -239,6 +239,13 @@ function SliderInput({ value, onChange, min, max, step = 1 }: { value: number; o
 function Slider({ label, v, on, min, max, step = 1 }: { label: string; v: number; on: (n: number) => void; min: number; max: number; step?: number }) {
   return <Row label={label}><SliderInput value={v} onChange={on} min={min} max={max} step={step} /></Row>;
 }
+function SelectControl({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: string[] }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1 text-xs font-mono">
+      {options.map((option) => <option key={option}>{option}</option>)}
+    </select>
+  );
+}
 function Preview({ children, dark = true, className = "" }: { children: React.ReactNode; dark?: boolean; className?: string }) {
   return (
     <div className={"rounded-xl border border-border grid place-items-center min-h-[220px] p-6 " + (dark ? "bg-neutral-900" : "bg-neutral-100 text-neutral-900") + " " + className}>
@@ -416,17 +423,12 @@ function FlexPlay() {
   const [wrap, setWrap] = useState(false);
   const [gap, setGap] = useState(8);
   const css = "display: flex;\nflex-direction: " + dir + ";\njustify-content: " + jc + ";\nalign-items: " + ai + ";\nflex-wrap: " + (wrap ? "wrap" : "nowrap") + ";\ngap: " + gap + "px;";
-  const Sel = ({ v, onChange, opts }: { v: string; onChange: (s: string) => void; opts: string[] }) => (
-    <select value={v} onChange={(e) => onChange(e.target.value)} className="rounded-md border border-border bg-background px-2 py-1 text-xs font-mono">
-      {opts.map((o) => <option key={o}>{o}</option>)}
-    </select>
-  );
   return (
     <div className="grid gap-5 md:grid-cols-2">
       <div className="space-y-3 text-xs font-mono">
-        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">direction</span><Sel v={dir} onChange={(s) => setDir(s as "row")} opts={["row", "row-reverse", "column", "column-reverse"]} /></div>
-        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">justify</span><Sel v={jc} onChange={setJc} opts={["flex-start", "center", "flex-end", "space-between", "space-around", "space-evenly"]} /></div>
-        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">align</span><Sel v={ai} onChange={setAi} opts={["stretch", "flex-start", "center", "flex-end", "baseline"]} /></div>
+        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">direction</span><SelectControl value={dir} onChange={(value) => setDir(value as typeof dir)} options={["row", "row-reverse", "column", "column-reverse"]} /></div>
+        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">justify</span><SelectControl value={jc} onChange={setJc} options={["flex-start", "center", "flex-end", "space-between", "space-around", "space-evenly"]} /></div>
+        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">align</span><SelectControl value={ai} onChange={setAi} options={["stretch", "flex-start", "center", "flex-end", "baseline"]} /></div>
         <label className="flex items-center gap-2"><input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} /> wrap</label>
         <Row label="Gap"><SliderInput value={gap} onChange={setGap} min={0} max={60} /></Row>
         <CodeBlock code={css} />
@@ -776,8 +778,15 @@ function FontPair() {
 /* ---------- Utilities ---------- */
 function JsonFormatter() {
   const [v, setV] = useState('{"name":"Jwala","skills":["react","tailwind"]}');
-  const [err, setErr] = useState("");
-  const pretty = useMemo(() => { try { setErr(""); return JSON.stringify(JSON.parse(v), null, 2); } catch (e) { setErr((e as Error).message); return v; } }, [v]);
+  const parsed = useMemo(() => {
+    try {
+      return { error: "", pretty: JSON.stringify(JSON.parse(v), null, 2) };
+    } catch (error) {
+      return { error: (error as Error).message, pretty: v };
+    }
+  }, [v]);
+  const err = parsed.error;
+  const pretty = parsed.pretty;
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <textarea value={v} onChange={(e) => setV(e.target.value)} className="min-h-[300px] rounded-xl border border-border bg-background p-3 font-mono text-xs" />
@@ -1001,24 +1010,65 @@ function UnitConv() {
 function ResponsiveChecker() {
   const [url, setUrl] = useState("https://jwalabaheliya.dev/");
   const [input, setInput] = useState(url);
+  const [viewMode, setViewMode] = useState<"single" | "compare" | "grid">("compare");
+  const [selectedDevice, setSelectedDevice] = useState("iPhone 15");
   const devices = [
     { name: "iPhone SE", w: 375, h: 667 },
     { name: "iPhone 15", w: 393, h: 852 },
     { name: "iPad", w: 768, h: 1024 },
     { name: "Laptop", w: 1280, h: 800 },
+    { name: "Desktop", w: 1440, h: 900 },
   ];
+  const visibleDevices = useMemo(() => {
+    if (viewMode === "single") return devices.filter((device) => device.name === selectedDevice);
+    if (viewMode === "compare") return devices.filter((device) => ["iPhone 15", "iPad", "Laptop"].includes(device.name));
+    return devices;
+  }, [selectedDevice, viewMode]);
   return (
     <div className="space-y-4">
       <form onSubmit={(e) => { e.preventDefault(); setUrl(input); }} className="flex gap-2">
         <input value={input} onChange={(e) => setInput(e.target.value)} className="flex-1 rounded-full border border-border bg-background px-4 py-2 text-sm" />
         <button className="rounded-full bg-accent px-5 py-2 text-xs font-mono uppercase text-accent-foreground">Preview</button>
       </form>
-      <div className="grid gap-4 md:grid-cols-2">
-        {devices.map((d) => (
+      <div className="flex flex-wrap items-center gap-2">
+        {(["single", "compare", "grid"] as const).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => setViewMode(mode)}
+            className={"rounded-full border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition " + (viewMode === mode ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground")}
+          >
+            {mode}
+          </button>
+        ))}
+        {viewMode === "single" && (
+          <select value={selectedDevice} onChange={(e) => setSelectedDevice(e.target.value)} className="rounded-full border border-border bg-background px-4 py-1.5 text-xs font-mono uppercase tracking-wide">
+            {devices.map((device) => (
+              <option key={device.name} value={device.name}>{device.name}</option>
+            ))}
+          </select>
+        )}
+      </div>
+      <Preview dark={false} className="items-start justify-start text-left">
+        <div className="grid w-full gap-3 sm:grid-cols-3">
+          {visibleDevices.map((device) => (
+            <div key={device.name} className="rounded-2xl border border-border bg-background px-3 py-3">
+              <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">{device.name}</div>
+              <div className="mt-1 font-display text-lg font-semibold">{device.w}px</div>
+              <div className="text-xs text-muted-foreground">{device.h}px height viewport</div>
+            </div>
+          ))}
+        </div>
+      </Preview>
+      <div className={"grid gap-4 " + (viewMode === "single" ? "md:grid-cols-1" : viewMode === "compare" ? "xl:grid-cols-3" : "md:grid-cols-2 xl:grid-cols-3")}>
+        {visibleDevices.map((d) => (
           <div key={d.name} className="rounded-xl border border-border p-3">
             <div className="flex items-center justify-between font-mono text-[11px] uppercase text-muted-foreground mb-2"><span>{d.name}</span><span>{d.w}×{d.h}</span></div>
-            <div className="overflow-hidden rounded-lg border border-border bg-white" style={{ height: 300 }}>
-              <iframe src={url} title={d.name} style={{ width: d.w, height: d.h, transform: "scale(0.55)", transformOrigin: "top left", border: 0 }} />
+            <div className="overflow-hidden rounded-lg border border-border bg-white" style={{ height: viewMode === "single" ? 420 : 300 }}>
+              <iframe src={url} title={d.name} style={{ width: d.w, height: d.h, transform: `scale(${Math.min((viewMode === "single" ? 620 : 320) / d.w, (viewMode === "single" ? 420 : 300) / d.h)})`, transformOrigin: "top left", border: 0 }} />
+            </div>
+            <div className="mt-3 flex items-center justify-between rounded-lg border border-dashed border-border px-3 py-2 text-[11px] font-mono uppercase tracking-wide text-muted-foreground">
+              <span>{viewMode === "single" ? "Focused preview" : "Compare view"}</span>
+              <span>{Math.round(Math.min((viewMode === "single" ? 620 : 320) / d.w, (viewMode === "single" ? 420 : 300) / d.h) * 100)}% scale</span>
             </div>
           </div>
         ))}
@@ -1048,6 +1098,12 @@ function MediaQueryGen() {
   const [hover, setHover] = useState<"any" | "hover" | "none">("any");
   const [pointer, setPointer] = useState<"any" | "fine" | "coarse">("any");
   const [selector, setSelector] = useState(".component");
+  const sampleDevices = [
+    { name: "Phone", width: 390, height: 844, hover: "none", pointer: "coarse" },
+    { name: "Tablet", width: 768, height: 1024, hover: "none", pointer: "coarse" },
+    { name: "Laptop", width: 1280, height: 800, hover: "hover", pointer: "fine" },
+    { name: "Desktop", width: 1440, height: 900, hover: "hover", pointer: "fine" },
+  ] as const;
 
   const clampRange = (nextMin: number, nextMax: number) => {
     setMinWidth(Math.min(nextMin, nextMax));
@@ -1094,6 +1150,26 @@ function MediaQueryGen() {
     if (mode === "max") return `Down breakpoint idea: @media (max-width: ${maxWidth}px)`;
     return `Range breakpoint idea: ${minWidth}px to ${maxWidth}px`;
   }, [maxWidth, minWidth, mode]);
+
+  const matchResults = useMemo(() => {
+    return sampleDevices.map((device) => {
+      let matches = true;
+
+      if (mode === "min") matches = matches && device.width >= minWidth;
+      if (mode === "max") matches = matches && device.width <= maxWidth;
+      if (mode === "range") matches = matches && device.width >= minWidth && device.width <= maxWidth;
+      if (minHeight > 0) matches = matches && device.height >= minHeight;
+      if (maxHeight > 0) matches = matches && device.height <= maxHeight;
+      if (orientation !== "any") {
+        const deviceOrientation = device.width > device.height ? "landscape" : "portrait";
+        matches = matches && deviceOrientation === orientation;
+      }
+      if (hover !== "any") matches = matches && device.hover === hover;
+      if (pointer !== "any") matches = matches && device.pointer === pointer;
+
+      return { ...device, matches };
+    });
+  }, [hover, maxHeight, maxWidth, minHeight, minWidth, mode, orientation, pointer, sampleDevices]);
 
   return (
     <div className="space-y-5">
@@ -1223,9 +1299,331 @@ function MediaQueryGen() {
         </div>
       </Preview>
 
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {matchResults.map((device) => (
+          <div
+            key={device.name}
+            className={"rounded-2xl border p-4 transition " + (device.matches ? "border-emerald-500/50 bg-emerald-500/10" : "border-border bg-card")}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="font-display text-lg font-semibold">{device.name}</div>
+                <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">{device.width} x {device.height}</div>
+              </div>
+              <div className={"rounded-full px-2.5 py-1 text-[10px] font-mono uppercase tracking-widest " + (device.matches ? "bg-emerald-500/15 text-emerald-300" : "bg-muted text-muted-foreground")}>
+                {device.matches ? "matches" : "skips"}
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 text-xs font-mono text-muted-foreground">
+              <div>hover: {device.hover}</div>
+              <div>pointer: {device.pointer}</div>
+              <div>orientation: {device.width > device.height ? "landscape" : "portrait"}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="grid gap-4 xl:grid-cols-2">
         <CodeBlock code={css} />
         <CodeBlock code={jsMatchMedia} lang="js" />
+      </div>
+    </div>
+  );
+}
+
+type InterviewTopic = "All" | "Closures" | "Async" | "Arrays" | "DOM";
+type InterviewQuestion = {
+  id: string;
+  topic: Exclude<InterviewTopic, "All">;
+  title: string;
+  prompt: string;
+  code: string;
+  options: string[];
+  answer: number;
+  explain: string;
+  takeaway: string;
+};
+
+const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
+  {
+    id: "loop-closure",
+    topic: "Closures",
+    title: "Loop closure with var",
+    prompt: "What logs after the loop finishes?",
+    code: "for (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 0);\n}",
+    options: ["0 1 2", "3 3 3", "undefined undefined undefined", "It throws an error"],
+    answer: 1,
+    explain: "`var` is function-scoped, so each callback closes over the same `i`. By the time timers run, the loop has completed and `i` is `3`.",
+    takeaway: "Use `let` in loops when each callback should keep its own iteration value.",
+  },
+  {
+    id: "event-loop-order",
+    topic: "Async",
+    title: "Microtasks vs macrotasks",
+    prompt: "Which output order is correct?",
+    code: "console.log('start');\nsetTimeout(() => console.log('timeout'), 0);\nPromise.resolve().then(() => console.log('promise'));\nconsole.log('end');",
+    options: ["start, timeout, promise, end", "start, end, promise, timeout", "promise, start, end, timeout", "start, end, timeout, promise"],
+    answer: 1,
+    explain: "Synchronous code runs first. Promise callbacks run in the microtask queue before `setTimeout`, which goes into the macrotask queue.",
+    takeaway: "A very common interview check is whether you know promises run before zero-delay timers.",
+  },
+  {
+    id: "map-parse-int",
+    topic: "Arrays",
+    title: "The parseInt map gotcha",
+    prompt: "What is the result of this expression?",
+    code: "['1', '2', '3'].map(parseInt)",
+    options: ["[1, 2, 3]", "[1, NaN, NaN]", "['1', '2', '3']", "It throws a TypeError"],
+    answer: 1,
+    explain: "`map` passes `(value, index)`. `parseInt('2', 1)` and `parseInt('3', 2)` are invalid because the second argument is treated as radix.",
+    takeaway: "Prefer `array.map((value) => Number.parseInt(value, 10))` when converting strings to integers.",
+  },
+  {
+    id: "array-reference",
+    topic: "Arrays",
+    title: "Reference equality",
+    prompt: "What does the comparison return?",
+    code: "[] === []",
+    options: ["true", "false", "undefined", "It depends on strict mode"],
+    answer: 1,
+    explain: "Arrays are objects, and strict equality compares references. Two separate array literals never point to the same object.",
+    takeaway: "In interviews, be ready to explain value equality vs reference equality.",
+  },
+  {
+    id: "dom-delegation",
+    topic: "DOM",
+    title: "Event delegation",
+    prompt: "Why is delegation useful on a large dynamic list?",
+    code: "list.addEventListener('click', (event) => {\n  const button = event.target.closest('[data-action]');\n  if (!button) return;\n  console.log(button.dataset.action);\n});",
+    options: ["It makes every item render faster in CSS", "It attaches one listener to handle many current and future children", "It automatically debounces clicks", "It prevents all bubbling"],
+    answer: 1,
+    explain: "Delegation lets one parent listener handle interactions for many children, including nodes inserted later.",
+    takeaway: "This is a strong answer when interviewers ask about performance or dynamic DOM structures.",
+  },
+  {
+    id: "this-arrow",
+    topic: "Closures",
+    title: "Arrow function and this",
+    prompt: "What happens here?",
+    code: "const user = {\n  name: 'Jwala',\n  greet: () => console.log(this.name),\n};\nuser.greet();",
+    options: ["It logs 'Jwala'", "It logs undefined in most module/browser contexts", "It throws immediately", "It logs the whole user object"],
+    answer: 1,
+    explain: "Arrow functions do not bind their own `this`. They capture `this` from the surrounding scope, not from the object method call.",
+    takeaway: "Use method syntax or a normal function when you want `this` to refer to the object.",
+  },
+];
+
+function InteractiveInterviewLab() {
+  const topics: InterviewTopic[] = ["All", "Closures", "Async", "Arrays", "DOM"];
+  const [topic, setTopic] = useState<InterviewTopic>("All");
+  const [index, setIndex] = useState(0);
+  const [selected, setSelected] = useState<number | null>(null);
+  const [revealed, setRevealed] = useState(false);
+  const [answered, setAnswered] = useState<string[]>([]);
+  const [correct, setCorrect] = useState(0);
+  const [stopInnerBubble, setStopInnerBubble] = useState(false);
+  const [logs, setLogs] = useState<string[]>([]);
+
+  const questions = useMemo(() => {
+    if (topic === "All") return INTERVIEW_QUESTIONS;
+    return INTERVIEW_QUESTIONS.filter((question) => question.topic === topic);
+  }, [topic]);
+
+  const current = questions[index] ?? questions[0];
+
+  useEffect(() => {
+    setIndex(0);
+    setSelected(null);
+    setRevealed(false);
+  }, [topic]);
+
+  const handlePick = (optionIndex: number) => {
+    if (!current || revealed) return;
+    setSelected(optionIndex);
+    setRevealed(true);
+    if (!answered.includes(current.id)) {
+      setAnswered((prev) => [...prev, current.id]);
+      if (optionIndex === current.answer) {
+        setCorrect((value) => value + 1);
+      }
+    }
+  };
+
+  const nextQuestion = () => {
+    if (!questions.length) return;
+    setIndex((value) => (value + 1) % questions.length);
+    setSelected(null);
+    setRevealed(false);
+  };
+
+  const resetQuiz = () => {
+    setIndex(0);
+    setSelected(null);
+    setRevealed(false);
+    setAnswered([]);
+    setCorrect(0);
+  };
+
+  const pushLog = (message: string) => {
+    setLogs((prev) => [`${prev.length + 1}. ${message}`, ...prev].slice(0, 12));
+  };
+
+  const scoreLabel = `${correct}/${answered.length || 0}`;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[1.35fr_0.95fr]">
+        <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="font-display text-xl font-semibold">Interactive Interview Lab</div>
+              <p className="mt-1 text-sm text-muted-foreground">Practice output prediction, explain the why, then test DOM event flow live.</p>
+            </div>
+            <div className="rounded-full border border-border px-3 py-1 text-xs font-mono uppercase tracking-widest text-accent">
+              Score {scoreLabel}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {topics.map((item) => (
+              <button
+                key={item}
+                onClick={() => setTopic(item)}
+                className={"rounded-full border px-3 py-1 text-[11px] font-mono uppercase tracking-widest transition " + (topic === item ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground")}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          {current && (
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-3">
+                <div>
+                  <div className="font-display text-lg font-semibold">{current.title}</div>
+                  <div className="mt-1 text-xs font-mono uppercase tracking-widest text-muted-foreground">{current.topic} · Question {index + 1} of {questions.length}</div>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={resetQuiz} className="rounded-full border border-border px-3 py-1.5 text-xs font-mono uppercase tracking-wide hover:border-accent hover:text-accent">Reset</button>
+                  <button onClick={nextQuestion} className="rounded-full bg-accent px-4 py-1.5 text-xs font-mono uppercase tracking-wide text-accent-foreground">Next</button>
+                </div>
+              </div>
+
+              <div className="text-sm text-foreground">{current.prompt}</div>
+              <CodeBlock code={current.code} lang="js" />
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {current.options.map((option, optionIndex) => {
+                  const isCorrect = optionIndex === current.answer;
+                  const isPicked = optionIndex === selected;
+                  const stateClass = revealed
+                    ? isCorrect
+                      ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-300"
+                      : isPicked
+                        ? "border-red-500/60 bg-red-500/10 text-red-300"
+                        : "border-border text-muted-foreground"
+                    : "border-border hover:border-accent hover:text-foreground";
+
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => handlePick(optionIndex)}
+                      className={"rounded-2xl border p-3 text-left text-sm transition " + stateClass}
+                    >
+                      <div className="text-[11px] font-mono uppercase tracking-widest opacity-70">Option {optionIndex + 1}</div>
+                      <div className="mt-2">{option}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {revealed && (
+                <div className="grid gap-3 rounded-2xl border border-border bg-background p-4">
+                  <div>
+                    <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Why</div>
+                    <p className="mt-1 text-sm text-foreground">{current.explain}</p>
+                  </div>
+                  <div className="rounded-xl border border-dashed border-accent/50 bg-accent/5 px-3 py-2 text-sm text-accent">
+                    {current.takeaway}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
+          <div>
+            <div className="font-display text-lg font-semibold">Event Flow Playground</div>
+            <p className="mt-1 text-sm text-muted-foreground">Click the inner button and watch capture and bubble order update in real time.</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setStopInnerBubble((value) => !value)}
+              className={"rounded-full border px-3 py-1.5 text-xs font-mono uppercase tracking-wide transition " + (stopInnerBubble ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground")}
+            >
+              {stopInnerBubble ? "Inner bubble stop: on" : "Inner bubble stop: off"}
+            </button>
+            <button onClick={() => setLogs([])} className="rounded-full border border-border px-3 py-1.5 text-xs font-mono uppercase tracking-wide hover:border-accent hover:text-accent">
+              Clear log
+            </button>
+          </div>
+
+          <div
+            onClickCapture={() => pushLog("Outer capture")}
+            onClick={() => pushLog("Outer bubble")}
+            className="rounded-[28px] border border-sky-500/40 bg-sky-500/10 p-5"
+          >
+            <div className="mb-2 text-xs font-mono uppercase tracking-widest text-sky-300">Outer</div>
+            <div
+              onClickCapture={() => pushLog("Middle capture")}
+              onClick={() => pushLog("Middle bubble")}
+              className="rounded-[24px] border border-violet-500/40 bg-violet-500/10 p-5"
+            >
+              <div className="mb-2 text-xs font-mono uppercase tracking-widest text-violet-300">Middle</div>
+              <div
+                onClickCapture={() => pushLog("Inner capture")}
+                onClick={(event) => {
+                  pushLog("Inner bubble");
+                  if (stopInnerBubble) {
+                    event.stopPropagation();
+                    pushLog("Propagation stopped at inner bubble");
+                  }
+                }}
+                className="rounded-[20px] border border-amber-500/40 bg-amber-500/10 p-5"
+              >
+                <div className="mb-3 text-xs font-mono uppercase tracking-widest text-amber-300">Inner</div>
+                <button className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground">
+                  Click me
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <CodeBlock
+            lang="js"
+            code={`outer.addEventListener('click', () => log('Outer bubble'));\nouter.addEventListener('click', () => log('Outer capture'), true);\n\ninner.addEventListener('click', (event) => {\n  log('Inner bubble');\n  if (${stopInnerBubble}) event.stopPropagation();\n});`}
+          />
+
+          <div className="rounded-2xl border border-border bg-background p-3">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Live log</div>
+              <div className="text-xs font-mono text-muted-foreground">{logs.length} entries</div>
+            </div>
+            <div className="space-y-2 font-mono text-xs">
+              {logs.length === 0 ? (
+                <div className="text-muted-foreground">Click the nested button to see event order.</div>
+              ) : (
+                logs.map((log) => (
+                  <div key={log} className="rounded-lg border border-border px-3 py-2">
+                    {log}
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1536,6 +1934,7 @@ const TOOLS: Tool[] = [
   { id: "qr", name: "QR Code Generator", category: "Utilities", icon: QrCode, render: () => <QrCodeTool /> },
   { id: "units", name: "PX ↔ REM ↔ EM Converter", category: "Utilities", icon: Ruler, render: () => <UnitConv /> },
   { id: "js-snippets", name: "JavaScript Snippets Library", category: "JavaScript", keywords: "vanilla scroll debounce throttle typing counter", icon: Code2, render: () => <JsSnippetsLibrary /> },
+  { id: "interview-lab", name: "Interactive Interview Lab", category: "JavaScript", keywords: "interview prep event loop closures arrays dom event propagation bubbling capture quiz practice", icon: Terminal, render: () => <InteractiveInterviewLab /> },
   { id: "components", name: "Components Library", category: "Components", keywords: "buttons cards badges alerts", icon: Component, render: () => <ComponentsLibrary /> },
   { id: "text-shadow", name: "Text Shadow Generator", category: "CSS", icon: Type, render: () => <TextShadowGen /> },
   { id: "bezier", name: "Cubic Bezier Easing", category: "CSS", keywords: "animation timing", icon: Zap, render: () => <CubicBezierTool /> },

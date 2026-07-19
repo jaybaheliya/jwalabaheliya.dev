@@ -1,7 +1,6 @@
 "use client";
+import Link from "next/link";
 import { useEffect } from "react";
-
-
 
 function ResumePage() {
   useEffect(() => {
@@ -12,7 +11,9 @@ function ResumePage() {
   return (
     <main className="mx-auto max-w-[820px] bg-white px-8 py-12 text-neutral-900 print:px-6 print:py-6">
       <div className="mb-6 flex items-start justify-between gap-6 border-b border-neutral-300 pb-6 print:hidden">
-        <a href="/" className="text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900">← Portfolio</a>
+        <Link href="/" className="text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900">
+          {"<- Portfolio"}
+        </Link>
         <button
           onClick={() => window.print()}
           className="rounded-full bg-neutral-900 px-4 py-2 text-xs font-medium uppercase tracking-widest text-white hover:bg-neutral-700"
@@ -23,9 +24,9 @@ function ResumePage() {
 
       <header className="mb-8">
         <h1 className="font-display text-4xl font-bold tracking-tight">Jwala Baheliya</h1>
-        <p className="mt-1 text-lg text-neutral-700">Senior Frontend Developer · 8+ years</p>
+        <p className="mt-1 text-lg text-neutral-700">Senior Frontend Developer - 8+ years</p>
         <p className="mt-2 text-sm text-neutral-500">
-          Mumbai, India · <a className="underline" href="mailto:jwala.baheliya@gmail.com">jwala.baheliya@gmail.com</a> ·{" "}
+          Mumbai, India - <a className="underline" href="mailto:jwala.baheliya@gmail.com">jwala.baheliya@gmail.com</a> -{" "}
           <a className="underline" href="https://www.linkedin.com/">LinkedIn</a>
         </p>
       </header>
@@ -42,7 +43,7 @@ function ResumePage() {
         <Job
           role="Web Developer"
           org="Bombay Design Centre"
-          period="Apr 2021 — Present"
+          period="Apr 2021 - Present"
           points={[
             "Shipped 40+ pixel-accurate marketing sites and micro-sites for Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji, RMZ, VIP Bags, Yes Bank, AU Bank and more.",
             "Built with HTML, SCSS, JavaScript, PHP, React and Next.js following clean-code and BEM.",
@@ -52,8 +53,8 @@ function ResumePage() {
         />
         <Job
           role="UI Developer"
-          org="HRMantra — HR & Payroll Platform"
-          period="May 2019 — Apr 2021"
+          org="HRMantra - HR & Payroll Platform"
+          period="May 2019 - Apr 2021"
           points={[
             "Owned UI development and web design for HRMantra's HR & payroll product.",
             "Built and maintained dynamic websites and web applications across HTML, CSS and JavaScript.",
@@ -62,7 +63,7 @@ function ResumePage() {
         <Job
           role="Frontend Developer"
           org="Technofra Pvt Ltd"
-          period="Jul 2016 — May 2019"
+          period="Jul 2016 - May 2019"
           points={[
             "Designed and implemented user interfaces for a diverse client portfolio.",
             "Built dynamic websites and web applications using HTML, CSS, JavaScript and ASP.NET.",
@@ -72,8 +73,8 @@ function ResumePage() {
 
       <Section title="Selected Brands">
         <p className="text-sm text-neutral-700">
-          Rustomjee · Godrej · Kotak · Tata Chemicals · Shapoorji Pallonji · RMZ · VIP Bags · Yes Bank · AU Bank ·
-          Kokuyo Camlin · Mezete · Kasih Food · Bharat Connect · Delhi Redz · Employee Vibes · Bits Design School
+          Rustomjee - Godrej - Kotak - Tata Chemicals - Shapoorji Pallonji - RMZ - VIP Bags - Yes Bank - AU Bank -
+          Kokuyo Camlin - Mezete - Kasih Food - Bharat Connect - Delhi Redz - Employee Vibes - Bits Design School
         </p>
       </Section>
 
@@ -84,15 +85,15 @@ function ResumePage() {
       </Section>
 
       <Section title="Education">
-        <p className="text-sm text-neutral-700">B.Sc. Information Technology — Mumbai University</p>
+        <p className="text-sm text-neutral-700">B.Sc. Information Technology - Mumbai University</p>
       </Section>
 
       <Section title="Languages">
-        <p className="text-sm text-neutral-700">English · Hindi · Marathi</p>
+        <p className="text-sm text-neutral-700">English - Hindi - Marathi</p>
       </Section>
 
       <Section title="Recognition">
-        <p className="text-sm text-neutral-700">Kyoorius Design Award, 2023 — team contribution at Bombay Design Centre</p>
+        <p className="text-sm text-neutral-700">Kyoorius Design Award, 2023 - team contribution at Bombay Design Centre</p>
       </Section>
     </main>
   );

@@ -1,4 +1,3 @@
-"use client";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight } from "lucide-react";
 
@@ -43,7 +42,7 @@ function NotesIndex() {
         <ul className="mt-14 divide-y divide-border">
           {NOTES.map((n) => (
             <li key={n.slug}>
-              <Link href="/notes/$slug"
+              <Link href={`/notes/${n.slug}`}
                     className="group flex flex-col gap-2 py-6 sm:flex-row sm:items-start sm:gap-8">
                 <span className="w-28 shrink-0 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
                   {new Date(n.date).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}

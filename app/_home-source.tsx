@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Briefcase, Sparkles, CircleDot, Clock, MapPin, Code2 } from "lucide-react";
-const portrait = { src: "/jwala-portrait.jpg", width: 800, height: 800 };
+const portrait = { src: "/jwala-baheliya.jpg", width: 800, height: 800 };
 import { CursorGlow } from "@/components/cursor-glow";
 import { Magnetic } from "@/components/magnetic";
 import { TextScramble } from "@/components/text-scramble";
@@ -12,11 +12,6 @@ import { GithubStats } from "@/components/github-stats";
 import { CursorTrail } from "@/components/cursor-trail";
 import { MumbaiClock } from "@/components/mumbai-clock";
 import { ViewCounter } from "@/components/view-counter";
-import { RateCalculator } from "@/components/rate-calculator";
-import { BookCall } from "@/components/book-call";
-import { GithubContributions } from "@/components/github-contributions";
-import { ResumeToggle } from "@/components/resume-toggle";
-import { SkillMatchScanner } from "@/components/skill-match";
 import { Playground } from "@/components/playground";
 import { BusinessCard } from "@/components/business-card";
 
@@ -313,22 +308,17 @@ function Reveal({ children, className = "" }: { children: React.ReactNode; class
 
 /* ---------------- Page ---------------- */
 
-function RecruiterToolkit() {
+function BusinessCardShowcase() {
   return (
     <section id="hire" className="mx-auto max-w-[1400px] px-6 md:px-10 py-16 md:py-24">
-      <div className="mb-8">
+      <div className="mb-8 hidden">
         <div className="text-[11px] font-mono tracking-widest uppercase text-muted-foreground">/06 · For recruiters</div>
         <h2 className="font-display text-3xl md:text-5xl font-bold mt-2">Everything you need in one place</h2>
         <p className="text-muted-foreground mt-3 max-w-2xl">
           Check budget fit, score your JD against my resume, book a 15-min chat, or save my contact — all without email tag.
         </p>
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <SkillMatchScanner />
-        <ResumeToggle />
-        <RateCalculator />
-        <BookCall />
-        <GithubContributions />
+      <div className="mx-auto max-w-2xl">
         <BusinessCard />
       </div>
     </section>
@@ -344,7 +334,7 @@ function PortfolioPage() {
       <Metrics />
       <Currently />
       <Projects />
-      <RecruiterToolkit />
+      <BusinessCardShowcase />
       <Playground />
       <Experience />
       <Skills />

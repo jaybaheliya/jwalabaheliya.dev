@@ -1,3 +1,13 @@
 {
-  "/toolkit/page": "app/toolkit/page.js"
+  "/_not-found/page": "app/_not-found/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/notes/page": "app/notes/page.js",
+  "/page": "app/page.js",
+  "/resume/page": "app/resume/page.js",
+  "/toolkit/page": "app/toolkit/page.js",
+  "/tools/page": "app/tools/page.js",
+  "/work/[slug]/page": "app/work/[slug]/page.js",
+  "/notes/[slug]/page": "app/notes/[slug]/page.js",
+  "/api/ask-resume/route": "app/api/ask-resume/route.js",
+  "/api/skill-match/route": "app/api/skill-match/route.js"
 }
