@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Briefcase, Sparkles, CircleDot, Clock, MapPin, Code2 } from "lucide-react";
+import { Briefcase, Sparkles, CircleDot, Clock, MapPin, Code2, Menu, X } from "lucide-react";
 const portrait = { src: "/jwala-baheliya.jpg", width: 800, height: 800 };
 import { CursorGlow } from "@/components/cursor-glow";
 import { Magnetic } from "@/components/magnetic";
@@ -308,23 +308,6 @@ function Reveal({ children, className = "" }: { children: React.ReactNode; class
 
 /* ---------------- Page ---------------- */
 
-function BusinessCardShowcase() {
-  return (
-    <section id="hire" className="mx-auto max-w-[1400px] px-6 md:px-10 py-16 md:py-24">
-      <div className="mb-8 hidden">
-        <div className="text-[11px] font-mono tracking-widest uppercase text-muted-foreground">/06 · For recruiters</div>
-        <h2 className="font-display text-3xl md:text-5xl font-bold mt-2">Everything you need in one place</h2>
-        <p className="text-muted-foreground mt-3 max-w-2xl">
-          Check budget fit, score your JD against my resume, book a 15-min chat, or save my contact — all without email tag.
-        </p>
-      </div>
-      <div className="mx-auto max-w-2xl">
-        <BusinessCard />
-      </div>
-    </section>
-  );
-}
-
 function PortfolioPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -334,7 +317,6 @@ function PortfolioPage() {
       <Metrics />
       <Currently />
       <Projects />
-      <BusinessCardShowcase />
       <Playground />
       <Experience />
       <Skills />
@@ -357,12 +339,23 @@ function PortfolioPage() {
 
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 768) setMobileOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const closeMobileMenu = () => setMobileOpen(false);
+
   return (
     <header
       className={
@@ -372,44 +365,102 @@ function Nav() {
           : "bg-transparent")
       }
     >
-      <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-4 md:px-10">
-        <a href="#top" className="flex items-center gap-2 font-display text-lg font-bold tracking-tight">
-          <img
-            src="/favicon.png"
-            alt="JB monogram"
-            width={28}
-            height={28}
-            className="h-7 w-7 rounded-md bg-foreground/5 p-0.5 dark:invert"
-          />
-          <span>Jwala<span className="text-accent">.</span></span>
-        </a>
-        <nav className="hidden gap-8 font-mono text-xs uppercase tracking-widest text-muted-foreground md:flex">
-          {NAV_SECTIONS.map((s) => (
-            <a
-              key={s.id}
-              href={`#${s.id}`}
-              onClick={(e) => {
-                e.preventDefault();
-                smoothScrollTo(s.id);
-              }}
-              className="hover:text-foreground transition-colors"
-            >
-              {s.label}
-            </a>
-          ))}
-          <Link href="/notes" className="hover:text-foreground transition-colors">Notes</Link>
-          <Link href="/tools" className="hover:text-foreground transition-colors">Tools</Link>
-          <Link href="/toolkit" className="hover:text-accent transition-colors">Toolkit</Link>
-        </nav>
-        <div className="flex items-center gap-2">
-          <MumbaiClock />
-          <a
-            href="mailto:jaybaheliya@gmail.com"
-            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-5 py-2 text-sm font-medium text-accent-foreground transition-transform hover:scale-[1.02]"
-          >
-            Hire me
+      <div className="mx-auto max-w-[1400px] px-4 py-3 sm:px-6 md:px-10">
+        <div className="flex items-center justify-between gap-3">
+          <a href="#top" className="min-w-0 flex items-center gap-2 font-display text-base font-bold tracking-tight sm:text-lg">
+            <img
+              src="/favicon.png"
+              alt="JB monogram"
+              width={28}
+              height={28}
+              className="h-7 w-7 shrink-0 rounded-md bg-foreground/5 p-0.5 dark:invert"
+            />
+            <span className="truncate">Jwala<span className="text-accent">.</span></span>
           </a>
+          <nav className="hidden gap-8 font-mono text-xs uppercase tracking-widest text-muted-foreground md:flex">
+            {NAV_SECTIONS.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  smoothScrollTo(s.id);
+                }}
+                className="hover:text-foreground transition-colors"
+              >
+                {s.label}
+              </a>
+            ))}
+            <Link href="/notes" className="hover:text-foreground transition-colors">Notes</Link>
+            <Link href="/tools" className="hover:text-foreground transition-colors">Tools</Link>
+            <Link href="/toolkit" className="hover:text-accent transition-colors">Toolkit</Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:block">
+              <MumbaiClock />
+            </div>
+            <a
+              href="mailto:jaybaheliya@gmail.com"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-transform hover:scale-[1.02] sm:px-5"
+            >
+              Hire me
+            </a>
+            <button
+              type="button"
+              aria-label={mobileOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileOpen}
+              onClick={() => setMobileOpen((v) => !v)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/70 text-foreground backdrop-blur-md transition-colors hover:bg-card md:hidden"
+            >
+              {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
+
+        {mobileOpen && (
+          <div className="mt-3 rounded-3xl border border-border bg-background/95 p-3 shadow-2xl backdrop-blur-xl md:hidden">
+            <div className="mb-2 px-2 sm:hidden">
+              <MumbaiClock />
+            </div>
+            <nav className="grid gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+              {NAV_SECTIONS.map((s) => (
+                <a
+                  key={s.id}
+                  href={`#${s.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    smoothScrollTo(s.id);
+                    closeMobileMenu();
+                  }}
+                  className="rounded-2xl border border-transparent px-4 py-3 transition-colors hover:border-border hover:bg-card hover:text-foreground"
+                >
+                  {s.label}
+                </a>
+              ))}
+              <Link
+                href="/notes"
+                onClick={closeMobileMenu}
+                className="rounded-2xl border border-transparent px-4 py-3 transition-colors hover:border-border hover:bg-card hover:text-foreground"
+              >
+                Notes
+              </Link>
+              <Link
+                href="/tools"
+                onClick={closeMobileMenu}
+                className="rounded-2xl border border-transparent px-4 py-3 transition-colors hover:border-border hover:bg-card hover:text-foreground"
+              >
+                Tools
+              </Link>
+              <Link
+                href="/toolkit"
+                onClick={closeMobileMenu}
+                className="rounded-2xl border border-transparent px-4 py-3 text-accent transition-colors hover:border-border hover:bg-card"
+              >
+                Toolkit
+              </Link>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
@@ -420,7 +471,7 @@ function Nav() {
 function Hero() {
   const t = HERO_COPY.en;
   return (
-    <section id="top" className="relative overflow-x-clip pt-32 pb-16 sm:pt-40 sm:pb-24 md:pt-52 md:pb-32">
+    <section id="top" className="relative overflow-x-clip pt-24 pb-12 sm:pt-36 sm:pb-20 md:pt-52 md:pb-32">
       {/* aurora */}
       <div
         aria-hidden
@@ -433,16 +484,16 @@ function Hero() {
         style={{ background: "radial-gradient(circle, var(--accent), transparent 60%)", animationDelay: "-6s" }}
       />
 
-      <div className="mx-auto grid max-w-[1400px] gap-12 px-5 sm:px-6 md:px-10 lg:grid-cols-[1.4fr_1fr] lg:items-center">
+      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 sm:gap-10 sm:px-6 md:px-10 lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-12">
         <div className="min-w-0">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground backdrop-blur-md">
+          <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-md sm:text-[11px] sm:tracking-widest">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
             </span>
             {t.badge}
           </div>
-          <div className="mb-6 ml-1"><ViewCounter storageKey="home" label="recruiters viewed this week" /></div>
+          <div className="mb-5 ml-1"><ViewCounter storageKey="home" label="recruiters viewed this week" /></div>
 
           <h1 className="font-display text-[13vw] font-bold leading-[0.95] tracking-tight break-words sm:text-[8vw] md:text-[6.5vw] lg:text-[5.5vw]">
             <TextScramble as="span" text={t.h1a} />
@@ -450,15 +501,15 @@ function Hero() {
             {t.h1b} <span className="text-accent">{t.h1accent}</span> {t.h1c}
           </h1>
 
-          <p className="mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground md:text-xl">
+          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg md:mt-8 md:text-xl">
             {t.body}
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center gap-3">
+          <div className="mt-7 flex flex-wrap items-center gap-2.5 sm:mt-8 sm:gap-3">
             <Magnetic>
               <a
                 href="#work"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-6 py-3 text-sm font-medium text-background transition-transform hover:scale-[1.02]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background transition-transform hover:scale-[1.02] sm:px-6"
               >
                 {t.cta1} <span aria-hidden>→</span>
               </a>
@@ -466,14 +517,14 @@ function Hero() {
             <Magnetic>
               <a
                 href="/resume"
-                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card/40 px-6 py-3 text-sm font-medium backdrop-blur-md transition-colors hover:bg-card"
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card/40 px-5 py-3 text-sm font-medium backdrop-blur-md transition-colors hover:bg-card sm:px-6"
               >
                 <span aria-hidden>↓</span> {t.cta2}
               </a>
             </Magnetic>
             <a
               href="#contact"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full px-6 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:px-6"
             >
               {t.cta3}
             </a>
@@ -481,7 +532,7 @@ function Hero() {
         </div>
 
         {/* Dev status card */}
-        <Reveal className="w-full max-w-full justify-self-center lg:justify-self-end">
+        <Reveal className="mt-2 w-full max-w-full justify-self-center lg:mt-0 lg:justify-self-end">
           <HeroTerminal />
         </Reveal>
       </div>
@@ -493,7 +544,7 @@ function Hero() {
 
 function HeroTerminal() {
   return (
-    <div className="orbit-wrap relative mx-auto h-[22rem] w-[22rem] max-w-full sm:h-[28rem] sm:w-[28rem] md:h-[34rem] md:w-[34rem]">
+    <div className="orbit-wrap relative mx-auto h-[18.5rem] w-[18.5rem] max-w-full sm:h-[24rem] sm:w-[24rem] md:h-[34rem] md:w-[34rem]">
       <DottedSphere />
       <SkillOrbit />
       <div className="absolute inset-0 flex items-center justify-center">
@@ -510,7 +561,7 @@ function DottedSphere() {
   const radius = 210;
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center [perspective:1200px]" aria-hidden>
-      <div className="relative h-[420px] w-[420px] [transform-style:preserve-3d] animate-[spin_38s_linear_infinite]">
+      <div className="relative h-[420px] w-[420px] scale-[0.58] [transform-style:preserve-3d] animate-[spin_38s_linear_infinite] sm:scale-75 md:scale-100">
         {Array.from({ length: rings }).map((_, r) => {
           const lat = (r / (rings - 1)) * Math.PI - Math.PI / 2;
           const rr = Math.cos(lat) * radius;
@@ -578,11 +629,11 @@ function SkillOrbit() {
                 type="button"
                 tabIndex={0}
                 aria-label={s.label}
-                className="orbit-node pointer-events-auto outline-none"
+                className="orbit-node pointer-events-none outline-none sm:pointer-events-auto"
                 style={{ transform: `rotate(${angle}deg) translate(${ring.r}px)` }}
               >
                 <span className="orbit-counter block">
-                  <span className="orbit-chip absolute rounded-full border border-border/70 bg-card/80 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-foreground/80 backdrop-blur-md">
+                  <span className="orbit-chip absolute hidden rounded-full border border-border/70 bg-card/80 px-3 py-1 font-mono text-[11px] uppercase tracking-wider text-foreground/80 backdrop-blur-md sm:block">
                     {s.label}
                   </span>
                 </span>
@@ -645,25 +696,25 @@ function DevStatusCard() {
         className="absolute -inset-6 rounded-[2.5rem] opacity-40 blur-3xl"
         style={{ background: "radial-gradient(circle, var(--accent), transparent 70%)" }}
       />
-      <div className="relative w-[20rem] overflow-hidden rounded-[1.75rem] border border-border/60 bg-card/85 shadow-2xl backdrop-blur-xl md:w-[24rem]">
+      <div className="relative w-[16.75rem] overflow-hidden rounded-[1.4rem] border border-border/60 bg-card/88 shadow-2xl backdrop-blur-xl sm:w-[19rem] sm:rounded-[1.6rem] md:w-[24rem] md:rounded-[1.75rem]">
         {/* Title bar */}
-        <div className="flex items-center justify-between border-b border-border/60 bg-background/40 px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border/60 bg-background/40 px-3 py-2.5 sm:px-4 sm:py-3">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
             <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
             <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
           </div>
-          <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+          <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground sm:text-[10px] sm:tracking-[0.3em]">
             ~/jwala — zsh
           </div>
-          <div className="flex items-center gap-1 font-mono text-[10px] text-accent">
+          <div className="flex items-center gap-1 font-mono text-[9px] text-accent sm:text-[10px]">
             <CircleDot className="h-3 w-3" /> live
           </div>
         </div>
 
         {/* Body with scanlines */}
         <div className="relative">
-          <pre className="relative z-10 min-h-[15rem] whitespace-pre-wrap px-5 py-4 font-mono text-[12.5px] leading-relaxed text-foreground/90">
+          <pre className="relative z-10 min-h-[12rem] whitespace-pre-wrap px-3.5 py-3 font-mono text-[11.5px] leading-relaxed text-foreground/90 sm:min-h-[14rem] sm:px-4 sm:py-4 sm:text-[12px] md:min-h-[15rem] md:px-5 md:text-[12.5px]">
             {TERMINAL_LINES.slice(0, li).map((l, i) => (
               <TermLine key={i} line={l} shown={l.text.length} />
             ))}
@@ -689,7 +740,7 @@ function DevStatusCard() {
         </div>
 
         {/* Meta strip */}
-        <div className="flex items-center justify-between border-t border-border/60 bg-background/60 px-4 py-2 font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+        <div className="flex items-center justify-between border-t border-border/60 bg-background/60 px-3 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground sm:px-4 sm:text-[10px] sm:tracking-[0.25em]">
           <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> Mumbai · Remote</span>
           <span className="inline-flex items-center gap-1"><Code2 className="h-3 w-3 text-accent" /> v8.0</span>
         </div>
@@ -1333,42 +1384,47 @@ function Testimonials() {
   return (
     <section id="kind-words" className="relative border-t border-border/60 py-24 md:py-32">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
-        <div className="mb-10 flex items-end justify-between gap-6">
-          <h2 className="font-display text-4xl font-semibold tracking-tight md:text-6xl">
+        <div className="mb-8 flex items-center justify-between gap-6">
+          <h2 className="font-display text-2xl font-semibold tracking-tight md:text-4xl">
             Kind <span className="text-accent">words</span>.
           </h2>
           <div className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             {String(i + 1).padStart(2, "0")} / {String(TESTIMONIALS.length).padStart(2, "0")}
           </div>
         </div>
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-card/40 p-8 backdrop-blur-md md:p-14">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full opacity-20 blur-3xl"
-            style={{ background: "radial-gradient(circle, var(--accent), transparent 60%)" }}
-          />
-          <div className="font-display text-6xl leading-none text-accent">“</div>
-          <blockquote
-            key={i}
-            className="mt-4 max-w-4xl animate-fade-in font-display text-2xl leading-snug md:text-4xl"
-          >
-            {t.q}
-          </blockquote>
-          <figcaption className="mt-8 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            — {t.a}
-          </figcaption>
-          <div className="mt-10 flex gap-2">
-            {TESTIMONIALS.map((_, idx) => (
-              <button
-                key={idx}
-                aria-label={`Show testimonial ${idx + 1}`}
-                onClick={() => setI(idx)}
-                className={
-                  "h-1.5 rounded-full transition-all " +
-                  (idx === i ? "w-10 bg-accent" : "w-4 bg-border hover:bg-muted-foreground/50")
-                }
-              />
-            ))}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.05fr)_420px] lg:items-stretch xl:grid-cols-[minmax(0,1.1fr)_460px]">
+          <div className="relative flex h-full min-h-[420px] flex-col overflow-hidden rounded-3xl border border-border bg-card/40 p-8 backdrop-blur-md md:min-h-[460px] md:p-10">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-16 -left-16 h-64 w-64 rounded-full opacity-20 blur-3xl"
+              style={{ background: "radial-gradient(circle, var(--accent), transparent 60%)" }}
+            />
+            <div className="font-display text-5xl leading-none text-accent md:text-6xl">"</div>
+            <blockquote
+              key={i}
+              className="mt-4 max-w-3xl animate-fade-in font-display text-xl leading-snug md:text-[2rem]"
+            >
+              {t.q}
+            </blockquote>
+            <figcaption className="mt-8 font-mono text-xs uppercase tracking-widest text-muted-foreground">
+              - {t.a}
+            </figcaption>
+            <div className="mt-auto pt-10 flex gap-2">
+              {TESTIMONIALS.map((_, idx) => (
+                <button
+                  key={idx}
+                  aria-label={`Show testimonial ${idx + 1}`}
+                  onClick={() => setI(idx)}
+                  className={
+                    "h-1.5 rounded-full transition-all " +
+                    (idx === i ? "w-10 bg-accent" : "w-4 bg-border hover:bg-muted-foreground/50")
+                  }
+                />
+              ))}
+            </div>
+          </div>
+          <div className="mx-auto h-full w-full max-w-md lg:mx-0 lg:max-w-none">
+            <BusinessCard />
           </div>
         </div>
       </div>
@@ -1402,7 +1458,7 @@ function Contact() {
             <ContactRow k="Email" v="jaybaheliya@gmail.com" href="mailto:jaybaheliya@gmail.com" />
             <ContactRow k="Phone" v="+91 90296 52067" href="tel:+919029652067" />
             <ContactRow k="LinkedIn" v="jwala-baheliya" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b" />
-            <ContactRow k="Portfolio" v="jwalabaheliya-webdev.vercel.app" href="https://jwalabaheliya-webdev.vercel.app/" />
+            <ContactRow k="Portfolio" v="jwalabaheliya-dev.vercel.app" href="https://jwalabaheliya-dev.vercel.app/" />
             <ContactRow k="Location" v="Mumbai, India · Remote" />
           </div>
 
@@ -1491,7 +1547,7 @@ function Footer() {
         <div className="flex gap-4 font-mono text-[11px] uppercase tracking-widest">
           <a href="mailto:jaybaheliya@gmail.com" className="hover:text-accent transition-colors">Email</a>
           <a href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b" target="_blank" rel="noreferrer noopener" className="hover:text-accent transition-colors">LinkedIn</a>
-          <a href="https://jwalabaheliya-webdev.vercel.app/" target="_blank" rel="noreferrer noopener" className="hover:text-accent transition-colors">Portfolio</a>
+          <a href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer noopener" className="hover:text-accent transition-colors">Portfolio</a>
           <Link href="/tools" className="hover:text-accent transition-colors">Tools</Link>
           <Link href="/toolkit" className="hover:text-accent transition-colors">Toolkit</Link>
           <Link href="/notes" className="hover:text-accent transition-colors">Notes</Link>
@@ -1620,3 +1676,6 @@ function SectionRail() {
 
 
 export default PortfolioPage;
+
+
+

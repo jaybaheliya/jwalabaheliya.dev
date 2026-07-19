@@ -11,7 +11,7 @@ TITLE:Senior Frontend Developer
 ORG:Bombay Design Centre
 EMAIL:jaybaheliya@gmail.com
 TEL:+91 90296 52067
-URL:https://jwalabaheliya-webdev.vercel.app/
+URL:https://jwalabaheliya-dev.vercel.app/
 ADR:;;Mumbai;;;India
 END:VCARD`;
 
@@ -29,11 +29,11 @@ export function BusinessCard() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex h-full flex-col rounded-3xl border border-border bg-card/70 p-6 backdrop-blur-md md:p-8">
+      <div className="mb-6 flex items-center justify-between">
         <div>
           <div className="text-[11px] font-mono tracking-widest uppercase text-muted-foreground">Digital Business Card</div>
-          <div className="font-display text-2xl font-bold">Save my contact in one tap</div>
+          <div className="font-display text-2xl font-bold leading-tight">Save my contact in one tap</div>
         </div>
         <button
           onClick={() => setFlipped((f) => !f)}
@@ -44,7 +44,7 @@ export function BusinessCard() {
         </button>
       </div>
 
-      <div style={{ perspective: "1200px" }} className="mx-auto max-w-sm">
+      <div style={{ perspective: "1200px" }} className="mx-auto flex w-full max-w-sm flex-1 items-center">
         <div
           onClick={() => setFlipped((f) => !f)}
           className="relative w-full aspect-[1.75/1] cursor-pointer transition-transform duration-700"
@@ -81,7 +81,7 @@ export function BusinessCard() {
               <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Scan to save</div>
               <div className="text-sm mt-1 truncate">jaybaheliya@gmail.com</div>
               <div className="text-sm truncate">+91 90296 52067</div>
-              <div className="text-xs text-muted-foreground truncate mt-1">jwalabaheliya-webdev.vercel.app</div>
+              <div className="text-xs text-muted-foreground truncate mt-1">jwalabaheliya-dev.vercel.app</div>
             </div>
             <div className="bg-white p-2 rounded-lg shrink-0">
               <QRCodeSVG value={VCARD} size={88} level="M" />

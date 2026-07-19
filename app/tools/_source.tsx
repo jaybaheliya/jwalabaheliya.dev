@@ -312,7 +312,7 @@ function GradientMaker() {
 
 /* ---------- Responsive ---------- */
 function ResponsiveChecker() {
-  const [url, setUrl] = useState("https://jwalabaheliya-webdev.vercel.app/");
+  const [url, setUrl] = useState("https://jwalabaheliya-dev.vercel.app/");
   const [input, setInput] = useState(url);
   const devices = [
     { name: "iPhone SE", w: 375, h: 667 },
@@ -438,3 +438,4 @@ export function FloatingToolkitCTA() {
 }
 
 export default ToolsPage;
+

@@ -10,6 +10,7 @@ import { AskResume } from "@/components/ask-resume";
 import { LenisScroll } from "./_providers";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://jwalabaheliya-dev.vercel.app"),
   title: "Jwala Baheliya — Senior Frontend Developer",
   description:
     "Senior frontend developer, 8+ years crafting interfaces for Rustomjee, Godrej, Kotak, Tata, Shapoorji Pallonji and other world-class brands.",
@@ -50,3 +51,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+
