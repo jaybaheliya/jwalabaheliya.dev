@@ -1,0 +1,430 @@
+@import "tailwindcss" source(none);
+@source "../app";
+@source "../components";
+@source "../hooks";
+@source "../lib";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+html, body { overflow-x: hidden; }
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 0.375rem;
+  /* Dark dev portfolio palette — deep charcoal + electric lime */
+  --background: oklch(0.12 0.015 260);
+  --foreground: oklch(0.95 0.01 90);
+  --card: oklch(0.16 0.018 260);
+  --card-foreground: oklch(0.95 0.01 90);
+  --popover: oklch(0.16 0.018 260);
+  --popover-foreground: oklch(0.95 0.01 90);
+  --primary: oklch(0.95 0.01 90);
+  --primary-foreground: oklch(0.12 0.015 260);
+  --secondary: oklch(0.18 0.015 260);
+  --secondary-foreground: oklch(0.9 0.01 90);
+  --muted: oklch(0.2 0.01 260);
+  --muted-foreground: oklch(0.6 0.01 260);
+  /* Warm amber — distinctive, high-contrast on charcoal */
+  --accent: oklch(0.82 0.17 75);
+  --accent-foreground: oklch(0.14 0.02 60);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0.005 25);
+  --border: oklch(0.25 0.012 260);
+  --input: oklch(0.22 0.012 260);
+  --ring: oklch(0.82 0.17 75);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.129 0.042 264.695);
+  --sidebar-primary: oklch(0.208 0.042 265.755);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Light mode override — toggled by adding `.light` on <html>. Dark is default (:root above). */
+.light {
+  --background: oklch(0.985 0.003 260);
+  --foreground: oklch(0.15 0.02 260);
+  --card: oklch(0.98 0.004 260);
+  --card-foreground: oklch(0.15 0.02 260);
+  --popover: oklch(0.98 0.004 260);
+  --popover-foreground: oklch(0.15 0.02 260);
+  --primary: oklch(0.15 0.02 260);
+  --primary-foreground: oklch(0.985 0.003 260);
+  --secondary: oklch(0.94 0.005 260);
+  --secondary-foreground: oklch(0.2 0.02 260);
+  --muted: oklch(0.94 0.005 260);
+  --muted-foreground: oklch(0.45 0.01 260);
+  --accent: oklch(0.55 0.18 250);
+  --accent-foreground: oklch(0.985 0.003 260);
+  --border: oklch(0.88 0.008 260);
+  --input: oklch(0.9 0.008 260);
+  --ring: oklch(0.55 0.18 250);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@theme inline {
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+@utility marquee {
+  display: flex;
+  gap: 2rem;
+  animation: marquee 40s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@utility marquee-reverse {
+  display: flex;
+  gap: 2rem;
+  animation: marquee-reverse 45s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+@keyframes marquee-reverse {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@utility marquee-fast {
+  display: flex;
+  gap: 2rem;
+  animation: marquee 32s linear infinite;
+  white-space: nowrap;
+  width: max-content;
+}
+
+@utility grain {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  }
+}
+
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@utility reveal {
+  animation: reveal-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Floating blob for hero aurora — faster, less jank */
+@keyframes blob-float {
+  0%, 100% { transform: translate(0, 0); }
+  33%      { transform: translate(30px, -20px); }
+  66%      { transform: translate(-20px, 15px); }
+}
+@utility blob {
+  animation: blob-float 18s ease-in-out infinite;
+  filter: blur(80px);
+  will-change: transform;
+}
+
+/* Soft floating badge bob */
+@keyframes bob {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50%      { transform: translateY(-10px) rotate(var(--r, 0deg)); }
+}
+@utility bob {
+  animation: bob 6s ease-in-out infinite;
+}
+
+/* Ticker for pill scroller */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@utility ticker {
+  display: flex;
+  gap: 0.75rem;
+  width: max-content;
+  animation: ticker 30s linear infinite;
+}
+
+/* Animated gradient shimmer for banner text */
+@keyframes shimmer-x {
+  from { background-position: 0% 50%; }
+  to   { background-position: 200% 50%; }
+}
+@utility text-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    currentColor 0%,
+    color-mix(in oklab, currentColor 55%, transparent) 40%,
+    var(--accent) 50%,
+    color-mix(in oklab, currentColor 55%, transparent) 60%,
+    currentColor 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-x 6s linear infinite;
+}
+
+/* Marquee hover pause */
+.marquee:hover,
+.marquee-fast:hover,
+.marquee-reverse:hover,
+.ticker:hover { animation-play-state: paused; }
+
+/* GPU acceleration hint */
+.transform-gpu { transform: translateZ(0); }
+
+/* Snap scroll for featured work gallery */
+@utility snap-x {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+@utility snap-center { scroll-snap-align: center; }
+@utility snap-start { scroll-snap-align: start; }
+
+/* Input focus ring animation */
+@keyframes ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--ring); }
+  50% { box-shadow: 0 0 0 4px color-mix(in oklab, var(--ring) 50%, transparent); }
+}
+@utility focus-ring-pulse {
+  &:focus {
+    animation: ring-pulse 1s ease-in-out infinite;
+  }
+}
+
+/* Slide in animation for modals */
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@utility slide-up-fade {
+  animation: slide-up-fade 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* -------- Ambient code backdrop -------- */
+@keyframes code-scroll-up {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+@keyframes code-scroll-down {
+  from { transform: translateY(-50%); }
+  to   { transform: translateY(0); }
+}
+
+/* -------- Custom scrollbar -------- */
+html {
+  scrollbar-color: color-mix(in oklab, var(--accent) 60%, transparent) var(--background);
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--background);
+}
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 70%, transparent), color-mix(in oklab, var(--accent) 30%, transparent));
+  border-radius: 999px;
+  border: 2px solid var(--background);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+@keyframes blink { 0%,49% { opacity: 1 } 50%,100% { opacity: 0 } }
+
+/* Terminal scanlines */
+@keyframes scan {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+.scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 0px,
+    color-mix(in oklab, var(--foreground) 6%, transparent) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+  opacity: .35;
+}
+.scan-sweep {
+  background: linear-gradient(180deg, transparent 0%, color-mix(in oklab, var(--accent) 25%, transparent) 50%, transparent 100%);
+  animation: scan 6s linear infinite;
+}
+
+/* Skill orbit */
+@keyframes orbit-spin      { to { transform: rotate(360deg); } }
+@keyframes orbit-spin-rev  { to { transform: rotate(-360deg); } }
+.orbit-ring {
+  border: 1px dashed color-mix(in oklab, var(--accent) 35%, transparent);
+  border-radius: 9999px;
+  position: absolute;
+  inset: 0;
+  margin: auto;
+}
+.orbit-rotate      { animation: orbit-spin 40s linear infinite; }
+.orbit-rotate-rev  { animation: orbit-spin-rev 60s linear infinite; }
+.orbit-rotate-fast { animation: orbit-spin 22s linear infinite; }
+.orbit-node {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 0;
+}
+.orbit-node > .orbit-chip {
+  transform: translate(-50%, -50%);
+  transition: transform .25s ease, background .25s ease, color .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.orbit-node:hover > .orbit-chip,
+.orbit-node:focus-visible > .orbit-chip {
+  transform: translate(-50%, -50%) scale(1.18);
+  background: var(--accent);
+  color: var(--background);
+  border-color: var(--accent);
+  box-shadow: 0 0 24px color-mix(in oklab, var(--accent) 60%, transparent);
+}
+/* pause orbit rotation while a chip is hovered/focused so users can read it */
+.orbit-wrap:hover .orbit-rotate,
+.orbit-wrap:hover .orbit-rotate-rev,
+.orbit-wrap:hover .orbit-rotate-fast,
+.orbit-wrap:focus-within .orbit-rotate,
+.orbit-wrap:focus-within .orbit-rotate-rev,
+.orbit-wrap:focus-within .orbit-rotate-fast {
+  animation-play-state: paused;
+}
+/* counter-rotate node contents so chips stay upright */
+.orbit-rotate      .orbit-counter { animation: orbit-spin-rev 40s linear infinite; }
+.orbit-rotate-rev  .orbit-counter { animation: orbit-spin      60s linear infinite; }
+.orbit-rotate-fast .orbit-counter { animation: orbit-spin-rev 22s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-rotate, .orbit-rotate-rev, .orbit-rotate-fast,
+  .orbit-counter, .scan-sweep { animation: none !important; }
+}
+
+/* CRT easter egg */
+html.crt {
+  filter: contrast(1.05) saturate(1.1);
+}
+html.crt body {
+  text-shadow: 0 0 1px color-mix(in oklab, var(--accent) 40%, transparent);
+}
+
+/* Print-optimized resume */
+@media print {
+  html.resume-print {
+    background: #fff !important;
+  }
+  html.resume-print body { background: #fff !important; color: #111 !important; }
+  html.resume-print [data-lenis], html.resume-print .lenis, html.resume-print .lenis-smooth { overflow: visible !important; }
+  html.resume-print .print\:hidden { display: none !important; }
+  html.resume-print aside, html.resume-print nav, html.resume-print [role="dialog"] { display: none !important; }
+  @page { margin: 14mm; }
+}
+@media print {
+  html.resume-print .fixed { display: none !important; }
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
