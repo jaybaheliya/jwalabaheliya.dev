@@ -799,15 +799,37 @@ function JsonFormatter() {
 }
 
 function Base64Tool() {
+  const ENCODE_SAMPLE = "Hello, world!";
+  const DECODE_SAMPLE = "SGVsbG8sIHdvcmxkIQ==";
   const [v, setV] = useState("Hello, world!");
   const [mode, setMode] = useState<"encode" | "decode">("encode");
-  let out = ""; try { out = mode === "encode" ? btoa(v) : atob(v); } catch { out = "Invalid input"; }
+  let out = "";
+  try {
+    if (mode === "encode") {
+      const bytes = new TextEncoder().encode(v);
+      let binary = "";
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      out = btoa(binary);
+    } else {
+      const normalized = v.replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
+      if (!normalized || /[^A-Za-z0-9+/=]/.test(normalized)) throw new Error("invalid");
+      const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+      out = new TextDecoder().decode(bytes);
+    }
+  } catch {
+    out = "Invalid input";
+  }
   return (
     <div className="space-y-3">
       <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">
-        {(["encode", "decode"] as const).map((m) => <button key={m} onClick={() => setMode(m)} className={"px-3 py-1 rounded-full uppercase " + (mode === m ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>{m}</button>)}
+        {(["encode", "decode"] as const).map((m) => <button key={m} onClick={() => { setMode(m); setV((current) => current === (m === "decode" ? ENCODE_SAMPLE : DECODE_SAMPLE) ? (m === "decode" ? DECODE_SAMPLE : ENCODE_SAMPLE) : current); }} className={"px-3 py-1 rounded-full uppercase " + (mode === m ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>{m}</button>)}
       </div>
-      <textarea value={v} onChange={(e) => setV(e.target.value)} className="w-full min-h-[100px] rounded-xl border border-border bg-background p-3 font-mono text-xs" />
+      <textarea value={v} onChange={(e) => setV(e.target.value)} placeholder={mode === "encode" ? "Type text to convert into Base64" : "Paste Base64 here, for example SGVsbG8sIHdvcmxkIQ=="} className="w-full min-h-[100px] rounded-xl border border-border bg-background p-3 font-mono text-xs" />
+      <p className="text-xs text-muted-foreground font-mono">
+        {mode === "encode" ? "Encoding converts plain text into Base64." : "Decoding expects Base64 input, not plain text."}
+      </p>
       <CodeBlock code={out} lang="text" />
     </div>
   );
@@ -839,7 +861,10 @@ function RegexTester() {
         <span>/</span>
         <input value={pat} onChange={(e) => setPat(e.target.value)} className="flex-1 rounded-md border border-border bg-background px-2 py-1" />
         <span>/</span>
-        <input value={flags} onChange={(e) => setFlags(e.target.value)} className="w-16 rounded-md border border-border bg-background px-2 py-1" />
+        <input value={flags} onChange={(e) => setFlags(e.target.value)} placeholder="gi" className="w-16 rounded-md border border-border bg-background px-2 py-1" />
+      </div>
+      <div className="rounded-md border border-border bg-muted/20 p-3 text-xs font-mono text-muted-foreground">
+        Flags change how the regex behaves. <span className="text-foreground">g</span> = find all matches, <span className="text-foreground">i</span> = ignore uppercase/lowercase, <span className="text-foreground">m</span> = treat each line separately. Example: <span className="text-foreground">gi</span> finds all matches and ignores case.
       </div>
       <textarea value={text} onChange={(e) => setText(e.target.value)} className="w-full min-h-[100px] rounded-xl border border-border bg-background p-3 font-mono text-xs" />
       {err ? <div className="rounded-md border border-rose-500/40 bg-rose-500/10 text-rose-400 text-xs p-2 font-mono">{err}</div>
@@ -1331,7 +1356,7 @@ function MediaQueryGen() {
   );
 }
 
-type InterviewTopic = "All" | "Closures" | "Async" | "Arrays" | "DOM";
+type InterviewTopic = "All" | "Closures" | "Async" | "Arrays" | "Objects" | "Functions" | "Strings" | "DOM";
 type InterviewQuestion = {
   id: string;
   topic: Exclude<InterviewTopic, "All">;
@@ -1411,10 +1436,692 @@ const INTERVIEW_QUESTIONS: InterviewQuestion[] = [
     explain: "Arrow functions do not bind their own `this`. They capture `this` from the surrounding scope, not from the object method call.",
     takeaway: "Use method syntax or a normal function when you want `this` to refer to the object.",
   },
+  {
+    id: "closure-private-state",
+    topic: "Closures",
+    title: "Private state in a closure",
+    prompt: "What does this log?",
+    code: "function makeCounter() {\n  let count = 0;\n  return () => ++count;\n}\nconst counter = makeCounter();\nconsole.log(counter(), counter(), counter());",
+    options: ["1 2 3", "0 1 2", "1 1 1", "It throws because `count` is private"],
+    answer: 0,
+    explain: "The returned function closes over `count`, so that single variable persists between calls and increments each time.",
+    takeaway: "Closures are often used in interviews to show how functions can preserve private state.",
+  },
+  {
+    id: "async-await-order",
+    topic: "Async",
+    title: "Async function scheduling",
+    prompt: "Which order is printed?",
+    code: "async function run() {\n  console.log('A');\n  await Promise.resolve();\n  console.log('B');\n}\nrun();\nconsole.log('C');",
+    options: ["A, B, C", "A, C, B", "C, A, B", "B, A, C"],
+    answer: 1,
+    explain: "`A` logs synchronously. After `await`, execution resumes in a microtask, so `C` prints before `B`.",
+    takeaway: "Treat code after `await` like promise continuation work that runs after current synchronous code finishes.",
+  },
+  {
+    id: "promise-all-reject",
+    topic: "Async",
+    title: "Promise.all behavior",
+    prompt: "How does `Promise.all` behave here?",
+    code: "Promise.all([\n  Promise.resolve('ok'),\n  Promise.reject('fail'),\n  Promise.resolve('later'),\n]).then(console.log).catch(console.log);",
+    options: ["It logs `['ok', 'fail', 'later']`", "It logs only `fail` in the catch handler", "It waits for every promise, then logs both success and failure values", "It throws a syntax error"],
+    answer: 1,
+    explain: "`Promise.all` rejects as soon as one input promise rejects, so the catch handler receives the rejection reason.",
+    takeaway: "Use `Promise.allSettled` when the interviewer wants results from every promise regardless of failures.",
+  },
+  {
+    id: "filter-boolean",
+    topic: "Arrays",
+    title: "Truthy filtering shortcut",
+    prompt: "What is the result of this expression?",
+    code: "[0, 1, false, 2, '', 3].filter(Boolean)",
+    options: ["[0, 1, false, 2, '', 3]", "[1, 2, 3]", "[0, false, '']", "It removes only empty strings"],
+    answer: 1,
+    explain: "`filter(Boolean)` keeps only truthy values. `0`, `false`, and an empty string are falsy, so they are removed.",
+    takeaway: "This is a handy shorthand, but mention in interviews that it also removes valid falsy values like `0`.",
+  },
+  {
+    id: "reduce-flatten",
+    topic: "Arrays",
+    title: "Flatten with reduce",
+    prompt: "What does this return?",
+    code: "[[1, 2], [3], [4, 5]].reduce((acc, item) => acc.concat(item), [])",
+    options: ["[1, 2, 3, 4, 5]", "[[1, 2], [3], [4, 5]]", "[15]", "It throws because `concat` cannot merge arrays"],
+    answer: 0,
+    explain: "The reducer starts with an empty array and concatenates each nested array onto it, producing one flat array.",
+    takeaway: "Reduce questions are often less about memorization and more about whether you can track the accumulator cleanly.",
+  },
+  {
+    id: "event-target-currenttarget",
+    topic: "DOM",
+    title: "target vs currentTarget",
+    prompt: "If the button inside the card is clicked, what do these refer to?",
+    code: "<div id=\"card\">\n  <button id=\"save\">Save</button>\n</div>\n\ncard.addEventListener('click', (event) => {\n  console.log(event.target.id, event.currentTarget.id);\n});",
+    options: ["`card save`", "`save card`", "`save save`", "`card card`"],
+    answer: 1,
+    explain: "`event.target` is the element that was actually clicked, while `event.currentTarget` is the element the listener is attached to.",
+    takeaway: "This distinction comes up a lot in delegation and bubbling interview questions.",
+  },
+  {
+    id: "stop-propagation",
+    topic: "DOM",
+    title: "Stopping bubbling",
+    prompt: "What changes if `event.stopPropagation()` runs inside the button click handler?",
+    code: "parent.addEventListener('click', () => console.log('parent'));\nbutton.addEventListener('click', (event) => {\n  event.stopPropagation();\n  console.log('button');\n});",
+    options: ["Both `button` and `parent` still log", "Only `parent` logs", "Only `button` logs", "Nothing logs"],
+    answer: 2,
+    explain: "`stopPropagation()` prevents the event from continuing up the DOM tree, so the parent listener does not run.",
+    takeaway: "Explain clearly that it stops propagation, not the current handler itself.",
+  },
+  {
+    id: "array-slice-splice",
+    topic: "Arrays",
+    title: "slice vs splice",
+    prompt: "What does this log?",
+    code: "const items = [1, 2, 3, 4];\nconst out = items.slice(1, 3);\nconsole.log(out, items);",
+    options: ["[2, 3] and [1, 2, 3, 4]", "[2, 3] and [1, 4]", "[1, 2] and [3, 4]", "It mutates both arrays"],
+    answer: 0,
+    explain: "`slice` returns a shallow copy of the selected range and does not mutate the original array.",
+    takeaway: "Interviewers often use `slice` and `splice` to test mutation awareness.",
+  },
+  {
+    id: "array-find-index",
+    topic: "Arrays",
+    title: "findIndex miss",
+    prompt: "What is returned here?",
+    code: "[10, 20, 30].findIndex((n) => n > 50)",
+    options: ["undefined", "null", "-1", "0"],
+    answer: 2,
+    explain: "`findIndex` returns `-1` when nothing matches.",
+    takeaway: "Know the different miss values: `find` gives `undefined`, `findIndex` gives `-1`.",
+  },
+  {
+    id: "array-sort-default",
+    topic: "Arrays",
+    title: "Default sort behavior",
+    prompt: "What is the result?",
+    code: "[1, 30, 4, 21].sort()",
+    options: ["[1, 4, 21, 30]", "[1, 21, 30, 4]", "[1, 30, 21, 4]", "It throws without a compare function"],
+    answer: 1,
+    explain: "Without a compare function, `sort` converts values to strings and sorts lexicographically.",
+    takeaway: "Mention a numeric compare callback in interviews: `(a, b) => a - b`.",
+  },
+  {
+    id: "array-destructure-rest",
+    topic: "Arrays",
+    title: "Destructuring with rest",
+    prompt: "What does this produce?",
+    code: "const [first, ...rest] = [5, 6, 7];\nconsole.log(first, rest);",
+    options: ["5 and [6, 7]", "[5] and [6, 7]", "5 and 6", "undefined and [5, 6, 7]"],
+    answer: 0,
+    explain: "The first element is assigned to `first`, and the remaining elements go into the `rest` array.",
+    takeaway: "Rest syntax is a common shorthand interviewers expect you to read comfortably.",
+  },
+  {
+    id: "array-every-some",
+    topic: "Arrays",
+    title: "every vs some",
+    prompt: "What is logged?",
+    code: "console.log([2, 4, 6].every((n) => n % 2 === 0), [2, 4, 5].some((n) => n % 2 !== 0));",
+    options: ["true true", "true false", "false true", "false false"],
+    answer: 0,
+    explain: "`every` checks whether all items pass. `some` checks whether at least one item passes.",
+    takeaway: "These methods are nice interview signals that you know intent-driven array APIs.",
+  },
+  {
+    id: "array-flat-depth",
+    topic: "Arrays",
+    title: "flat depth",
+    prompt: "What is the result?",
+    code: "[1, [2, [3]]].flat()",
+    options: ["[1, 2, 3]", "[1, [2], [3]]", "[1, 2, [3]]", "It stays unchanged"],
+    answer: 2,
+    explain: "The default depth for `flat()` is `1`, so only one nesting level is removed.",
+    takeaway: "If you need full flattening, say `flat(Infinity)` explicitly.",
+  },
+  {
+    id: "array-fill-reference",
+    topic: "Arrays",
+    title: "fill object reference trap",
+    prompt: "What happens after the mutation?",
+    code: "const rows = Array(3).fill({ done: false });\nrows[0].done = true;\nconsole.log(rows[1].done);",
+    options: ["false", "true", "undefined", "It throws"],
+    answer: 1,
+    explain: "`fill` uses the same object reference for each slot, so mutating one affects them all.",
+    takeaway: "When interviews ask about initialization, be alert for shared object references.",
+  },
+  {
+    id: "array-from-set",
+    topic: "Arrays",
+    title: "Remove duplicates",
+    prompt: "What does this expression return?",
+    code: "Array.from(new Set([1, 2, 2, 3]))",
+    options: ["[1, 2, 2, 3]", "[1, 2, 3]", "{1, 2, 3}", "A Map"],
+    answer: 1,
+    explain: "`Set` keeps unique values only, and `Array.from` converts the set back into an array.",
+    takeaway: "This is a common concise answer for array deduplication questions.",
+  },
+  {
+    id: "array-at-negative",
+    topic: "Arrays",
+    title: "Negative indexing with at",
+    prompt: "What is returned?",
+    code: "['a', 'b', 'c'].at(-1)",
+    options: ["'a'", "'b'", "'c'", "undefined"],
+    answer: 2,
+    explain: "`at(-1)` reads the last item from the array.",
+    takeaway: "This is cleaner than manual `arr[arr.length - 1]` when you want the last item.",
+  },
+  {
+    id: "array-copy-with-spread",
+    topic: "Arrays",
+    title: "Spread copy depth",
+    prompt: "What gets logged?",
+    code: "const original = [{ n: 1 }];\nconst copy = [...original];\ncopy[0].n = 9;\nconsole.log(original[0].n);",
+    options: ["1", "9", "undefined", "It throws because spread freezes objects"],
+    answer: 1,
+    explain: "Spread makes a shallow copy of the array, not deep copies of the nested objects.",
+    takeaway: "Shallow vs deep copy shows up constantly in frontend interviews.",
+  },
+  {
+    id: "object-keys-order",
+    topic: "Objects",
+    title: "Object.keys output",
+    prompt: "What is returned here?",
+    code: "Object.keys({ a: 1, b: 2 })",
+    options: ["['a', 'b']", "[1, 2]", "{ a: 1, b: 2 }", "A Set of keys"],
+    answer: 0,
+    explain: "`Object.keys` returns an array of the object's own enumerable property names.",
+    takeaway: "Be ready to contrast `Object.keys`, `Object.values`, and `Object.entries`.",
+  },
+  {
+    id: "object-assign-shallow",
+    topic: "Objects",
+    title: "Object.assign depth",
+    prompt: "What is logged?",
+    code: "const source = { profile: { city: 'Delhi' } };\nconst copy = Object.assign({}, source);\ncopy.profile.city = 'Pune';\nconsole.log(source.profile.city);",
+    options: ["Delhi", "Pune", "undefined", "It throws"],
+    answer: 1,
+    explain: "`Object.assign` creates a shallow copy, so nested objects are still shared references.",
+    takeaway: "Any copy question is a chance to call out shallow cloning clearly.",
+  },
+  {
+    id: "object-hasown",
+    topic: "Objects",
+    title: "Checking own properties",
+    prompt: "Which expression safely checks whether `name` is an own property?",
+    code: "const user = Object.create({ role: 'admin' });\nuser.name = 'Jwala';",
+    options: ["'name' in user", "Object.hasOwn(user, 'name')", "user.name !== undefined", "user.includes('name')"],
+    answer: 1,
+    explain: "`Object.hasOwn` checks only own properties and avoids prototype-chain confusion.",
+    takeaway: "The `in` operator includes inherited properties, which is a common interview distinction.",
+  },
+  {
+    id: "object-destructure-rename",
+    topic: "Objects",
+    title: "Destructuring rename",
+    prompt: "What does this log?",
+    code: "const user = { name: 'Jwala', age: 24 };\nconst { name: fullName } = user;\nconsole.log(fullName);",
+    options: ["name", "Jwala", "undefined", "24"],
+    answer: 1,
+    explain: "The `name` property is extracted and stored in a new variable called `fullName`.",
+    takeaway: "Renaming during destructuring is a useful pattern in React and API handling.",
+  },
+  {
+    id: "object-freeze",
+    topic: "Objects",
+    title: "Frozen object behavior",
+    prompt: "What is true about this object?",
+    code: "const settings = Object.freeze({ theme: 'light' });",
+    options: ["New top-level properties cannot be added or changed", "Nested objects also become deeply frozen automatically", "It becomes an array", "It can only be read inside strict mode"],
+    answer: 0,
+    explain: "`Object.freeze` prevents top-level mutation, but it is not deep by default.",
+    takeaway: "If a question mentions immutability, clarify whether it is shallow or deep.",
+  },
+  {
+    id: "object-spread-override",
+    topic: "Objects",
+    title: "Spread override order",
+    prompt: "What is the resulting object?",
+    code: "const result = { a: 1, ...{ a: 2, b: 3 } };",
+    options: ["{ a: 1, b: 3 }", "{ a: 2, b: 3 }", "{ a: [1, 2], b: 3 }", "It throws for duplicate keys"],
+    answer: 1,
+    explain: "Later properties overwrite earlier ones when spreading objects.",
+    takeaway: "Order matters in object spread, especially when merging config or props.",
+  },
+  {
+    id: "object-entries-map",
+    topic: "Objects",
+    title: "Object.entries shape",
+    prompt: "What does this return?",
+    code: "Object.entries({ x: 1, y: 2 })",
+    options: ["['x', 'y']", "[[1, 'x'], [2, 'y']]", "[['x', 1], ['y', 2]]", "{ x: 1, y: 2 }"],
+    answer: 2,
+    explain: "`Object.entries` returns an array of `[key, value]` pairs.",
+    takeaway: "This is useful when transforming objects with array methods.",
+  },
+  {
+    id: "object-json-drop",
+    topic: "Objects",
+    title: "JSON serialization omission",
+    prompt: "What is the result?",
+    code: "JSON.stringify({ a: 1, b: undefined, c: () => 1 })",
+    options: ["'{\"a\":1,\"b\":undefined,\"c\":null}'", "'{\"a\":1}'", "'{\"a\":1,\"b\":null}'", "It throws for functions"],
+    answer: 1,
+    explain: "When serializing objects, `undefined` and function properties are omitted.",
+    takeaway: "JSON questions often test what gets dropped or transformed during serialization.",
+  },
+  {
+    id: "object-reference-compare",
+    topic: "Objects",
+    title: "Object equality",
+    prompt: "What is the result?",
+    code: "({ a: 1 }) === ({ a: 1 })",
+    options: ["true", "false", "undefined", "It depends on the engine"],
+    answer: 1,
+    explain: "Objects are compared by reference, not by shape or content.",
+    takeaway: "This is the object version of the array reference-equality interview classic.",
+  },
+  {
+    id: "object-create-null",
+    topic: "Objects",
+    title: "Prototype-free object",
+    prompt: "What is special about this object?",
+    code: "const dict = Object.create(null);",
+    options: ["It has no prototype", "It is deeply frozen", "It behaves like a Map", "It cannot store strings as keys"],
+    answer: 0,
+    explain: "`Object.create(null)` makes an object with no inherited prototype methods or properties.",
+    takeaway: "This is useful when you want a pure dictionary with no prototype collisions.",
+  },
+  {
+    id: "function-hoisting-declaration",
+    topic: "Functions",
+    title: "Function declaration hoisting",
+    prompt: "What happens here?",
+    code: "sayHi();\nfunction sayHi() {\n  console.log('hi');\n}",
+    options: ["It logs 'hi'", "It throws because the function is defined later", "It logs undefined", "Nothing happens"],
+    answer: 0,
+    explain: "Function declarations are hoisted, so they can be called before their position in the source.",
+    takeaway: "Contrast this with function expressions, which often behave differently.",
+  },
+  {
+    id: "function-expression-hoisting",
+    topic: "Functions",
+    title: "Function expression timing",
+    prompt: "What happens here?",
+    code: "sayHi();\nconst sayHi = function () {\n  console.log('hi');\n};",
+    options: ["It logs 'hi'", "It throws due to the temporal dead zone", "It logs undefined", "It silently skips"],
+    answer: 1,
+    explain: "The `const` binding exists but cannot be accessed before initialization, so calling it early throws.",
+    takeaway: "This is a great interview example for hoisting plus the temporal dead zone.",
+  },
+  {
+    id: "function-default-params",
+    topic: "Functions",
+    title: "Default parameter value",
+    prompt: "What does this return?",
+    code: "function greet(name = 'friend') {\n  return `Hi ${name}`;\n}\ngreet();",
+    options: ["'Hi friend'", "'Hi undefined'", "undefined", "It throws"],
+    answer: 0,
+    explain: "Default parameters are used when an argument is missing or explicitly `undefined`.",
+    takeaway: "Mention that `null` does not trigger the default, but `undefined` does.",
+  },
+  {
+    id: "function-rest-args",
+    topic: "Functions",
+    title: "Rest parameters",
+    prompt: "What is logged?",
+    code: "function count(...items) {\n  return items.length;\n}\nconsole.log(count(1, 2, 3));",
+    options: ["1", "2", "3", "undefined"],
+    answer: 2,
+    explain: "Rest parameters gather all remaining arguments into an array.",
+    takeaway: "Rest parameters are cleaner and more explicit than the old `arguments` object.",
+  },
+  {
+    id: "function-bind",
+    topic: "Functions",
+    title: "bind return value",
+    prompt: "What does `bind` do here?",
+    code: "const user = { name: 'Jwala' };\nfunction greet() { return this.name; }\nconst bound = greet.bind(user);",
+    options: ["It calls `greet` immediately", "It returns a new function with `this` fixed", "It mutates `greet` permanently", "It converts the function into an arrow function"],
+    answer: 1,
+    explain: "`bind` returns a new function whose `this` is permanently set to the provided object.",
+    takeaway: "A quick bind question often appears alongside `call` and `apply` comparisons.",
+  },
+  {
+    id: "function-arrow-arguments",
+    topic: "Functions",
+    title: "Arrow function and arguments",
+    prompt: "Which statement is correct?",
+    code: "const add = () => arguments[0] + arguments[1];",
+    options: ["Arrow functions have their own `arguments` object", "Arrow functions capture `arguments` from the outer scope", "This always works the same as a normal function", "Arrow functions convert `arguments` into an array"],
+    answer: 1,
+    explain: "Arrow functions do not have their own `arguments`; they use the surrounding scope's `arguments` if available.",
+    takeaway: "Prefer rest parameters instead of relying on `arguments` in modern code.",
+  },
+  {
+    id: "function-higher-order",
+    topic: "Functions",
+    title: "Higher-order function",
+    prompt: "Why is this a higher-order function?",
+    code: "function repeat(fn, times) {\n  for (let i = 0; i < times; i++) fn(i);\n}",
+    options: ["Because it returns a number", "Because it takes another function as an argument", "Because it uses a loop", "Because it is recursive"],
+    answer: 1,
+    explain: "A higher-order function either takes a function as input, returns a function, or both.",
+    takeaway: "Interviewers often expect you to recognize higher-order functions instantly in callbacks-heavy code.",
+  },
+  {
+    id: "function-pure",
+    topic: "Functions",
+    title: "Pure function idea",
+    prompt: "Which description best matches a pure function?",
+    code: "function add(a, b) {\n  return a + b;\n}",
+    options: ["It always returns the same output for the same input and has no side effects", "It can access any global state safely", "It must use recursion", "It can only return primitives"],
+    answer: 0,
+    explain: "Pure functions are deterministic and do not cause observable side effects.",
+    takeaway: "Purity comes up often in React, state management, and functional programming interviews.",
+  },
+  {
+    id: "function-currying",
+    topic: "Functions",
+    title: "Currying result",
+    prompt: "What does this return?",
+    code: "const multiply = (a) => (b) => a * b;\nmultiply(3)(4)",
+    options: ["7", "12", "34", "A syntax error"],
+    answer: 1,
+    explain: "The first function returns another function that remembers `a`, then multiplies it by `b`.",
+    takeaway: "Currying questions often overlap with closures and partial application.",
+  },
+  {
+    id: "function-call-apply",
+    topic: "Functions",
+    title: "call vs apply",
+    prompt: "What is the main difference?",
+    code: "fn.call(obj, 1, 2);\nfn.apply(obj, [1, 2]);",
+    options: ["`call` is async and `apply` is sync", "`call` takes arguments individually, `apply` takes them as an array", "`apply` only works on arrow functions", "There is no difference at all"],
+    answer: 1,
+    explain: "Both set `this`, but `call` takes positional arguments while `apply` takes an array-like list.",
+    takeaway: "This is basic but still shows up in interviews surprisingly often.",
+  },
+  {
+    id: "string-trim",
+    topic: "Strings",
+    title: "Whitespace trimming",
+    prompt: "What is returned?",
+    code: "'  hello  '.trim()",
+    options: ["'  hello  '", "'hello'", "'hello  '", "'  hello'"],
+    answer: 1,
+    explain: "`trim()` removes whitespace from both ends of the string.",
+    takeaway: "String utility methods are common quick warm-up interview questions.",
+  },
+  {
+    id: "string-split-join",
+    topic: "Strings",
+    title: "Split and join",
+    prompt: "What is the result?",
+    code: "'a-b-c'.split('-').join(':')",
+    options: ["'a-b-c'", "'a:b:c'", "['a', 'b', 'c']", "'abc'"],
+    answer: 1,
+    explain: "`split` creates an array, then `join` combines it with the new separator.",
+    takeaway: "This is a simple transformation pattern that often appears in coding rounds.",
+  },
+  {
+    id: "string-includes",
+    topic: "Strings",
+    title: "Case sensitivity",
+    prompt: "What does this return?",
+    code: "'JavaScript'.includes('script')",
+    options: ["true", "false", "undefined", "It depends on locale"],
+    answer: 1,
+    explain: "`includes` is case-sensitive, so `'script'` does not match `'Script'`.",
+    takeaway: "When a string check fails unexpectedly, case sensitivity is often the reason.",
+  },
+  {
+    id: "string-template-literal",
+    topic: "Strings",
+    title: "Template literal interpolation",
+    prompt: "What is logged?",
+    code: "const name = 'Jwala';\nconsole.log(`Hi ${name}`);",
+    options: ["Hi ${name}", "Hi Jwala", "name", "undefined"],
+    answer: 1,
+    explain: "Template literals evaluate expressions inside `${...}` and insert the result into the string.",
+    takeaway: "Template literals are especially worth knowing well for JSX and message formatting.",
+  },
+  {
+    id: "string-repeat",
+    topic: "Strings",
+    title: "String repeat",
+    prompt: "What is returned?",
+    code: "'ha'.repeat(3)",
+    options: ["'hahaha'", "'ha3'", "'ha ha ha'", "['ha', 'ha', 'ha']"],
+    answer: 0,
+    explain: "`repeat(3)` concatenates the string to itself three times.",
+    takeaway: "Small API methods like this can be handy in live coding without manual loops.",
+  },
+  {
+    id: "string-replace-once",
+    topic: "Strings",
+    title: "replace default behavior",
+    prompt: "What is the result?",
+    code: "'foo foo'.replace('foo', 'bar')",
+    options: ["'bar bar'", "'foo bar'", "'bar foo'", "It replaces nothing"],
+    answer: 2,
+    explain: "With a plain string pattern, `replace` changes only the first occurrence.",
+    takeaway: "Use a global regex if you want every occurrence replaced.",
+  },
+  {
+    id: "string-padstart",
+    topic: "Strings",
+    title: "Left padding",
+    prompt: "What does this return?",
+    code: "'7'.padStart(3, '0')",
+    options: ["'700'", "'007'", "'0007'", "'7'"],
+    answer: 1,
+    explain: "`padStart` adds characters to the beginning until the string reaches the target length.",
+    takeaway: "This is useful for clocks, invoice numbers, and fixed-width formatting.",
+  },
+  {
+    id: "string-char-at",
+    topic: "Strings",
+    title: "Index lookup",
+    prompt: "What is returned?",
+    code: "'hello'.charAt(1)",
+    options: ["'h'", "'e'", "'l'", "undefined"],
+    answer: 1,
+    explain: "Strings are zero-indexed, so index `1` is the second character.",
+    takeaway: "Off-by-one mistakes are tiny, but interviews often plant them intentionally.",
+  },
+  {
+    id: "async-promise-race",
+    topic: "Async",
+    title: "Promise.race result",
+    prompt: "Which value wins?",
+    code: "Promise.race([\n  new Promise((resolve) => setTimeout(() => resolve('slow'), 50)),\n  Promise.resolve('fast'),\n]).then(console.log);",
+    options: ["slow", "fast", "Both values", "It always rejects"],
+    answer: 1,
+    explain: "`Promise.race` settles with the first promise that resolves or rejects.",
+    takeaway: "This often comes up when discussing timeouts or fastest-response wins.",
+  },
+  {
+    id: "async-finally",
+    topic: "Async",
+    title: "finally behavior",
+    prompt: "What is `finally` mainly used for?",
+    code: "fetchData()\n  .then(handle)\n  .catch(handleError)\n  .finally(cleanup);",
+    options: ["Transforming the fulfilled value only", "Running cleanup regardless of success or failure", "Catching syntax errors only", "Retrying automatically"],
+    answer: 1,
+    explain: "`finally` runs after the promise settles, whether it fulfilled or rejected.",
+    takeaway: "Great place to mention spinners, loading flags, and resource cleanup.",
+  },
+  {
+    id: "async-await-return",
+    topic: "Async",
+    title: "Async return type",
+    prompt: "What does an `async` function always return?",
+    code: "async function getValue() {\n  return 42;\n}",
+    options: ["A plain number", "A promise", "undefined", "A callback"],
+    answer: 1,
+    explain: "Even when you `return 42`, an `async` function wraps it in a resolved promise.",
+    takeaway: "This is a foundational async concept and a very fair interview question.",
+  },
+  {
+    id: "async-await-loop",
+    topic: "Async",
+    title: "await inside forEach",
+    prompt: "What is the common issue with this pattern?",
+    code: "items.forEach(async (item) => {\n  await save(item);\n});",
+    options: ["`forEach` waits for each async callback automatically", "The outer flow does not wait for the async callbacks to finish", "It only works for arrays of strings", "It becomes synchronous"],
+    answer: 1,
+    explain: "`forEach` does not understand promises, so surrounding code will not wait for those async callbacks.",
+    takeaway: "Mention `for...of` or `Promise.all(items.map(...))` as better alternatives.",
+  },
+  {
+    id: "async-catch-await",
+    topic: "Async",
+    title: "Catching await errors",
+    prompt: "Which pattern correctly catches a rejected awaited promise?",
+    code: "async function load() {\n  // ...\n}",
+    options: ["Wrap the `await` in `try/catch`", "Use `if (await x)`", "Use `console.error` after the call", "Use `finally` only"],
+    answer: 0,
+    explain: "Inside an async function, `try/catch` is the normal way to handle rejected awaited promises.",
+    takeaway: "Interviewers often want to hear both `try/catch` and promise-chain `.catch` as valid options.",
+  },
+  {
+    id: "async-settimeout-return",
+    topic: "Async",
+    title: "setTimeout return value",
+    prompt: "What does `setTimeout` return in browser code?",
+    code: "const id = setTimeout(() => {}, 1000);",
+    options: ["A promise", "A timer ID", "The callback result", "undefined"],
+    answer: 1,
+    explain: "`setTimeout` returns an identifier that can be used with `clearTimeout`.",
+    takeaway: "Small runtime API details like this can matter in debugging and interviews.",
+  },
+  {
+    id: "closure-factory",
+    topic: "Closures",
+    title: "Function factory",
+    prompt: "What does this log?",
+    code: "function makeAdder(x) {\n  return function (y) {\n    return x + y;\n  };\n}\nconsole.log(makeAdder(5)(2));",
+    options: ["5", "2", "7", "52"],
+    answer: 2,
+    explain: "The inner function remembers `x` from the outer scope and adds it to `y`.",
+    takeaway: "Closures are easiest to explain when you describe what values stay alive after the outer call ends.",
+  },
+  {
+    id: "closure-shadowing",
+    topic: "Closures",
+    title: "Variable shadowing",
+    prompt: "What is logged?",
+    code: "const value = 1;\nfunction outer() {\n  const value = 2;\n  return function inner() {\n    console.log(value);\n  };\n}\nouter()();",
+    options: ["1", "2", "undefined", "It throws"],
+    answer: 1,
+    explain: "The inner function closes over the nearest `value`, which is the one inside `outer`.",
+    takeaway: "Shadowing is worth calling out explicitly when reading nested scopes out loud.",
+  },
+  {
+    id: "closure-module-pattern",
+    topic: "Closures",
+    title: "Module pattern idea",
+    prompt: "Why is this pattern useful?",
+    code: "function createStore() {\n  let secret = 0;\n  return {\n    inc() { secret += 1; },\n    get() { return secret; },\n  };\n}",
+    options: ["It exposes private state through controlled methods", "It deep-freezes state automatically", "It avoids all memory usage", "It disables reassignment globally"],
+    answer: 0,
+    explain: "The closure keeps `secret` private while the returned methods can still access and update it.",
+    takeaway: "This is a classic way to explain encapsulation in plain JavaScript.",
+  },
+  {
+    id: "closure-timeout-let",
+    topic: "Closures",
+    title: "Loop closure with let",
+    prompt: "What logs here?",
+    code: "for (let i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 0);\n}",
+    options: ["0 1 2", "3 3 3", "undefined undefined undefined", "It throws"],
+    answer: 0,
+    explain: "`let` creates a new block-scoped binding for each iteration, so each callback gets its own `i`.",
+    takeaway: "This is the natural companion question to the classic `var` loop closure bug.",
+  },
+  {
+    id: "dom-queryselectorall",
+    topic: "DOM",
+    title: "querySelectorAll return type",
+    prompt: "What does `document.querySelectorAll('.item')` return?",
+    code: "const nodes = document.querySelectorAll('.item');",
+    options: ["A live HTMLCollection", "A NodeList", "A plain array", "A single element"],
+    answer: 1,
+    explain: "`querySelectorAll` returns a `NodeList` of matching elements.",
+    takeaway: "Be ready to compare `NodeList`, `HTMLCollection`, and arrays in DOM interviews.",
+  },
+  {
+    id: "dom-classlist-toggle",
+    topic: "DOM",
+    title: "classList.toggle",
+    prompt: "What does this do?",
+    code: "element.classList.toggle('active');",
+    options: ["Adds `active` every time", "Removes `active` every time", "Adds it if missing and removes it if present", "Clears all classes"],
+    answer: 2,
+    explain: "`toggle` switches the class on or off depending on its current presence.",
+    takeaway: "Tiny DOM APIs like `classList` are very common in quick UI interview tasks.",
+  },
+  {
+    id: "dom-dataset",
+    topic: "DOM",
+    title: "Reading data attributes",
+    prompt: "How do you read `data-id=\"42\"` from an element?",
+    code: "<button data-id=\"42\"></button>",
+    options: ["element.data.id", "element.dataset.id", "element.attr.id", "element.value.id"],
+    answer: 1,
+    explain: "Custom `data-*` attributes are exposed through the `dataset` object.",
+    takeaway: "This pairs nicely with delegation questions because `dataset` is often how actions are stored.",
+  },
+  {
+    id: "dom-remove-listener",
+    topic: "DOM",
+    title: "Removing listeners",
+    prompt: "What is required for `removeEventListener` to work?",
+    code: "element.addEventListener('click', handle);\nelement.removeEventListener('click', handle);",
+    options: ["A different callback each time", "The same event type and same handler reference", "Only the same event type", "Nothing, it removes all listeners"],
+    answer: 1,
+    explain: "You must pass the same handler reference used during registration.",
+    takeaway: "Anonymous inline callbacks are harder to remove later for this reason.",
+  },
+  {
+    id: "dom-innerhtml-risk",
+    topic: "DOM",
+    title: "innerHTML caution",
+    prompt: "Why should `innerHTML` be used carefully with user input?",
+    code: "element.innerHTML = userContent;",
+    options: ["It always crashes on mobile", "It can introduce XSS if content is not sanitized", "It only works once per element", "It removes CSS support"],
+    answer: 1,
+    explain: "Injecting unsanitized HTML can allow unwanted scripts or markup, creating security issues like XSS.",
+    takeaway: "Security awareness is a strong signal even in frontend-focused interviews.",
+  },
+  {
+    id: "dom-prevent-default",
+    topic: "DOM",
+    title: "preventDefault meaning",
+    prompt: "What does `event.preventDefault()` do on a link click?",
+    code: "link.addEventListener('click', (event) => {\n  event.preventDefault();\n});",
+    options: ["Stops bubbling only", "Blocks the browser's default action, like navigation", "Removes the link element", "Pauses JavaScript execution"],
+    answer: 1,
+    explain: "`preventDefault` stops the browser's built-in behavior for that event, such as following a link or submitting a form.",
+    takeaway: "Differentiate `preventDefault` from `stopPropagation`; interviewers love that comparison.",
+  },
+  {
+    id: "dom-ready",
+    topic: "DOM",
+    title: "DOMContentLoaded timing",
+    prompt: "When does `DOMContentLoaded` fire?",
+    code: "document.addEventListener('DOMContentLoaded', init);",
+    options: ["After the full page including images loads", "When the initial HTML is parsed and the DOM is ready", "Before any HTML is parsed", "Only after CSS animations finish"],
+    answer: 1,
+    explain: "`DOMContentLoaded` fires when the DOM has been parsed, without waiting for all images and other assets.",
+    takeaway: "This is a good browser-lifecycle detail to know for practical frontend work.",
+  },
 ];
 
 function InteractiveInterviewLab() {
-  const topics: InterviewTopic[] = ["All", "Closures", "Async", "Arrays", "DOM"];
+  const topics: InterviewTopic[] = ["All", "Closures", "Async", "Arrays", "Objects", "Functions", "Strings", "DOM"];
   const [topic, setTopic] = useState<InterviewTopic>("All");
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
@@ -1422,6 +2129,8 @@ function InteractiveInterviewLab() {
   const [answered, setAnswered] = useState<string[]>([]);
   const [correct, setCorrect] = useState(0);
   const [stopInnerBubble, setStopInnerBubble] = useState(false);
+  const [stopMiddleCapture, setStopMiddleCapture] = useState(false);
+  const [preventButtonDefault, setPreventButtonDefault] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
 
   const questions = useMemo(() => {
@@ -1466,6 +2175,14 @@ function InteractiveInterviewLab() {
 
   const pushLog = (message: string) => {
     setLogs((prev) => [`${prev.length + 1}. ${message}`, ...prev].slice(0, 12));
+  };
+
+  const phaseLabel = (phase: number) => (phase === 1 ? "capture" : phase === 2 ? "target" : phase === 3 ? "bubble" : "unknown");
+
+  const pushEventLog = (label: string, event: React.MouseEvent<HTMLElement>) => {
+    const target = event.target instanceof HTMLElement ? event.target.dataset.flowLabel || event.target.tagName.toLowerCase() : "unknown";
+    const currentTarget = event.currentTarget instanceof HTMLElement ? event.currentTarget.dataset.flowLabel || event.currentTarget.tagName.toLowerCase() : "unknown";
+    pushLog(`${label} [phase: ${phaseLabel(event.eventPhase)} | target: ${target} | current: ${currentTarget}]`);
   };
 
   const scoreLabel = `${correct}/${answered.length || 0}`;
@@ -1555,7 +2272,7 @@ function InteractiveInterviewLab() {
         <div className="space-y-4 rounded-2xl border border-border bg-card p-4">
           <div>
             <div className="font-display text-lg font-semibold">Event Flow Playground</div>
-            <p className="mt-1 text-sm text-muted-foreground">Click the inner button and watch capture and bubble order update in real time.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Click different layers and watch capture, target, bubble, propagation, and default behavior update in real time.</p>
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -1565,27 +2282,52 @@ function InteractiveInterviewLab() {
             >
               {stopInnerBubble ? "Inner bubble stop: on" : "Inner bubble stop: off"}
             </button>
+            <button
+              onClick={() => setStopMiddleCapture((value) => !value)}
+              className={"rounded-full border px-3 py-1.5 text-xs font-mono uppercase tracking-wide transition " + (stopMiddleCapture ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground")}
+            >
+              {stopMiddleCapture ? "Middle capture stop: on" : "Middle capture stop: off"}
+            </button>
+            <button
+              onClick={() => setPreventButtonDefault((value) => !value)}
+              className={"rounded-full border px-3 py-1.5 text-xs font-mono uppercase tracking-wide transition " + (preventButtonDefault ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground")}
+            >
+              {preventButtonDefault ? "Button default blocked" : "Button default allowed"}
+            </button>
             <button onClick={() => setLogs([])} className="rounded-full border border-border px-3 py-1.5 text-xs font-mono uppercase tracking-wide hover:border-accent hover:text-accent">
               Clear log
             </button>
           </div>
 
+          <div className="rounded-2xl border border-border bg-background p-3 text-xs font-mono text-muted-foreground">
+            `capture` runs from outer to inner, `target` runs on the clicked element, and `bubble` runs back out. Try clicking the outer card, middle card, inner card, and the button to compare the order.
+          </div>
+
           <div
-            onClickCapture={() => pushLog("Outer capture")}
-            onClick={() => pushLog("Outer bubble")}
+            data-flow-label="outer"
+            onClickCapture={(event) => pushEventLog("Outer capture", event)}
+            onClick={(event) => pushEventLog("Outer bubble", event)}
             className="rounded-[28px] border border-sky-500/40 bg-sky-500/10 p-5"
           >
             <div className="mb-2 text-xs font-mono uppercase tracking-widest text-sky-300">Outer</div>
             <div
-              onClickCapture={() => pushLog("Middle capture")}
-              onClick={() => pushLog("Middle bubble")}
+              data-flow-label="middle"
+              onClickCapture={(event) => {
+                pushEventLog("Middle capture", event);
+                if (stopMiddleCapture) {
+                  event.stopPropagation();
+                  pushLog("Propagation stopped at middle capture");
+                }
+              }}
+              onClick={(event) => pushEventLog("Middle bubble", event)}
               className="rounded-[24px] border border-violet-500/40 bg-violet-500/10 p-5"
             >
               <div className="mb-2 text-xs font-mono uppercase tracking-widest text-violet-300">Middle</div>
               <div
-                onClickCapture={() => pushLog("Inner capture")}
+                data-flow-label="inner"
+                onClickCapture={(event) => pushEventLog("Inner capture", event)}
                 onClick={(event) => {
-                  pushLog("Inner bubble");
+                  pushEventLog("Inner bubble", event);
                   if (stopInnerBubble) {
                     event.stopPropagation();
                     pushLog("Propagation stopped at inner bubble");
@@ -1594,16 +2336,29 @@ function InteractiveInterviewLab() {
                 className="rounded-[20px] border border-amber-500/40 bg-amber-500/10 p-5"
               >
                 <div className="mb-3 text-xs font-mono uppercase tracking-widest text-amber-300">Inner</div>
-                <button className="rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground">
+                <a
+                  href="#event-flow-playground"
+                  data-flow-label="button"
+                  onClick={(event) => {
+                    pushEventLog("Button target", event);
+                    if (preventButtonDefault) {
+                      event.preventDefault();
+                      pushLog("Default link jump prevented");
+                    } else {
+                      pushLog("Default link jump allowed");
+                    }
+                  }}
+                  className="inline-flex rounded-full bg-accent px-4 py-2 text-sm font-medium text-accent-foreground"
+                >
                   Click me
-                </button>
+                </a>
               </div>
             </div>
           </div>
 
           <CodeBlock
             lang="js"
-            code={`outer.addEventListener('click', () => log('Outer bubble'));\nouter.addEventListener('click', () => log('Outer capture'), true);\n\ninner.addEventListener('click', (event) => {\n  log('Inner bubble');\n  if (${stopInnerBubble}) event.stopPropagation();\n});`}
+            code={`outer.addEventListener('click', () => log('Outer bubble'));\nouter.addEventListener('click', () => log('Outer capture'), true);\n\nmiddle.addEventListener('click', (event) => {\n  log('Middle capture');\n  if (${stopMiddleCapture}) event.stopPropagation();\n}, true);\n\nbutton.addEventListener('click', (event) => {\n  log('Button target');\n  if (${preventButtonDefault}) event.preventDefault();\n});\n\ninner.addEventListener('click', (event) => {\n  log('Inner bubble');\n  if (${stopInnerBubble}) event.stopPropagation();\n});`}
           />
 
           <div className="rounded-2xl border border-border bg-background p-3">
@@ -1860,6 +2615,211 @@ function DiffChecker() {
   return <div className="space-y-3"><div className="grid gap-3 md:grid-cols-2"><textarea value={a} onChange={(e) => setA(e.target.value)} rows={8} className="rounded-lg border border-border bg-background p-3 font-mono text-xs" /><textarea value={b} onChange={(e) => setB(e.target.value)} rows={8} className="rounded-lg border border-border bg-background p-3 font-mono text-xs" /></div><div className="rounded-xl border border-border bg-card p-3 font-mono text-xs">{Array.from({ length: max }).map((_, i) => { const same = la[i] === lb[i]; return <div key={i} className={same ? "text-muted-foreground" : "text-accent"}>{same ? "  " : "≠ "}{lb[i] ?? ""} <span className="opacity-40">{same ? "" : `(was: ${la[i] ?? ""})`}</span></div>; })}</div></div>;
 }
 
+function CheatSheetComplete() {
+  const sections: { title: string; items: [string, string][] }[] = [
+    {
+      title: "Layout",
+      items: [
+        ["Center everything", "display: flex;\nalign-items: center;\njustify-content: center;"],
+        ["Space between row", "display: flex;\njustify-content: space-between;\nalign-items: center;"],
+        ["Wrap children", "display: flex;\nflex-wrap: wrap;\ngap: 1rem;"],
+        ["Responsive auto grid", "display: grid;\ngrid-template-columns: repeat(auto-fit, minmax(240px, 1fr));\ngap: 1rem;"],
+        ["Equal-height cards", "display: grid;\ngrid-auto-rows: 1fr;"],
+        ["Sidebar + content", "display: grid;\ngrid-template-columns: 280px minmax(0, 1fr);\ngap: 1.5rem;"],
+      ],
+    },
+    {
+      title: "Spacing",
+      items: [
+        ["Page container", "width: min(100% - 2rem, 72rem);\nmargin-inline: auto;"],
+        ["Section spacing", "padding-block: clamp(3rem, 6vw, 6rem);"],
+        ["Fluid card padding", "padding: clamp(1rem, 2vw, 1.5rem);"],
+        ["Safe viewport height", "min-height: 100svh;"],
+      ],
+    },
+    {
+      title: "Position",
+      items: [
+        ["Sticky header", "position: sticky;\ntop: 0;\nz-index: 50;"],
+        ["Absolute overlay", "position: absolute;\ninset: 0;"],
+        ["Absolute center", "position: absolute;\nleft: 50%;\ntop: 50%;\ntransform: translate(-50%, -50%);"],
+        ["Floating action button", "position: fixed;\nright: 1rem;\nbottom: 1rem;"],
+      ],
+    },
+    {
+      title: "Typography",
+      items: [
+        ["Fluid heading", "font-size: clamp(2rem, 5vw, 4.5rem);\nline-height: 0.95;"],
+        ["Readable paragraph", "max-width: 65ch;\nline-height: 1.7;"],
+        ["Balance headline", "text-wrap: balance;"],
+        ["Pretty body text", "text-wrap: pretty;"],
+        ["Two-line clamp", "display: -webkit-box;\n-webkit-line-clamp: 2;\n-webkit-box-orient: vertical;\noverflow: hidden;"],
+      ],
+    },
+    {
+      title: "Backgrounds",
+      items: [
+        ["Linear gradient", "background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 50%, #38bdf8 100%);"],
+        ["Radial glow", "background: radial-gradient(circle at top, rgba(56, 189, 248, 0.25), transparent 45%);"],
+        ["Mesh background", "background:\n  radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.25), transparent 30%),\n  radial-gradient(circle at 80% 0%, rgba(56, 189, 248, 0.2), transparent 28%),\n  #020617;"],
+        ["Image cover", "background: url('/image.jpg') center / cover no-repeat;"],
+      ],
+    },
+    {
+      title: "Borders & Radius",
+      items: [
+        ["Rounded card", "border: 1px solid var(--border);\nborder-radius: 1.5rem;"],
+        ["Pill shape", "border-radius: 999px;"],
+        ["Gradient border", "border: 1px solid transparent;\nbackground:\n  linear-gradient(#0f172a, #0f172a) padding-box,\n  linear-gradient(135deg, #38bdf8, #f472b6) border-box;"],
+        ["Dashed drop zone", "border: 2px dashed color-mix(in srgb, currentColor 35%, transparent);"],
+      ],
+    },
+    {
+      title: "Effects",
+      items: [
+        ["Soft shadow", "box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);"],
+        ["Layered shadow", "box-shadow:\n  0 1px 2px rgba(15, 23, 42, 0.08),\n  0 12px 24px rgba(15, 23, 42, 0.12);"],
+        ["Glassmorphism", "background: rgba(255, 255, 255, 0.08);\nbackdrop-filter: blur(18px) saturate(160%);"],
+        ["Image polish", "filter: saturate(1.1) contrast(1.05);"],
+        ["Text glow", "text-shadow: 0 2px 18px rgba(14, 165, 233, 0.35);"],
+      ],
+    },
+    {
+      title: "Interactions",
+      items: [
+        ["Smooth transition", "transition: transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease;"],
+        ["Lift on hover", "transition: transform 180ms ease;\n\n:hover {\n  transform: translateY(-4px);\n}"],
+        ["Keyboard focus ring", ":focus-visible {\n  outline: 3px solid rgba(56, 189, 248, 0.45);\n  outline-offset: 3px;\n}"],
+        ["Disable pointer hits", "pointer-events: none;"],
+      ],
+    },
+    {
+      title: "Animation",
+      items: [
+        ["Fade up", "@keyframes fade-up {\n  from { opacity: 0; transform: translateY(12px); }\n  to { opacity: 1; transform: translateY(0); }\n}\n\nelement {\n  animation: fade-up 500ms ease both;\n}"],
+        ["Float loop", "@keyframes float {\n  0%, 100% { transform: translateY(0); }\n  50% { transform: translateY(-8px); }\n}\n\nelement {\n  animation: float 3s ease-in-out infinite;\n}"],
+        ["Stagger by variable", "animation-delay: calc(var(--index) * 80ms);"],
+        ["Reduced motion safe", "@media (prefers-reduced-motion: reduce) {\n  * {\n    animation: none !important;\n    transition: none !important;\n  }\n}"],
+      ],
+    },
+    {
+      title: "Responsive",
+      items: [
+        ["Tablet breakpoint", "@media (min-width: 768px) {\n  .layout { grid-template-columns: 1fr 1fr; }\n}"],
+        ["Desktop breakpoint", "@media (min-width: 1024px) {\n  .layout { grid-template-columns: 280px 1fr; }\n}"],
+        ["Clamp width", "width: clamp(16rem, 40vw, 28rem);"],
+        ["Container query", "@container (min-width: 42rem) {\n  .card { grid-template-columns: 1fr 1fr; }\n}"],
+      ],
+    },
+    {
+      title: "Forms",
+      items: [
+        ["Input reset", "appearance: none;\nbackground: transparent;\nborder: 0;\nfont: inherit;"],
+        ["Custom placeholder", "::placeholder {\n  color: color-mix(in srgb, currentColor 45%, transparent);\n}"],
+        ["Accent color", "accent-color: #0ea5e9;"],
+        ["Invalid state", ":invalid {\n  border-color: #ef4444;\n}"],
+      ],
+    },
+    {
+      title: "Modern CSS",
+      items: [
+        ["Cascade layers", "@layer reset, base, components, utilities;"],
+        ["CSS nesting", ".card {\n  & img {\n    border-radius: inherit;\n  }\n\n  &:hover {\n    transform: translateY(-2px);\n  }\n}"],
+        ["Color mix", "background: color-mix(in srgb, var(--accent) 18%, transparent);"],
+        ["Aspect ratio", "aspect-ratio: 16 / 9;"],
+        ["Subgrid", "grid-template-columns: subgrid;"],
+      ],
+    },
+  ];
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState("All");
+  const categories = ["All", ...sections.map((section) => section.title)];
+  const filteredSections = sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(([label, snippet]) => {
+        const matchesQuery = !query || `${label} ${snippet}`.toLowerCase().includes(query.toLowerCase());
+        const matchesCategory = active === "All" || section.title === active;
+        return matchesQuery && matchesCategory;
+      }),
+    }))
+    .filter((section) => section.items.length > 0);
+  const totalSnippets = sections.reduce((sum, section) => sum + section.items.length, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-4 rounded-2xl border border-border bg-card p-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-3">
+          <div>
+            <div className="font-display text-xl font-semibold">CSS Cheatsheet</div>
+            <p className="mt-1 text-sm text-muted-foreground">A broader quick-reference pack for layout, typography, effects, responsive patterns, forms, and modern CSS features.</p>
+          </div>
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Search snippets</span>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="grid, clamp, sticky, gradient, focus-visible..."
+              className="rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+          {[
+            `Sections: ${sections.length}`,
+            `Snippets: ${totalSnippets}`,
+            `Showing: ${filteredSections.reduce((sum, section) => sum + section.items.length, 0)}`,
+          ].map((item) => (
+            <div key={item} className="rounded-xl border border-border bg-background px-3 py-3 text-xs font-mono text-muted-foreground">
+              {item}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <button
+            key={category}
+            onClick={() => setActive(category)}
+            className={"rounded-full border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide transition " + (active === category ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground")}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
+
+      {filteredSections.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-sm text-muted-foreground">
+          No snippets matched that search. Try broader terms like `flex`, `hover`, `animation`, or `container`.
+        </div>
+      ) : (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {filteredSections.map((sec) => (
+            <div key={sec.title} className="rounded-2xl border border-border bg-card p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="font-display font-semibold">{sec.title}</div>
+                <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">{sec.items.length} snippets</div>
+              </div>
+              <div className="space-y-3">
+                {sec.items.map(([k, v]) => (
+                  <div key={k} className="rounded-xl border border-border bg-background p-3">
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <div className="text-sm">{k}</div>
+                      <CopyBtn value={v} />
+                    </div>
+                    <CodeBlock code={v} lang="css" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SnippetCard({ s }: { s: Snippet }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
@@ -1946,7 +2906,7 @@ const TOOLS: Tool[] = [
   { id: "markdown", name: "Markdown Preview", category: "Utilities", keywords: "md live", icon: ScrollText, render: () => <MarkdownPreview /> },
   { id: "img64", name: "Image → Base64", category: "Utilities", keywords: "data url", icon: ImageIcon, render: () => <ImageToBase64 /> },
   { id: "curl", name: "cURL → Fetch", category: "Utilities", keywords: "convert api", icon: Terminal, render: () => <CurlToFetch /> },
-  { id: "cheat", name: "CSS Cheatsheet", category: "CSS", keywords: "reference snippets", icon: Percent, render: () => <CheatSheet /> },
+  { id: "cheat", name: "CSS Cheatsheet", category: "CSS", keywords: "reference snippets layout typography responsive animation forms modern css", icon: Percent, render: () => <CheatSheetComplete /> },
   { id: "diff", name: "Text Diff Checker", category: "Utilities", keywords: "compare", icon: FileText, render: () => <DiffChecker /> },
   { id: "js-gallery", name: "JavaScript Snippets — 70 Ready-made", category: "JavaScript", keywords: "modal accordion tabs dropdown sidebar hamburger slider carousel typing scramble password validation debounce throttle fetch search pagination drag drop upload counter clock stopwatch quote uuid localstorage query params formdata custom event download event delegation reduce map promise all memoize flatten group by retry deep clone sort once interview prep closure currying pipe binary search dfs event loop polyfill bind call apply lru cache", icon: Code2, render: () => <SnippetsGallery /> },
 ];
