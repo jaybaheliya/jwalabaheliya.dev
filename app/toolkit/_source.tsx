@@ -25,13 +25,27 @@ type Tool = {
   render: () => React.ReactNode;
 };
 
+const LAB_TOOL_IDS = new Set([
+  "forms-lab",
+  "form-events-lab",
+  "database-lab",
+  "rest-api-lab",
+  "frontend-backend-lab",
+  "interview-lab",
+  "container-query",
+  "view-transition",
+  "color-mix-oklch",
+  "scroll-snap",
+]);
+
 function ToolkitPage() {
   const [q, setQ] = useState("");
-  const [cat, setCat] = useState<Category | "All" | "Favorites" | "Recent">("All");
+  const [cat, setCat] = useState<Category | "All" | "Favorites" | "Recent" | "Labs">("All");
   const [favs, setFavs] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
   const [spotlightId, setSpotlightId] = useState("flex");
+  const resultsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     try {
@@ -56,7 +70,9 @@ function ToolkitPage() {
     return TOOLS.filter((tool) => {
       if (cat === "Favorites") return favs.includes(tool.id);
       if (cat === "Recent") return recent.includes(tool.id);
-      if (cat !== "All" && tool.category !== cat) return false;
+      if (cat === "Labs") {
+        if (!LAB_TOOL_IDS.has(tool.id)) return false;
+      } else if (cat !== "All" && tool.category !== cat) return false;
       if (!t) return true;
       return (tool.name + " " + tool.category + " " + (tool.keywords ?? "")).toLowerCase().includes(t);
     });
@@ -81,6 +97,18 @@ function ToolkitPage() {
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
   }, []);
+
+  const focusResults = () => {
+    if (typeof window === "undefined") return;
+    window.requestAnimationFrame(() => {
+      resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
+  const handleCategoryClick = (nextCategory: Category | "All" | "Favorites" | "Recent" | "Labs") => {
+    setCat(nextCategory);
+    focusResults();
+  };
 
   const openTool = TOOLS.find((t) => t.id === openId);
   const spotlightTool = TOOLS.find((tool) => tool.id === spotlightId) ?? filtered[0] ?? TOOLS[0];
@@ -121,10 +149,11 @@ function ToolkitPage() {
         </div>
 
         <div className="mx-auto max-w-[1400px] px-4 md:px-8 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
-          {(["All", "Favorites", "Recent", "CSS", "Layout", "JavaScript", "Color", "Typography", "Responsive", "Utilities", "Components", "Wow"] as const).map((c) => (
+          {(["All", "Favorites", "Recent", "Labs", "CSS", "Layout", "JavaScript", "Color", "Typography", "Responsive", "Utilities", "Components", "Wow"] as const).map((c) => (
             <button
+              type="button"
               key={c}
-              onClick={() => setCat(c)}
+              onClick={() => handleCategoryClick(c)}
               className={"shrink-0 rounded-full border px-3 py-1 text-[11px] font-mono uppercase tracking-widest transition " + (cat === c ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:text-foreground")}
             >
               {c === "Favorites" ? "★ Favs (" + favs.length + ")" : c === "Recent" ? "Recent (" + recent.length + ")" : c}
@@ -252,7 +281,7 @@ function ToolkitPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1400px] px-4 md:px-8 pb-24">
+      <section ref={resultsRef} className="mx-auto max-w-[1400px] scroll-mt-28 px-4 md:px-8 pb-24">
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
             No tools match “{q}”. Try a different keyword.
@@ -692,15 +721,102 @@ function ClampFont() {
 
 function AspectRatio() {
   const [w, setW] = useState(16), [h, setH] = useState(9);
-  const css = "aspect-ratio: " + w + " / " + h + ";";
+  const [pxWidth, setPxWidth] = useState(640);
+  const [mode, setMode] = useState<"css" | "fixed">("css");
+  const [fit, setFit] = useState<"cover" | "contain">("cover");
+  const computedHeight = Math.round((pxWidth * h) / w);
+  const ratio = (w / h).toFixed(4);
+  const css = mode === "css"
+    ? "aspect-ratio: " + w + " / " + h + ";\nwidth: 100%;\nmax-width: " + pxWidth + "px;"
+    : "width: " + pxWidth + "px;\nheight: " + computedHeight + "px;";
+  const fallback = ".media-frame {\n  position: relative;\n  width: 100%;\n  max-width: " + pxWidth + "px;\n}\n\n.media-frame::before {\n  content: \"\";\n  display: block;\n  padding-top: " + ((h / w) * 100).toFixed(2) + "%;\n}\n\n.media-frame > * {\n  position: absolute;\n  inset: 0;\n}";
+  const html = `<div class="media-frame">\n  <img src="/image.jpg" alt="" style="object-fit: ${fit};" />\n</div>`;
   return (
-    <div className="grid gap-5 md:grid-cols-2">
-      <div className="space-y-3">
-        <Row label="Width"><SliderInput value={w} onChange={setW} min={1} max={32} /></Row>
-        <Row label="Height"><SliderInput value={h} onChange={setH} min={1} max={32} /></Row>
+    <div className="grid gap-5 xl:grid-cols-[1.02fr_.98fr]">
+      <div className="space-y-4">
+        <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">
+          {(["css", "fixed"] as const).map((item) => (
+            <button key={item} onClick={() => setMode(item)} className={"rounded-full px-3 py-1 uppercase " + (mode === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+              {item === "css" ? "responsive" : "px size"}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex flex-wrap gap-2 text-xs font-mono">
+          {[
+            [1, 1],
+            [4, 3],
+            [16, 9],
+            [3, 2],
+            [21, 9],
+            [9, 16],
+          ].map(([rw, rh]) => (
+            <button
+              key={`${rw}-${rh}`}
+              onClick={() => { setW(rw); setH(rh); }}
+              className={"rounded-full border px-3 py-1 " + (w === rw && h === rh ? "border-accent bg-accent text-accent-foreground" : "border-border")}
+            >
+              {rw}:{rh}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
+          <Row label="Ratio W"><SliderInput value={w} onChange={setW} min={1} max={32} /></Row>
+          <Row label="Ratio H"><SliderInput value={h} onChange={setH} min={1} max={32} /></Row>
+          <Row label="Max px"><SliderInput value={pxWidth} onChange={setPxWidth} min={120} max={1440} step={10} /></Row>
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <span className="w-24 uppercase text-muted-foreground">object fit</span>
+            <SelectControl value={fit} onChange={(value) => setFit(value as "cover" | "contain")} options={["cover", "contain"]} />
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-border bg-card px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">ratio</div>
+            <div className="mt-1 text-sm font-semibold">{w}:{h}</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">decimal</div>
+            <div className="mt-1 text-sm font-semibold">{ratio}</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">px size</div>
+            <div className="mt-1 text-sm font-semibold">{pxWidth} × {computedHeight}</div>
+          </div>
+        </div>
+
         <CodeBlock code={css} />
+        <div className="grid gap-4 lg:grid-cols-2">
+          <CodeBlock code={fallback} lang="css" />
+          <CodeBlock code={html} lang="html" />
+        </div>
       </div>
-      <Preview><div className="bg-accent/30 border border-accent/50 rounded-md w-full max-w-sm grid place-items-center font-mono text-sm" style={{ aspectRatio: w + "/" + h }}>{w}:{h}</div></Preview>
+      <div className="space-y-4">
+        <Preview className="p-4 sm:p-6">
+          <div className="w-full max-w-2xl space-y-4">
+            <div className="rounded-xl border border-border bg-card px-3 py-2 text-left">
+              <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">preview frame</div>
+              <div className="mt-1 text-sm font-semibold">{mode === "css" ? "responsive aspect-ratio" : "fixed pixel dimensions"}</div>
+            </div>
+            <div
+              className="relative mx-auto overflow-hidden rounded-2xl border border-accent/40 bg-accent/10 shadow-[0_20px_50px_-30px_rgba(59,130,246,0.5)]"
+              style={mode === "css"
+                ? { aspectRatio: `${w} / ${h}`, width: "100%", maxWidth: `${pxWidth}px` }
+                : { width: `${Math.min(pxWidth, 720)}px`, height: `${Math.min(computedHeight, 420)}px`, maxWidth: "100%" }}
+            >
+              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(59,130,246,0.14),rgba(14,165,233,0.28))]" />
+              <div className="absolute inset-4 rounded-[18px] border border-dashed border-accent/40" />
+              <div className="absolute inset-0 grid place-items-center p-4 text-center">
+                <div>
+                  <div className="text-sm font-semibold text-accent-foreground/90">{w}:{h} aspect frame</div>
+                  <div className="mt-1 font-mono text-xs text-muted-foreground">{pxWidth}px × {computedHeight}px</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Preview>
+      </div>
     </div>
   );
 }
@@ -1656,6 +1772,2186 @@ function MediaQueryGen() {
       <div className="grid gap-4 xl:grid-cols-2">
         <CodeBlock code={css} />
         <CodeBlock code={jsMatchMedia} lang="js" />
+      </div>
+    </div>
+  );
+}
+
+function ContainerQueryPlaygroundTool() {
+  const [containerWidth, setContainerWidth] = useState(420);
+  const [breakpoint, setBreakpoint] = useState(640);
+  const [gap, setGap] = useState(20);
+  const [padding, setPadding] = useState(18);
+  const [radius, setRadius] = useState(24);
+  const [theme, setTheme] = useState<"ocean" | "sunset" | "mono">("ocean");
+  const [template, setTemplate] = useState<"feature" | "pricing">("feature");
+
+  const themes = {
+    ocean: {
+      shell: "linear-gradient(135deg, rgba(8,145,178,0.12), rgba(59,130,246,0.08))",
+      card: "linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.9))",
+      accent: "#38bdf8",
+      soft: "rgba(56,189,248,0.18)",
+    },
+    sunset: {
+      shell: "linear-gradient(135deg, rgba(249,115,22,0.12), rgba(244,63,94,0.10))",
+      card: "linear-gradient(180deg, rgba(41,37,36,0.98), rgba(68,64,60,0.92))",
+      accent: "#fb7185",
+      soft: "rgba(251,113,133,0.18)",
+    },
+    mono: {
+      shell: "linear-gradient(135deg, rgba(148,163,184,0.10), rgba(100,116,139,0.08))",
+      card: "linear-gradient(180deg, rgba(15,23,42,0.98), rgba(30,41,59,0.92))",
+      accent: "#e2e8f0",
+      soft: "rgba(226,232,240,0.16)",
+    },
+  } as const;
+
+  const activeTheme = themes[theme];
+  const isActive = containerWidth >= breakpoint;
+  const heading = template === "feature" ? "Component-first responsive card" : "Pricing card with smart layout";
+  const body = template === "feature"
+    ? "Container queries react to the component width itself, not the whole viewport. Perfect for cards inside sidebars, CMS blocks, and nested layouts."
+    : "This pricing block stacks naturally in narrow parents, then switches into a split summary once the component itself has enough room.";
+
+  const css = `.cq-demo {
+  container: toolkit-card / inline-size;
+  width: min(100%, ${containerWidth}px);
+  margin-inline: auto;
+}
+
+.cq-card {
+  display: grid;
+  gap: ${gap}px;
+  padding: ${padding}px;
+  border-radius: ${radius}px;
+  color: #f8fafc;
+  background: ${activeTheme.card};
+  border: 1px solid ${activeTheme.soft};
+  box-shadow: 0 24px 80px -36px rgba(15, 23, 42, 0.72);
+}
+
+.cq-media {
+  min-height: 176px;
+  border-radius: ${Math.max(16, radius - 8)}px;
+  background:
+    radial-gradient(circle at 20% 20%, ${activeTheme.soft}, transparent 36%),
+    linear-gradient(140deg, ${activeTheme.accent}22, transparent 65%),
+    #020617;
+}
+
+.cq-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.cq-stats {
+  display: grid;
+  gap: 12px;
+}
+
+@container toolkit-card (min-width: ${breakpoint}px) {
+  .cq-card {
+    grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+    align-items: center;
+  }
+
+  .cq-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}`;
+
+  const reactSnippet = `<section className="cq-demo">
+  <article className="cq-card">
+    <div className="cq-copy">
+      <p className="cq-kicker">Modern CSS API</p>
+      <h3>${heading}</h3>
+      <p>${body}</p>
+      <div className="cq-actions">
+        <button>Primary action</button>
+        <button>Secondary action</button>
+      </div>
+    </div>
+    <div className="cq-media" />
+  </article>
+</section>`;
+
+  const usageNotes = [
+    "Use this when a card sits inside a grid, drawer, CMS section, or sidebar where viewport breakpoints are too global.",
+    "Container queries make reusable components smarter because each one responds to its own width.",
+    "Keep the parent container named and typed with `container: name / inline-size` or `container-type: inline-size`.",
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Controls</div>
+            <div className="mt-2 text-sm text-muted-foreground">Resize the parent container and the card responds based on its own width, not the page viewport.</div>
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["feature", "pricing"] as const).map((item) => (
+              <button
+                key={item}
+                onClick={() => setTemplate(item)}
+                className={"flex-1 rounded-xl px-3 py-2 transition " + (template === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["ocean", "sunset", "mono"] as const).map((item) => (
+              <button
+                key={item}
+                onClick={() => setTheme(item)}
+                className={"flex-1 rounded-xl px-3 py-2 transition " + (theme === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <Slider label="Width" v={containerWidth} on={setContainerWidth} min={260} max={920} step={10} />
+          <Slider label="Query" v={breakpoint} on={setBreakpoint} min={320} max={880} step={10} />
+          <Slider label="Gap" v={gap} on={setGap} min={12} max={40} />
+          <Slider label="Padding" v={padding} on={setPadding} min={12} max={40} />
+          <Slider label="Radius" v={radius} on={setRadius} min={16} max={40} />
+
+          <div className="rounded-2xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
+            <div className="font-mono uppercase tracking-widest">State</div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span>Container width: {containerWidth}px</span>
+              <span className={"rounded-full px-2 py-1 font-mono uppercase tracking-wide " + (isActive ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600")}>
+                {isActive ? "query matched" : "stacked mode"}
+              </span>
+            </div>
+            <div className="mt-2">Breakpoint activates at <span className="font-mono text-foreground">{breakpoint}px</span>.</div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div className="w-full rounded-[28px] border border-border bg-white p-3 sm:p-5">
+              <div
+                className="mx-auto rounded-[28px] border border-border p-3 transition-all sm:p-5"
+                style={{ width: `min(100%, ${containerWidth}px)`, background: activeTheme.shell }}
+              >
+                <style>{css}</style>
+                <section className="cq-demo">
+                  <article className="cq-card">
+                    <div className="space-y-4">
+                      <div className="inline-flex rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.28em] text-white/70">
+                        Modern CSS API
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-semibold leading-tight text-white sm:text-3xl">{heading}</h3>
+                        <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">{body}</p>
+                      </div>
+                      <div className="cq-actions">
+                        <button className="rounded-full bg-white px-4 py-2 text-sm font-medium text-slate-950">Primary action</button>
+                        <button className="rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white">Secondary</button>
+                      </div>
+                      <div className="cq-stats">
+                        {["Own width", "Reusable", "Nested layouts"].map((item, index) => (
+                          <div key={item} className="rounded-2xl border border-white/10 bg-white/5 p-3 text-left">
+                            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-400">Benefit {index + 1}</div>
+                            <div className="mt-2 text-sm font-medium text-white">{item}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="cq-media flex min-h-[176px] items-end justify-between overflow-hidden p-5">
+                      <div className="max-w-[180px] rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-left text-white">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-400">Container</div>
+                        <div className="mt-2 text-xl font-semibold">{containerWidth}px</div>
+                        <div className="mt-2 text-xs text-slate-300">The component changes when this box grows, even if the viewport stays the same.</div>
+                      </div>
+                      <div className="h-24 w-24 rounded-full border border-white/10 bg-white/10 backdrop-blur" />
+                    </div>
+                  </article>
+                </section>
+              </div>
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CodeBlock code={css} lang="css" />
+            <CodeBlock code={reactSnippet} lang="jsx" />
+          </div>
+
+          <div className="rounded-3xl border border-border bg-card p-4">
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Why it matters</div>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              {usageNotes.map((note) => (
+                <div key={note} className="rounded-2xl border border-border bg-background p-4 text-sm text-muted-foreground">
+                  {note}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ViewTransitionPlaygroundTool() {
+  const [activeView, setActiveView] = useState<"overview" | "gallery" | "pricing">("overview");
+  const [layout, setLayout] = useState<"card" | "split">("card");
+  const [duration, setDuration] = useState(550);
+  const [accent, setAccent] = useState("#3b82f6");
+  const [supported, setSupported] = useState(false);
+  const [lastAction, setLastAction] = useState("overview -> overview");
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    setSupported("startViewTransition" in document);
+  }, []);
+
+  const changeView = (next: "overview" | "gallery" | "pricing") => {
+    const current = activeView;
+    const run = () => {
+      setActiveView(next);
+      setLastAction(`${current} -> ${next}`);
+    };
+    const doc = document as Document & {
+      startViewTransition?: (callback: () => void) => { finished?: Promise<unknown> };
+    };
+    if (doc.startViewTransition) {
+      void doc.startViewTransition(run)?.finished?.catch(() => undefined);
+      return;
+    }
+    run();
+  };
+
+  const toggleLayout = () => {
+    const run = () => setLayout((current) => (current === "card" ? "split" : "card"));
+    const doc = document as Document & {
+      startViewTransition?: (callback: () => void) => { finished?: Promise<unknown> };
+    };
+    if (doc.startViewTransition) {
+      void doc.startViewTransition(run)?.finished?.catch(() => undefined);
+      return;
+    }
+    run();
+  };
+
+  const accentRgb = hexToRgb(accent);
+  const softAccent = `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.18)`;
+  const deepAccent = `rgba(${accentRgb.r}, ${accentRgb.g}, ${accentRgb.b}, 0.28)`;
+
+  const css = `:root {
+  --vt-duration: ${duration}ms;
+  --vt-accent: ${accent};
+}
+
+.vt-shell {
+  view-transition-name: demo-shell;
+}
+
+.vt-hero {
+  view-transition-name: demo-hero;
+}
+
+.vt-badge {
+  view-transition-name: demo-badge;
+}
+
+::view-transition-old(demo-shell),
+::view-transition-new(demo-shell),
+::view-transition-old(demo-hero),
+::view-transition-new(demo-hero),
+::view-transition-old(demo-badge),
+::view-transition-new(demo-badge) {
+  animation-duration: var(--vt-duration);
+  animation-timing-function: cubic-bezier(.2,.8,.2,1);
+}`;
+
+  const js = `const swapView = (nextView) => {
+  if (!document.startViewTransition) {
+    setView(nextView);
+    return;
+  }
+
+  document.startViewTransition(() => {
+    setView(nextView);
+  });
+};`;
+
+  const modeLabel =
+    activeView === "overview"
+      ? "Product overview"
+      : activeView === "gallery"
+        ? "Gallery spotlight"
+        : "Pricing summary";
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Controls</div>
+            <div className="mt-2 text-sm text-muted-foreground">Switch views and layout states to test how the View Transition API can smooth page-level and component-level UI changes.</div>
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["overview", "gallery", "pricing"] as const).map((item) => (
+              <button
+                key={item}
+                onClick={() => changeView(item)}
+                className={"flex-1 rounded-xl px-3 py-2 transition " + (activeView === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <button onClick={toggleLayout} className="inline-flex min-h-11 w-full items-center justify-center rounded-2xl border border-border px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
+            Toggle layout: {layout}
+          </button>
+
+          <Slider label="Duration" v={duration} on={setDuration} min={180} max={1200} step={10} />
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Accent</span>
+            <input type="color" value={accent} onChange={(event) => setAccent(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-2" />
+          </label>
+
+          <div className="rounded-2xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
+            <div className="font-mono uppercase tracking-widest">Browser support</div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <span>{supported ? "Native API available" : "Fallback mode active"}</span>
+              <span className={"rounded-full px-2 py-1 font-mono uppercase tracking-wide " + (supported ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600")}>
+                {supported ? "supported" : "fallback"}
+              </span>
+            </div>
+            <div className="mt-2">Last transition: <span className="font-mono text-foreground">{lastAction}</span></div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <style>{css}</style>
+            <div
+              className={"vt-shell w-full rounded-[30px] border border-border p-4 text-left shadow-[0_24px_70px_-38px_rgba(15,23,42,0.42)] transition-all sm:p-6 " + (layout === "split" ? "grid gap-4 lg:grid-cols-[1.1fr_.9fr]" : "space-y-4")}
+              style={{ background: `linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98)), radial-gradient(circle at top right, ${softAccent}, transparent 34%)` }}
+            >
+              <div className="space-y-4">
+                <div className="vt-badge inline-flex rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-[0.28em]" style={{ borderColor: softAccent, color: accent }}>
+                  View Transition API
+                </div>
+                <div className="vt-hero">
+                  <h3 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">{modeLabel}</h3>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+                    {activeView === "overview" && "Use this to animate route changes, tab switches, or layout shifts without the jump-cut feeling of a normal state swap."}
+                    {activeView === "gallery" && "Shared visual continuity helps images, cards, and spotlight sections feel connected when the active item changes."}
+                    {activeView === "pricing" && "Pricing, plans, and comparison tables feel more polished when key UI blocks keep visual identity between states."}
+                  </p>
+                </div>
+
+                <div className={"grid gap-3 " + (layout === "split" ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+                  {[
+                    activeView === "overview" ? "Route-level transitions" : activeView === "gallery" ? "Shared media focus" : "Plan switch polish",
+                    supported ? "Native browser animation" : "Graceful state fallback",
+                    `${duration}ms timing`,
+                  ].map((item, index) => (
+                    <div key={item} className="rounded-2xl border p-3" style={{ borderColor: softAccent, background: index === 0 ? softAccent : "rgba(255,255,255,0.8)" }}>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Signal {index + 1}</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">{item}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                <div className="rounded-[26px] border p-4" style={{ borderColor: softAccent, background: `linear-gradient(135deg, ${softAccent}, rgba(15,23,42,0.04))` }}>
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Active surface</div>
+                      <div className="mt-2 text-lg font-semibold text-slate-950">{activeView}</div>
+                    </div>
+                    <div className="h-14 w-14 rounded-2xl border" style={{ borderColor: deepAccent, background: `linear-gradient(135deg, ${softAccent}, rgba(255,255,255,0.85))` }} />
+                  </div>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[1, 2].map((item) => (
+                    <div key={item} className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Card {item}</div>
+                      <div className="mt-2 h-20 rounded-xl" style={{ background: `linear-gradient(135deg, ${softAccent}, rgba(15,23,42,0.04))` }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CodeBlock code={css} lang="css" />
+            <CodeBlock code={js} lang="js" />
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-3">
+            {[
+              "Best for route changes, tab switches, and shared-element UI moments.",
+              "Add a fallback path because unsupported browsers should still switch state instantly.",
+              "Keep transitions purposeful so they guide attention instead of slowing the interface down.",
+            ].map((note) => (
+              <div key={note} className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                {note}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ColorMixOklchPlaygroundTool() {
+  const [base, setBase] = useState("#0f172a");
+  const [blend, setBlend] = useState("#60a5fa");
+  const [mix, setMix] = useState(26);
+  const [space, setSpace] = useState<"srgb" | "oklab" | "oklch">("oklch");
+  const [lightness, setLightness] = useState(0.72);
+  const [chroma, setChroma] = useState(0.17);
+  const [hue, setHue] = useState(248);
+
+  const oklchColor = `oklch(${lightness.toFixed(2)} ${chroma.toFixed(2)} ${hue})`;
+  const mixedColor = `color-mix(in ${space}, ${base} ${100 - mix}%, ${blend} ${mix}%)`;
+  const surfaceMix = `color-mix(in ${space}, ${base} 88%, ${blend} 12%)`;
+  const borderMix = `color-mix(in ${space}, ${blend} 38%, white 62%)`;
+  const palette = [0.98, 0.93, 0.86, lightness, Math.max(0.22, lightness - 0.16), Math.max(0.16, lightness - 0.28)].map((value) => `oklch(${value.toFixed(2)} ${chroma.toFixed(2)} ${hue})`);
+
+  const css = `:root {
+  --brand-base: ${base};
+  --brand-blend: ${blend};
+  --brand-mix: ${mixedColor};
+  --brand-surface: ${surfaceMix};
+  --brand-strong: ${oklchColor};
+}
+
+.button {
+  background: var(--brand-mix);
+  color: white;
+}
+
+.panel {
+  background: var(--brand-surface);
+  border: 1px solid ${borderMix};
+}
+
+.badge {
+  background: ${oklchColor};
+}`;
+
+  const tokens = `export const themeTokens = {
+  brandBase: "${base}",
+  brandBlend: "${blend}",
+  brandMix: "${mixedColor}",
+  brandSurface: "${surfaceMix}",
+  brandStrong: "${oklchColor}",
+};`;
+
+  const tailwind = `@theme {
+  --color-brand-base: ${base};
+  --color-brand-mix: ${mixedColor};
+  --color-brand-strong: ${oklchColor};
+}`;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Mix controls</div>
+            <div className="mt-2 text-sm text-muted-foreground">Blend two colors with modern CSS, then shape a stronger OKLCH accent for buttons, borders, highlights, and tokens.</div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Base color</span>
+              <input type="color" value={base} onChange={(event) => setBase(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-2" />
+            </label>
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Blend color</span>
+              <input type="color" value={blend} onChange={(event) => setBlend(event.target.value)} className="h-11 w-full rounded-xl border border-border bg-background px-2" />
+            </label>
+          </div>
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Color space</span>
+            <select value={space} onChange={(event) => setSpace(event.target.value as "srgb" | "oklab" | "oklch")} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+              <option value="srgb">srgb</option>
+              <option value="oklab">oklab</option>
+              <option value="oklch">oklch</option>
+            </select>
+          </label>
+
+          <Slider label="Mix %" v={mix} on={setMix} min={0} max={100} />
+          <Slider label="Lightness" v={Math.round(lightness * 100)} on={(value) => setLightness(value / 100)} min={35} max={98} />
+          <Slider label="Chroma" v={Math.round(chroma * 100)} on={(value) => setChroma(value / 100)} min={0} max={37} />
+          <Slider label="Hue" v={hue} on={setHue} min={0} max={360} />
+
+          <div className="rounded-2xl border border-dashed border-border bg-background p-4 text-xs text-muted-foreground">
+            <div className="font-mono uppercase tracking-widest">Output</div>
+            <div className="mt-2 break-words font-mono text-foreground">{mixedColor}</div>
+            <div className="mt-2 break-words font-mono text-foreground">{oklchColor}</div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div
+              className="w-full rounded-[30px] border p-4 text-left shadow-[0_24px_70px_-38px_rgba(15,23,42,0.32)] sm:p-6"
+              style={{ background: `linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98)), radial-gradient(circle at top right, ${surfaceMix}, transparent 36%)`, borderColor: borderMix }}
+            >
+              <div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
+                <div className="space-y-4">
+                  <div className="inline-flex rounded-full border px-3 py-1 text-[10px] font-mono uppercase tracking-[0.28em]" style={{ color: oklchColor, borderColor: borderMix }}>
+                    Modern color API
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Color Mix + OKLCH lab</h3>
+                    <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+                      Build softer surfaces with <span className="font-mono">color-mix()</span> and stronger brand accents with <span className="font-mono">oklch()</span>, then ship both as reusable tokens.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl border p-3" style={{ borderColor: borderMix, background: surfaceMix }}>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Surface</div>
+                      <div className="mt-2 text-sm font-medium text-slate-900">Muted blend</div>
+                    </div>
+                    <div className="rounded-2xl border p-3 text-white" style={{ borderColor: borderMix, background: mixedColor }}>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-white/70">Action</div>
+                      <div className="mt-2 text-sm font-medium">Mixed button</div>
+                    </div>
+                    <div className="rounded-2xl border p-3" style={{ borderColor: borderMix, background: oklchColor, color: lightness > 0.65 ? "#0f172a" : "white" }}>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] opacity-70">Accent</div>
+                      <div className="mt-2 text-sm font-medium">OKLCH tone</div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border bg-white p-4" style={{ borderColor: borderMix }}>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Mixed background</div>
+                      <div className="mt-3 h-20 rounded-xl" style={{ background: `linear-gradient(135deg, ${surfaceMix}, ${mixedColor})` }} />
+                    </div>
+                    <div className="rounded-2xl border bg-white p-4" style={{ borderColor: borderMix }}>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Accent chip</div>
+                      <div className="mt-3 inline-flex rounded-full px-4 py-2 text-sm font-medium" style={{ background: oklchColor, color: lightness > 0.65 ? "#0f172a" : "white" }}>
+                        {oklchColor}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border bg-white/80 p-4" style={{ borderColor: borderMix }}>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Palette ramp</div>
+                  <div className="mt-4 grid gap-2">
+                    {palette.map((colorValue, index) => (
+                      <div key={colorValue} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2">
+                        <div className="h-10 w-10 rounded-xl border border-slate-200" style={{ background: colorValue }} />
+                        <div className="min-w-0">
+                          <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-slate-500">Step {index + 1}</div>
+                          <div className="truncate font-mono text-xs text-slate-900">{colorValue}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 xl:grid-cols-3">
+            <CodeBlock code={css} lang="css" />
+            <CodeBlock code={tokens} lang="ts" />
+            <CodeBlock code={tailwind} lang="css" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScrollSnapBuilderTool() {
+  const [axis, setAxis] = useState<"x" | "y" | "both">("x");
+  const [strictness, setStrictness] = useState<"mandatory" | "proximity">("mandatory");
+  const [align, setAlign] = useState<"start" | "center" | "end">("center");
+  const [snapStop, setSnapStop] = useState<"normal" | "always">("normal");
+  const [itemCount, setItemCount] = useState(5);
+  const [gap, setGap] = useState(16);
+  const [padding, setPadding] = useState(20);
+  const [itemSize, setItemSize] = useState(240);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const railRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const dragStateRef = useRef<{ pointerId: number; startX: number; startY: number; startLeft: number; startTop: number; dragging: boolean } | null>(null);
+
+  const isVertical = axis === "y";
+  const isBoth = axis === "both";
+  const isHorizontal = axis === "x";
+  const scrollSnapType = `${axis} ${strictness}`;
+  const containerStyle: React.CSSProperties = isVertical
+    ? {
+        display: "grid",
+        gap,
+        overflowY: "auto",
+        maxHeight: 420,
+        padding,
+        scrollSnapType: scrollSnapType as React.CSSProperties["scrollSnapType"],
+        touchAction: "pan-y",
+      }
+    : {
+        display: "flex",
+        flexWrap: isBoth ? "wrap" : "nowrap",
+        gap,
+        overflowX: "auto",
+        overflowY: isBoth ? "auto" : "hidden",
+        padding,
+        width: "100%",
+        scrollSnapType: scrollSnapType as React.CSSProperties["scrollSnapType"],
+        touchAction: isHorizontal ? "pan-y" : "none",
+        WebkitOverflowScrolling: "touch",
+        overscrollBehaviorX: "contain",
+      };
+
+  const itemStyle: React.CSSProperties = {
+    scrollSnapAlign: align,
+    scrollSnapStop: snapStop,
+    flex: isVertical ? undefined : `0 0 ${itemSize}px`,
+    width: isVertical ? undefined : `${itemSize}px`,
+    minHeight: isVertical || isBoth ? 160 : 220,
+  };
+
+  const css = `.snap-container {
+  display: ${isVertical ? "grid" : "flex"};
+  ${isVertical ? "" : `flex-wrap: ${isBoth ? "wrap" : "nowrap"};\n`}
+  gap: ${gap}px;
+  padding: ${padding}px;
+  overflow: auto;
+  scroll-snap-type: ${scrollSnapType};
+}
+
+.snap-item {
+  ${isVertical ? "" : `flex: 0 0 ${itemSize}px;\n  width: ${itemSize}px;`}
+  scroll-snap-align: ${align};
+  scroll-snap-stop: ${snapStop};
+}`;
+
+  const html = `<div class="snap-container">
+  ${Array.from({ length: itemCount }, (_, index) => `<section class="snap-item">Slide ${index + 1}</section>`).join("\n  ")}
+</div>`;
+
+  useEffect(() => {
+    setActiveSlide((current) => Math.min(current, Math.max(itemCount - 1, 0)));
+  }, [itemCount]);
+
+  const snapToIndex = (index: number) => {
+    const nextIndex = Math.max(0, Math.min(index, itemCount - 1));
+    setActiveSlide(nextIndex);
+    const item = itemRefs.current[nextIndex];
+    item?.scrollIntoView({
+      behavior: "smooth",
+      inline: align,
+      block: isVertical ? align : "nearest",
+    });
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startLeft: rail.scrollLeft,
+      startTop: rail.scrollTop,
+      dragging: false,
+    };
+    rail.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rail = railRef.current;
+    const dragState = dragStateRef.current;
+    if (!rail || !dragState || dragState.pointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+
+    if (!dragState.dragging && Math.abs(deltaX) + Math.abs(deltaY) > 6) {
+      dragState.dragging = true;
+    }
+
+    if (!dragState.dragging) return;
+
+    event.preventDefault();
+
+    if (!isVertical) {
+      rail.scrollLeft = dragState.startLeft - deltaX;
+    }
+    if (isVertical || isBoth) {
+      rail.scrollTop = dragState.startTop - deltaY;
+    }
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rail = railRef.current;
+    const dragState = dragStateRef.current;
+    if (rail?.hasPointerCapture(event.pointerId)) {
+      rail.releasePointerCapture(event.pointerId);
+    }
+    if (dragState?.dragging && !isVertical) {
+      const deltaX = event.clientX - dragState.startX;
+      if (Math.abs(deltaX) > 40) {
+        snapToIndex(activeSlide + (deltaX < 0 ? 1 : -1));
+      }
+    }
+    dragStateRef.current = null;
+  };
+
+  const nudgeRail = (direction: "prev" | "next") => {
+    snapToIndex(activeSlide + (direction === "next" ? 1 : -1));
+  };
+
+  const handleRailWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if (isVertical) return;
+    const rail = railRef.current;
+    if (!rail) return;
+    const dominantDelta = Math.abs(event.deltaY) > Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
+    if (Math.abs(dominantDelta) < 8) return;
+    event.preventDefault();
+    snapToIndex(activeSlide + (dominantDelta > 0 ? 1 : -1));
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Container</div>
+            <div className="mt-2 text-sm text-muted-foreground">Build snap-ready carousels, section rails, or full-page scroll experiences and copy the exact CSS once the interaction feels right.</div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Axis</span>
+              <select value={axis} onChange={(event) => setAxis(event.target.value as "x" | "y" | "both")} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="x">x</option>
+                <option value="y">y</option>
+                <option value="both">both</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Strictness</span>
+              <select value={strictness} onChange={(event) => setStrictness(event.target.value as "mandatory" | "proximity")} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="mandatory">mandatory</option>
+                <option value="proximity">proximity</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Align</span>
+              <select value={align} onChange={(event) => setAlign(event.target.value as "start" | "center" | "end")} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="start">start</option>
+                <option value="center">center</option>
+                <option value="end">end</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Snap stop</span>
+              <select value={snapStop} onChange={(event) => setSnapStop(event.target.value as "normal" | "always")} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="normal">normal</option>
+                <option value="always">always</option>
+              </select>
+            </label>
+          </div>
+
+          <Slider label="Items" v={itemCount} on={setItemCount} min={3} max={8} />
+          <Slider label="Gap" v={gap} on={setGap} min={0} max={40} />
+          <Slider label="Padding" v={padding} on={setPadding} min={0} max={40} />
+          <Slider label="Item px" v={itemSize} on={setItemSize} min={140} max={360} step={10} />
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-background px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">type</div>
+              <div className="mt-1 text-sm font-semibold">{scrollSnapType}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-background px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">align</div>
+              <div className="mt-1 text-sm font-semibold">{align}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-background px-3 py-2">
+              <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">stop</div>
+              <div className="mt-1 text-sm font-semibold">{snapStop}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div className="w-full rounded-[28px] border border-border bg-white p-4 shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] sm:p-5">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/80 px-4 py-3">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">scroll snap preview</div>
+                  <div className="mt-1 text-sm font-semibold text-foreground">{isVertical ? "Section stack" : "Carousel rail"}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!isVertical && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => nudgeRail("prev")}
+                        className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent"
+                      >
+                        ← Prev
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => nudgeRail("next")}
+                        className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent"
+                      >
+                        Next →
+                      </button>
+                    </>
+                  )}
+                  <div className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                    {scrollSnapType}
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-[24px] border border-border bg-slate-950 p-2">
+                <div
+                  ref={railRef}
+                  onPointerDown={handlePointerDown}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                  onWheel={handleRailWheel}
+                  className={(isVertical ? "pr-2 " : "") + (!isVertical ? "cursor-grab active:cursor-grabbing select-none " : "")}
+                  style={containerStyle}
+                >
+                  {Array.from({ length: itemCount }, (_, index) => (
+                    <div
+                      key={index}
+                      ref={(node) => {
+                        itemRefs.current[index] = node;
+                      }}
+                      style={itemStyle}
+                      className={
+                        "rounded-[22px] border bg-[linear-gradient(145deg,rgba(59,130,246,0.25),rgba(15,23,42,0.92))] p-5 text-left text-white transition " +
+                        (activeSlide === index ? "border-white/20 shadow-[0_0_0_1px_rgba(255,255,255,0.06)]" : "border-white/10")
+                      }
+                    >
+                      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-300">Slide {index + 1}</div>
+                      <div className="mt-3 text-xl font-semibold">{index % 2 === 0 ? "Snap-ready content" : "Horizontal/vertical section"}</div>
+                      <div className="mt-3 max-w-[18rem] text-sm leading-6 text-slate-300">
+                        Use scroll snap for onboarding flows, full-screen sections, product galleries, story rails, or swipeable content blocks.
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {!isVertical && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/80 px-4 py-3">
+                  <div className="text-xs text-muted-foreground">Drag, swipe, use trackpad, mouse wheel, or the buttons above.</div>
+                  <div className="flex items-center gap-2">
+                    {Array.from({ length: itemCount }, (_, index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => snapToIndex(index)}
+                        className={"h-2.5 rounded-full transition " + (activeSlide === index ? "w-8 bg-accent" : "w-2.5 bg-muted-foreground/30")}
+                        aria-label={`Go to slide ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CodeBlock code={css} lang="css" />
+            <CodeBlock code={html} lang="html" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FormsLabTool() {
+  const [framework, setFramework] = useState<"vanilla" | "react" | "next">("react");
+  const [mode, setMode] = useState<"basic" | "work" | "secure">("work");
+  const [submitState, setSubmitState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [includeCsrf, setIncludeCsrf] = useState(true);
+  const [includeHoneypot, setIncludeHoneypot] = useState(true);
+  const [useSfdcRelay, setUseSfdcRelay] = useState(true);
+  const [values, setValues] = useState({
+    fullName: "Jwala Baheliya",
+    email: "jwala@example.com",
+    phone: "",
+    company: "",
+    password: "",
+    otp: "",
+    message: "Need a frontend developer for a landing page.",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState<Record<string, string> | null>(null);
+
+  const endpoint = mode === "secure" ? "/api/contact/secure" : "/api/contact";
+  const visibleFields = mode === "basic"
+    ? ["fullName", "email", "message"]
+    : mode === "work"
+      ? ["fullName", "email", "phone", "company", "message"]
+      : ["fullName", "email", "password", "otp", "message"];
+
+  const fieldMeta = {
+    fullName: { label: "Full name", type: "text", placeholder: "Jwala Baheliya" },
+    email: { label: "Email", type: "email", placeholder: "you@example.com" },
+    phone: { label: "Phone", type: "tel", placeholder: "+91 98765 43210" },
+    company: { label: "Company", type: "text", placeholder: "Acme Inc." },
+    password: { label: "Password", type: "password", placeholder: "At least 8 chars, one number" },
+    otp: { label: "OTP", type: "text", placeholder: "123456" },
+    message: { label: "Message", type: "textarea", placeholder: "Tell me about the project" },
+  } as const;
+
+  const validate = (input: typeof values) => {
+    const next: Record<string, string> = {};
+    if (!input.fullName.trim()) next.fullName = "Full name is required.";
+    if (!input.email.trim()) next.email = "Email is required.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email)) next.email = "Enter a valid email address.";
+    if (visibleFields.includes("phone") && input.phone && !/^[0-9+()\-\s]{7,20}$/.test(input.phone)) next.phone = "Phone should be 7 to 20 characters.";
+    if (visibleFields.includes("password")) {
+      if (!input.password.trim()) next.password = "Password is required.";
+      else if (!/^(?=.*\d).{8,}$/.test(input.password)) next.password = "Password needs 8+ chars and one number.";
+    }
+    if (visibleFields.includes("otp") && input.otp && !/^\d{4,6}$/.test(input.otp)) next.otp = "OTP should be 4 to 6 digits.";
+    if (!input.message.trim()) next.message = "Message is required.";
+    return next;
+  };
+
+  const handleValue = (name: keyof typeof values, value: string) => {
+    setValues((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: "" }));
+    setSubmitState("idle");
+  };
+
+  const handleDemoSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextErrors = validate(values);
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) {
+      setSubmitState("error");
+      return;
+    }
+    setSubmitState("loading");
+    await new Promise((resolve) => window.setTimeout(resolve, 700));
+    setSubmitted(
+      Object.fromEntries(
+        Object.entries(values).filter(([key, value]) => visibleFields.includes(key) && value.trim()),
+      ) as Record<string, string>,
+    );
+    setSubmitState("success");
+  };
+
+  const fieldLines = visibleFields.map((field) => {
+    const meta = fieldMeta[field as keyof typeof fieldMeta];
+    if (meta.type === "textarea") {
+      return `      <label>\n        <span>${meta.label}</span>\n        <textarea\n          name="${field}"\n          value={form.${field}}\n          onChange={handleChange}\n          placeholder="${meta.placeholder}"\n          aria-invalid={Boolean(errors.${field})}\n        />\n        {errors.${field} && <small>{errors.${field}}</small>}\n      </label>`;
+    }
+    return `      <label>\n        <span>${meta.label}</span>\n        <input\n          name="${field}"\n          type="${meta.type}"\n          value={form.${field}}\n          onChange={handleChange}\n          placeholder="${meta.placeholder}"\n          aria-invalid={Boolean(errors.${field})}\n        />\n        {errors.${field} && <small>{errors.${field}}</small>}\n      </label>`;
+  }).join("\n\n");
+
+  const initialState = `{
+${visibleFields.map((field) => `  ${field}: ${JSON.stringify(values[field as keyof typeof values] || "")},`).join("\n")}
+}`;
+
+  const validationBlock = [
+    `if (!form.fullName.trim()) nextErrors.fullName = "Full name is required.";`,
+    `if (!form.email.trim()) nextErrors.email = "Email is required.";`,
+    `else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(form.email)) nextErrors.email = "Enter a valid email address.";`,
+    visibleFields.includes("phone") ? `if (form.phone && !/^[0-9+()\\-\\s]{7,20}$/.test(form.phone)) nextErrors.phone = "Phone should be 7 to 20 characters.";` : "",
+    visibleFields.includes("password") ? `if (!/^(?=.*\\d).{8,}$/.test(form.password)) nextErrors.password = "Password needs 8+ chars and one number.";` : "",
+    visibleFields.includes("otp") ? `if (form.otp && !/^\\d{4,6}$/.test(form.otp)) nextErrors.otp = "OTP should be 4 to 6 digits.";` : "",
+    `if (!form.message.trim()) nextErrors.message = "Message is required.";`,
+  ].filter(Boolean).join("\n    ");
+
+  const frameworkCode = framework === "vanilla"
+    ? `const form = document.querySelector("#contact-form");
+const status = document.querySelector("[data-status]");
+
+function validate(payload) {
+  const errors = {};
+  if (!payload.fullName.trim()) errors.fullName = "Full name is required.";
+  if (!payload.email.trim()) errors.email = "Email is required.";
+  else if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(payload.email)) errors.email = "Enter a valid email address.";
+  if (!payload.message.trim()) errors.message = "Message is required.";
+  return errors;
+}
+
+form?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const payload = Object.fromEntries(new FormData(form).entries());
+  const errors = validate(payload);
+
+  if (Object.keys(errors).length) {
+    status.textContent = "Fix validation errors first.";
+    return;
+  }
+
+  status.textContent = "Submitting...";
+  const response = await fetch("${endpoint}", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",${includeCsrf ? '\n      "X-CSRF-Token": window.__CSRF_TOKEN__,' : ""}
+    },
+    body: JSON.stringify(payload),
+  });
+
+  status.textContent = response.ok ? "Form submitted successfully." : "Submission failed.";
+});`
+    : framework === "react"
+      ? `import { useState } from "react";
+
+export function ContactForm() {
+  const [form, setForm] = useState(${initialState});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: "" }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+    ${validationBlock}
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      setStatus("Fix validation errors first.");
+      return;
+    }
+
+    setLoading(true);
+    setStatus("Submitting...");
+
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",${includeCsrf ? '\n          "X-CSRF-Token": csrfToken,' : ""}
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) throw new Error("Request failed");
+      setStatus("Form submitted successfully.");
+    } catch {
+      setStatus("Submission failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+${fieldLines}
+      ${includeHoneypot ? '<input type="text" name="website" hidden tabIndex={-1} autoComplete="off" />' : ""}
+      <button type="submit" disabled={loading}>{loading ? "Submitting..." : "Submit"}</button>
+    </form>
+  );
+}`
+      : `// app/contact/page.tsx
+"use client";
+import { useState } from "react";
+
+export default function ContactPage() {
+  const [form, setForm] = useState(${initialState});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: "" }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextErrors: Record<string, string> = {};
+    ${validationBlock}
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
+      setStatus("Fix validation errors first.");
+      return;
+    }
+
+    setLoading(true);
+    setStatus("Submitting...");
+
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",${includeCsrf ? '\n          "X-CSRF-Token": csrfToken,' : ""}
+        },
+        body: JSON.stringify(form),
+      });
+
+      if (!response.ok) throw new Error("Request failed");
+      setStatus("Form submitted successfully.");
+    } catch {
+      setStatus("Submission failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return <form onSubmit={handleSubmit}>...</form>;
+}
+
+// app/api/contact/route.ts
+import { z } from "zod";
+
+const schema = z.object({
+  fullName: z.string().min(1, "Full name is required."),
+  email: z.string().email("Enter a valid email address."),
+${visibleFields.includes("phone") ? '  phone: z.string().regex(/^[0-9+()\\-\\s]{7,20}$/).optional().or(z.literal("")),' : ""}
+${visibleFields.includes("company") ? '  company: z.string().optional(),' : ""}
+${visibleFields.includes("password") ? '  password: z.string().regex(/^(?=.*\\d).{8,}$/,' + ' "Password needs 8+ chars and one number."),' : ""}
+${visibleFields.includes("otp") ? '  otp: z.string().regex(/^\\d{4,6}$/).optional().or(z.literal("")),' : ""}
+  message: z.string().min(1, "Message is required."),
+});
+
+export async function POST(request: Request) {
+  const body = await request.json();
+  const result = schema.safeParse(body);
+
+  if (!result.success) {
+    return Response.json({ ok: false, errors: result.error.flatten().fieldErrors }, { status: 400 });
+  }
+
+  return Response.json({ ok: true, message: "Saved successfully" });
+}`;
+
+  const apiCode = `// backend route idea
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  // 1. validate body
+  // 2. auth / CSRF / rate limit
+  // 3. save to database or CRM
+
+  return Response.json({
+    ok: true,
+    message: "Saved successfully"
+  });
+}`;
+
+  const sfdcCode = `// safer SFDC / Salesforce relay
+export async function POST(request: Request) {
+  const body = await request.json();
+
+  const payload = new URLSearchParams({
+    oid: process.env.SFDC_ORG_ID ?? "",
+    first_name: body.fullName,
+    email: body.email,
+    phone: body.phone ?? "",
+    company: body.company ?? "",
+    description: body.message,
+  });
+
+  await fetch("https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: payload.toString(),
+  });
+
+  return Response.json({ ok: true });
+}`;
+
+  const checklist = [
+    "Client validation is for UX. Server validation is for trust.",
+    includeCsrf ? "CSRF example is enabled. Use it for cookie-based auth flows." : "CSRF example is off. Turn it on for cookie-based auth flows.",
+    includeHoneypot ? "Honeypot example is enabled for basic bot filtering." : "Honeypot example is off for a cleaner minimal form.",
+    "Always design loading, success, and error states before wiring the API.",
+    "Never trust hidden fields or client-side role checks for permission logic.",
+  ];
+
+  const steps = [
+    ["1. Fill form", "User types into clearly labeled fields."],
+    ["2. Validate", "Client checks required fields and formats."],
+    ["3. Submit", "Frontend sends JSON to your API route."],
+    ["4. Verify", "Server validates again and applies guardrails."],
+    ["5. Save", useSfdcRelay ? "Server saves to DB or forwards safely to SFDC." : "Server saves to your database or CRM."],
+    ["6. Respond", "Frontend shows success or field-level errors."],
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[32px] border border-border bg-card p-4 md:p-6">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_360px]">
+          <div className="space-y-4">
+            <div className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.28em] text-sky-700">
+              Full form flow
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold tracking-tight text-foreground md:text-4xl">One complete form, from validation to submit</h3>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
+                This lab now focuses on one practical flow. Build the form, validate it, submit it to an API, handle success and errors, and then extend the same pattern to Next.js, React, vanilla JavaScript, or SFDC relay flows.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {steps.map(([title, text]) => (
+                <div key={title} className="rounded-2xl border border-border bg-background p-4">
+                  <div className="text-sm font-semibold text-foreground">{title}</div>
+                  <div className="mt-2 text-sm leading-6 text-muted-foreground">{text}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-4 rounded-[28px] border border-border bg-background p-4">
+            <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+              {(["basic", "work", "secure"] as const).map((item) => (
+                <button type="button" key={item} onClick={() => setMode(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (mode === item ? "bg-foreground text-background" : "text-muted-foreground")}>
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+              {(["vanilla", "react", "next"] as const).map((item) => (
+                <button type="button" key={item} onClick={() => setFramework(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (framework === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="grid gap-3">
+              <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-mono">
+                <input type="checkbox" checked={includeCsrf} onChange={(event) => setIncludeCsrf(event.target.checked)} />
+                CSRF example
+              </label>
+              <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-mono">
+                <input type="checkbox" checked={includeHoneypot} onChange={(event) => setIncludeHoneypot(event.target.checked)} />
+                Honeypot field
+              </label>
+              <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-mono">
+                <input type="checkbox" checked={useSfdcRelay} onChange={(event) => setUseSfdcRelay(event.target.checked)} />
+                SFDC relay example
+              </label>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Current setup</div>
+              <div className="mt-2 text-sm text-foreground">{framework} form using `{endpoint}`</div>
+              <div className="mt-2 text-sm text-muted-foreground">
+                `{mode}` changes the visible fields and validation depth, so the code stays easier to follow.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+          <div className="w-full rounded-[30px] border border-border bg-white p-4 text-left shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] sm:p-6">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_360px]">
+              <div className="space-y-4">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Live form preview</div>
+                  <div className="mt-2 text-xl font-semibold text-slate-950">Validate first, then submit</div>
+                </div>
+
+                <form onSubmit={(event) => void handleDemoSubmit(event)} className="grid gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {visibleFields.map((field) => {
+                      const meta = fieldMeta[field as keyof typeof fieldMeta];
+                      const fieldError = errors[field];
+                      const isTextarea = meta.type === "textarea";
+                      return (
+                        <label key={field} className={isTextarea ? "grid gap-1.5 md:col-span-2" : "grid gap-1.5"}>
+                          <span className="text-sm font-medium text-slate-900">{meta.label}</span>
+                          {isTextarea ? (
+                            <textarea
+                              value={values[field as keyof typeof values]}
+                              onChange={(event) => handleValue(field as keyof typeof values, event.target.value)}
+                              placeholder={meta.placeholder}
+                              className={"min-h-[140px] rounded-2xl border px-4 py-3 text-sm outline-none transition " + (fieldError ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white focus:border-sky-300")}
+                            />
+                          ) : (
+                            <input
+                              type={meta.type}
+                              value={values[field as keyof typeof values]}
+                              onChange={(event) => handleValue(field as keyof typeof values, event.target.value)}
+                              placeholder={meta.placeholder}
+                              className={"rounded-2xl border px-4 py-3 text-sm outline-none transition " + (fieldError ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white focus:border-sky-300")}
+                            />
+                          )}
+                          <span className={"min-h-5 text-xs " + (fieldError ? "text-rose-600" : "text-slate-400")}>
+                            {fieldError || " "}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {includeHoneypot && (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+                      Honeypot stays hidden in production, but shown here so the flow is easier to understand.
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white">
+                      {submitState === "loading" ? "Submitting..." : "Submit form"}
+                    </button>
+                    <div className={"rounded-full border px-3 py-2 text-xs font-mono uppercase tracking-[0.2em] " + (submitState === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : submitState === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-slate-200 bg-slate-50 text-slate-500")}>
+                      {submitState === "idle" ? "ready" : submitState}
+                    </div>
+                  </div>
+                </form>
+              </div>
+
+              <div className="space-y-4">
+                <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">What happens here</div>
+                  <div className="mt-3 grid gap-3">
+                    {checklist.map((item) => (
+                      <div key={item} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[26px] border border-slate-200 bg-white p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Submitted payload</div>
+                  <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-2xl bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100">
+                    {JSON.stringify(submitted ?? Object.fromEntries(Object.entries(values).filter(([key]) => visibleFields.includes(key))), null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Preview>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          <CodeBlock code={frameworkCode} lang={framework === "vanilla" ? "js" : "tsx"} />
+          <CodeBlock code={apiCode} lang="ts" />
+          <CodeBlock code={useSfdcRelay ? sfdcCode : "// SFDC relay is turned off.\n// Use your normal API -> database save flow here."} lang="ts" />
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-3">
+          <div className="rounded-3xl border border-border bg-card p-4">
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Client validation</div>
+            <div className="mt-2 text-sm text-muted-foreground">Use field-level errors, instant feedback, and accessible labels so users know what is wrong before submit.</div>
+          </div>
+          <div className="rounded-3xl border border-border bg-card p-4">
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Server validation</div>
+            <div className="mt-2 text-sm text-muted-foreground">Repeat validation on the server, because browser checks can always be bypassed.</div>
+          </div>
+          <div className="rounded-3xl border border-border bg-card p-4">
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Submit states</div>
+            <div className="mt-2 text-sm text-muted-foreground">Design `loading`, `success`, and `error` states from the start, not as an afterthought.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FormEventsCsrfLabTool() {
+  const [framework, setFramework] = useState<"vanilla" | "react" | "next">("react");
+  const [eventLog, setEventLog] = useState<string[]>(["ready"]);
+  const [useCustomValidation, setUseCustomValidation] = useState(true);
+  const [includeCsrf, setIncludeCsrf] = useState(true);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const pushEvent = (label: string) => {
+    setEventLog((current) => [label, ...current].slice(0, 10));
+  };
+
+  const validate = () => {
+    const next: Record<string, string> = {};
+    if (!name.trim()) next.name = "Name is required";
+    if (!email.trim()) next.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) next.email = "Enter a valid email";
+    if (message.trim().length < 12) next.message = "Message should be at least 12 characters";
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const onSubmitDemo = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    pushEvent("submit");
+    if (useCustomValidation && !validate()) return;
+    setErrors({});
+    pushEvent("submit success");
+  };
+
+  const customValidationJs = `const validateForm = (values) => {
+  const errors = {};
+
+  if (!values.name.trim()) errors.name = "Name is required";
+  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(values.email)) {
+    errors.email = "Enter a valid email";
+  }
+  if (values.message.trim().length < 12) {
+    errors.message = "Message should be at least 12 characters";
+  }
+
+  return errors;
+};`;
+
+  const csrfJs = `await fetch("/api/contact", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",${includeCsrf ? '\n    "X-CSRF-Token": csrfToken,' : ""}
+  },
+  body: JSON.stringify(values),
+});`;
+
+  const frameworkCode = framework === "vanilla"
+    ? `const form = document.querySelector("#contact-form");
+const log = (name) => console.log("[form-event]", name);
+
+form?.addEventListener("focusin", () => log("focusin"));
+form?.addEventListener("input", () => log("input"));
+form?.addEventListener("change", () => log("change"));
+form?.addEventListener("blur", () => log("blur"), true);
+form?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const values = Object.fromEntries(new FormData(form).entries());
+  const errors = ${useCustomValidation ? "validateForm(values)" : "{}"};
+  if (Object.keys(errors).length) return;
+  ${csrfJs}
+});`
+    : framework === "next"
+      ? `"use client";
+import { useState } from "react";
+
+export default function ContactForm() {
+  const [values, setValues] = useState({ name: "", email: "", message: "" });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = event.target;
+    setValues((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextErrors = ${useCustomValidation ? "validateForm(values)" : "{}"};
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+    ${csrfJs}
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* name, email, message */}
+    </form>
+  );
+}
+
+// Route Handler: validate again on server before any DB or email action`
+      : `const [values, setValues] = useState({ name: "", email: "", message: "" });
+const [errors, setErrors] = useState<Record<string, string>>({});
+
+const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  event.preventDefault();
+  const nextErrors = ${useCustomValidation ? "validateForm(values)" : "{}"};
+  setErrors(nextErrors);
+  if (Object.keys(nextErrors).length) return;
+  ${csrfJs}
+};`;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">What this page teaches</div>
+            <div className="mt-2 text-sm text-muted-foreground">One clean lab for form events, custom validation, submit flow, and CSRF protection. Use it to understand what happens before the request ever reaches your backend.</div>
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["vanilla", "react", "next"] as const).map((item) => (
+              <button type="button" key={item} onClick={() => setFramework(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (framework === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <label className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono">
+            <input type="checkbox" checked={useCustomValidation} onChange={(event) => setUseCustomValidation(event.target.checked)} />
+            Custom validation
+          </label>
+          <label className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-mono">
+            <input type="checkbox" checked={includeCsrf} onChange={(event) => setIncludeCsrf(event.target.checked)} />
+            Include CSRF header example
+          </label>
+
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Event order to watch</div>
+            <div className="mt-3 grid gap-2 text-sm text-muted-foreground">
+              {["focus", "input", "change", "blur", "submit"].map((item) => (
+                <div key={item} className="rounded-xl border border-border px-3 py-2">{item}</div>
+              ))}
+            </div>
+          </div>
+
+          <CodeBlock code={customValidationJs} lang="js" />
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div className="w-full rounded-[30px] border border-border bg-white p-4 text-left shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] sm:p-6">
+              <div className="grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
+                <form onSubmit={onSubmitDemo} className="grid gap-3">
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Interactive form</div>
+                    <div className="mt-2 text-lg font-semibold text-slate-950">Try focus, input, blur, and submit</div>
+                  </div>
+                  <label className="grid gap-1.5 text-sm">
+                    <span className="font-medium text-slate-900">Name</span>
+                    <input value={name} onFocus={() => pushEvent("focus:name")} onInput={() => pushEvent("input:name")} onChange={(e) => { setName(e.target.value); pushEvent("change:name"); }} onBlur={() => { pushEvent("blur:name"); if (useCustomValidation) validate(); }} className="rounded-2xl border border-slate-200 px-3 py-2" />
+                    {errors.name && <span className="text-xs text-rose-600">{errors.name}</span>}
+                  </label>
+                  <label className="grid gap-1.5 text-sm">
+                    <span className="font-medium text-slate-900">Email</span>
+                    <input value={email} onFocus={() => pushEvent("focus:email")} onInput={() => pushEvent("input:email")} onChange={(e) => { setEmail(e.target.value); pushEvent("change:email"); }} onBlur={() => { pushEvent("blur:email"); if (useCustomValidation) validate(); }} className="rounded-2xl border border-slate-200 px-3 py-2" />
+                    {errors.email && <span className="text-xs text-rose-600">{errors.email}</span>}
+                  </label>
+                  <label className="grid gap-1.5 text-sm">
+                    <span className="font-medium text-slate-900">Message</span>
+                    <textarea value={message} onFocus={() => pushEvent("focus:message")} onInput={() => pushEvent("input:message")} onChange={(e) => { setMessage(e.target.value); pushEvent("change:message"); }} onBlur={() => { pushEvent("blur:message"); if (useCustomValidation) validate(); }} className="min-h-[120px] rounded-2xl border border-slate-200 px-3 py-2" />
+                    {errors.message && <span className="text-xs text-rose-600">{errors.message}</span>}
+                  </label>
+                  <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white">Submit form</button>
+                </form>
+
+                <div className="space-y-4">
+                  <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Recent events</div>
+                    <div className="mt-3 grid gap-2">
+                      {eventLog.map((item, index) => (
+                        <div key={`${item}-${index}`} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">{item}</div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="rounded-[26px] border border-slate-200 bg-white p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">CSRF idea</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-600">If login uses cookies, a CSRF token helps prove the request came from your real form page. Add it in a header or hidden field and validate it on the server.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CodeBlock code={frameworkCode} lang={framework === "vanilla" ? "js" : "tsx"} />
+            <CodeBlock code={csrfJs} lang="js" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DatabaseLabTool() {
+  const [backend, setBackend] = useState<"sql" | "prisma" | "mongo" | "supabase">("prisma");
+  const [operation, setOperation] = useState<"create" | "read" | "update" | "delete">("create");
+  const [tableName, setTableName] = useState("leads");
+  const [recordId, setRecordId] = useState("lead_101");
+  const [queryField, setQueryField] = useState("email");
+  const [payloadText, setPayloadText] = useState('{\n  "name": "Jwala Baheliya",\n  "email": "jwala@example.com",\n  "message": "Need a frontend developer for a landing page.",\n  "status": "new"\n}');
+
+  const parsedPayload = useMemo(() => {
+    try {
+      return { value: JSON.parse(payloadText) as Record<string, string>, error: "" };
+    } catch (error) {
+      return { value: {} as Record<string, string>, error: error instanceof Error ? error.message : "Invalid JSON" };
+    }
+  }, [payloadText]);
+
+  const columns = Object.keys(parsedPayload.value);
+  const queryValue = String(parsedPayload.value[queryField] ?? recordId);
+  const sql = operation === "create"
+    ? `INSERT INTO ${tableName} (${columns.join(", ")})\nVALUES (${columns.map((key) => `'${String(parsedPayload.value[key] ?? "")}'`).join(", ")});`
+    : operation === "read"
+      ? `SELECT * FROM ${tableName}\nWHERE ${queryField} = '${queryValue}'\nORDER BY created_at DESC;`
+      : operation === "update"
+        ? `UPDATE ${tableName}\nSET ${columns.filter((key) => key !== "id").map((key) => `${key} = '${String(parsedPayload.value[key] ?? "")}'`).join(",\n    ")}\nWHERE id = '${recordId}';`
+        : `DELETE FROM ${tableName}\nWHERE id = '${recordId}';`;
+  const prisma = operation === "create"
+    ? `await prisma.${tableName}.create({\n  data: ${JSON.stringify(parsedPayload.value, null, 2)}\n});`
+    : operation === "read"
+      ? `const rows = await prisma.${tableName}.findMany({\n  where: {\n    ${queryField}: ${JSON.stringify(queryValue)}\n  },\n  orderBy: { createdAt: "desc" }\n});`
+      : operation === "update"
+        ? `await prisma.${tableName}.update({\n  where: { id: ${JSON.stringify(recordId)} },\n  data: ${JSON.stringify(parsedPayload.value, null, 2)}\n});`
+        : `await prisma.${tableName}.delete({\n  where: { id: ${JSON.stringify(recordId)} }\n});`;
+  const mongo = operation === "create"
+    ? `await db.collection("${tableName}").insertOne(${JSON.stringify(parsedPayload.value, null, 2)});`
+    : operation === "read"
+      ? `const rows = await db.collection("${tableName}")\n  .find({ ${queryField}: ${JSON.stringify(queryValue)} })\n  .sort({ createdAt: -1 })\n  .toArray();`
+      : operation === "update"
+        ? `await db.collection("${tableName}").updateOne(\n  { _id: ${JSON.stringify(recordId)} },\n  { $set: ${JSON.stringify(parsedPayload.value, null, 2)} }\n);`
+        : `await db.collection("${tableName}").deleteOne({ _id: ${JSON.stringify(recordId)} });`;
+  const supabase = operation === "create"
+    ? `await supabase.from("${tableName}").insert(${JSON.stringify(parsedPayload.value, null, 2)});`
+    : operation === "read"
+      ? `const { data, error } = await supabase\n  .from("${tableName}")\n  .select("*")\n  .eq("${queryField}", ${JSON.stringify(queryValue)})\n  .order("created_at", { ascending: false });`
+      : operation === "update"
+        ? `await supabase\n  .from("${tableName}")\n  .update(${JSON.stringify(parsedPayload.value, null, 2)})\n  .eq("id", ${JSON.stringify(recordId)});`
+        : `await supabase\n  .from("${tableName}")\n  .delete()\n  .eq("id", ${JSON.stringify(recordId)});`;
+  const activeCode = backend === "sql" ? sql : backend === "prisma" ? prisma : backend === "mongo" ? mongo : supabase;
+  const method = operation === "create" ? "POST" : operation === "read" ? "GET" : operation === "update" ? "PATCH" : "DELETE";
+  const routeCode = `// Next.js route handler\nexport async function ${method}(request: Request) {\n  ${operation === "read" ? `const url = new URL(request.url);\n  const ${queryField} = url.searchParams.get("${queryField}");` : "const body = await request.json();"}\n\n  // 1. auth / csrf / rate limit\n  // 2. validate and sanitize input\n  // 3. run the database operation\n\n  return Response.json({\n    ok: true,\n    operation: "${operation}",\n    resource: "${tableName}"\n  });\n}`;
+  const responseCode = operation === "create"
+    ? `{\n  "ok": true,\n  "id": "${recordId}",\n  "created": true\n}`
+    : operation === "read"
+      ? `{\n  "ok": true,\n  "items": [\n    ${JSON.stringify(parsedPayload.value, null, 4).replace(/\n/g, "\n    ")}\n  ]\n}`
+      : operation === "update"
+        ? `{\n  "ok": true,\n  "id": "${recordId}",\n  "updated": true\n}`
+        : `{\n  "ok": true,\n  "id": "${recordId}",\n  "deleted": true\n}`;
+  const operationLabel = operation === "create" ? `Create ${tableName}` : operation === "read" ? `Read ${tableName}` : operation === "update" ? `Update ${tableName}` : `Delete ${tableName}`;
+  const operationSummary = operation === "create"
+    ? "Collect fields in the UI, validate them in your API layer, and create a new database row or document."
+    : operation === "read"
+      ? "Fetch filtered records safely, shape the response, and return only the fields the UI actually needs."
+      : operation === "update"
+        ? "Load the current record, validate the changed fields, and patch the existing record predictably."
+        : "Confirm intent, authorize the action, and remove the record with a clear success response.";
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Flow</div>
+            <div className="mt-2 text-sm text-muted-foreground">Move through the full CRUD path from frontend input to API validation and database write or read logic for SQL, Prisma, Mongo, or Supabase.</div>
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["sql", "prisma", "mongo", "supabase"] as const).map((item) => (
+              <button type="button" key={item} onClick={() => setBackend(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (backend === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["create", "read", "update", "delete"] as const).map((item) => (
+              <button type="button" key={item} onClick={() => setOperation(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (operation === item ? "bg-foreground text-background" : "text-muted-foreground")}>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Collection / table</span>
+            <input value={tableName} onChange={(e) => setTableName(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+          </label>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Record id</span>
+              <input value={recordId} onChange={(e) => setRecordId(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+            </label>
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Query field</span>
+              <input value={queryField} onChange={(e) => setQueryField(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+            </label>
+          </div>
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Payload editor</span>
+            <textarea value={payloadText} onChange={(e) => setPayloadText(e.target.value)} className="min-h-[220px] rounded-2xl border border-border bg-background p-3 text-xs leading-6" spellCheck={false} />
+          </label>
+
+          <div className={"rounded-2xl border p-4 text-xs " + (parsedPayload.error ? "border-rose-500/40 bg-rose-500/10 text-rose-700" : "border-border bg-background text-muted-foreground")}>
+            <div className="font-mono uppercase tracking-widest">{parsedPayload.error ? "Payload error" : "Columns detected"}</div>
+            <div className="mt-2">{parsedPayload.error ? parsedPayload.error : columns.join(", ") || "none"}</div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div className="w-full rounded-[30px] border border-border bg-white p-4 text-left shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">CRUD map</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-950">{operationLabel}</div>
+                  <div className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{operationSummary}</div>
+                </div>
+                <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.24em] text-slate-600">
+                  {method} /api/{tableName}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-4">
+                {[
+                  ["1. UI", operation === "read" ? "Search, filter, table, detail view" : operation === "delete" ? "Confirm intent before deletion" : "Form or action button triggers the request"],
+                  ["2. API", `${method} route validates, sanitizes, and shapes the response`],
+                  ["3. Guardrails", "Auth, CSRF, rate limit, audit trail, field allowlist"],
+                  ["4. Database", operation === "create" ? `Create in ${tableName}` : operation === "read" ? `Query ${tableName}` : operation === "update" ? `Update ${tableName}` : `Delete from ${tableName}`],
+                ].map(([title, text]) => (
+                  <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold text-slate-900">{title}</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-600">{text}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-[.95fr_1.05fr]">
+                <div className="rounded-[26px] border border-slate-200 bg-white p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Payload preview</div>
+                  <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-2xl bg-slate-950 p-4 font-mono text-xs leading-6 text-slate-100">{payloadText}</pre>
+                </div>
+                <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Frontend + API checklist</div>
+                  <div className="mt-3 grid gap-3">
+                    {[
+                      operation === "read"
+                        ? "Use loading, empty, success, and error UI states for fetch-heavy screens."
+                        : "Frontend should never write raw unchecked data straight into a database.",
+                      operation === "delete"
+                        ? "Delete flows need confirm modals, permission checks, and a restore strategy when possible."
+                        : "API layer is where validation, auth, CSRF checks, and business rules should live.",
+                      operation === "update"
+                        ? "Patch only editable fields and return the updated record for optimistic UI sync."
+                        : "Your UI should expect success, validation error, and server error states clearly.",
+                    ].map((item) => (
+                      <div key={item} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">{item}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 xl:grid-cols-3">
+            <CodeBlock code={activeCode} lang={backend === "sql" ? "sql" : backend === "mongo" ? "js" : "ts"} />
+            <CodeBlock code={routeCode} lang="ts" />
+            <CodeBlock code={responseCode} lang="json" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FrontendBackendLabTool() {
+  const [level, setLevel] = useState<"beginner" | "intermediate" | "advanced" | "production">("beginner");
+  const [framework, setFramework] = useState<"vanilla" | "react" | "next">("react");
+  const [resource, setResource] = useState("leads");
+  const [action, setAction] = useState<"fetch-list" | "create-item" | "update-item" | "delete-item">("fetch-list");
+  const [authMode, setAuthMode] = useState<"public" | "bearer" | "cookie">("cookie");
+  const [optimistic, setOptimistic] = useState(true);
+
+  const actionLabel = action === "fetch-list"
+    ? "Load list"
+    : action === "create-item"
+      ? "Create item"
+      : action === "update-item"
+        ? "Update item"
+        : "Delete item";
+  const method = action === "fetch-list" ? "GET" : action === "create-item" ? "POST" : action === "update-item" ? "PATCH" : "DELETE";
+  const endpoint = `/api/${resource}${action === "fetch-list" ? "?page=1&limit=10" : "/lead_101"}`;
+  const bodyExample = action === "fetch-list"
+    ? ""
+    : action === "create-item"
+      ? `{\n  "name": "Jwala Baheliya",\n  "email": "jwala@example.com",\n  "status": "new"\n}`
+      : action === "update-item"
+        ? `{\n  "status": "qualified",\n  "priority": "high"\n}`
+        : `{\n  "reason": "duplicate request"\n}`;
+
+  const frontendCode = framework === "vanilla"
+    ? `const state = {\n  loading: false,\n  error: "",\n  items: []\n};\n\nasync function ${action === "fetch-list" ? "loadLeads" : action === "create-item" ? "createLead" : action === "update-item" ? "updateLead" : "deleteLead"}() {\n  state.loading = true;\n  state.error = "";\n\n  try {\n    const response = await fetch("${endpoint}", {\n      method: "${method}",\n      headers: {\n        "Content-Type": "application/json"${authMode === "bearer" ? ',\n        "Authorization": "Bearer <token>"' : ""}\n      }${bodyExample ? `,\n      body: JSON.stringify(${bodyExample})` : ""}\n    });\n\n    if (!response.ok) throw new Error("Request failed");\n    const data = await response.json();\n    console.log(data);\n  } catch (error) {\n    state.error = error instanceof Error ? error.message : "Unknown error";\n  } finally {\n    state.loading = false;\n  }\n}`
+    : framework === "react"
+      ? `const [items, setItems] = useState([]);\nconst [loading, setLoading] = useState(false);\nconst [error, setError] = useState("");\n\nasync function ${action === "fetch-list" ? "loadLeads" : action === "create-item" ? "createLead" : action === "update-item" ? "updateLead" : "deleteLead"}() {\n  setLoading(true);\n  setError("");\n\n  try {\n    const response = await fetch("${endpoint}", {\n      method: "${method}",\n      headers: {\n        "Content-Type": "application/json"${authMode === "bearer" ? ',\n        "Authorization": "Bearer <token>"' : ""}\n      }${bodyExample ? `,\n      body: JSON.stringify(${bodyExample})` : ""}\n    });\n\n    if (!response.ok) throw new Error("Request failed");\n    const data = await response.json();\n    ${action === "fetch-list" ? "setItems(data.items ?? []);" : optimistic ? "// optimistic UI: update local state first, then revalidate if needed" : "// re-fetch the list after mutation if that fits your screen"}\n  } catch (error) {\n    setError(error instanceof Error ? error.message : "Unknown error");\n  } finally {\n    setLoading(false);\n  }\n}`
+      : `// app/${resource}/page.tsx\n"use client";\n\nimport { useTransition, useState } from "react";\n\nexport function ${resource[0]?.toUpperCase() ?? "R"}${resource.slice(1)}Panel() {\n  const [pending, startTransition] = useTransition();\n  const [error, setError] = useState("");\n\n  async function handleAction() {\n    startTransition(async () => {\n      setError("");\n      try {\n        const response = await fetch("${endpoint}", {\n          method: "${method}",\n          headers: {\n            "Content-Type": "application/json"${authMode === "bearer" ? ',\n            "Authorization": "Bearer <token>"' : ""}\n          }${bodyExample ? `,\n          body: JSON.stringify(${bodyExample})` : ""}\n        });\n\n        if (!response.ok) throw new Error("Request failed");\n      } catch (error) {\n        setError(error instanceof Error ? error.message : "Unknown error");\n      }\n    });\n  }\n\n  return <button onClick={handleAction} disabled={pending}>${actionLabel}</button>;\n}`;
+
+  const routeCode = `// app/api/${resource}${action === "fetch-list" ? "/route.ts" : "/[id]/route.ts"}\nexport async function ${method}(request: Request${action === "fetch-list" ? "" : ", { params }: { params: { id: string } }"}) {\n  ${action === "fetch-list"
+    ? `const url = new URL(request.url);\n  const page = Number(url.searchParams.get("page") ?? "1");\n  const limit = Number(url.searchParams.get("limit") ?? "10");`
+    : "const body = await request.json();"}\n\n  // 1. authenticate user\n  // 2. validate input and allowlisted fields\n  // 3. call service / database layer\n  // 4. return shaped JSON the UI can actually use\n\n  return Response.json({\n    ok: true,\n    action: "${action}",\n    resource: "${resource}"\n  });\n}`;
+
+  const serviceCode = action === "fetch-list"
+    ? `export async function list${resource[0]?.toUpperCase() ?? "R"}${resource.slice(1)}() {\n  // service layer keeps route handlers thin\n  return db.${resource}.findMany({\n    orderBy: { createdAt: "desc" },\n    take: 10\n  });\n}`
+    : action === "create-item"
+      ? `export async function create${resource[0]?.toUpperCase() ?? "R"}${resource.slice(1)}(input: Create${resource[0]?.toUpperCase() ?? "R"}${resource.slice(1)}Input) {\n  return db.${resource}.create({ data: input });\n}`
+      : action === "update-item"
+        ? `export async function update${resource[0]?.toUpperCase() ?? "R"}${resource.slice(1)}(id: string, input: Update${resource[0]?.toUpperCase() ?? "R"}${resource.slice(1)}Input) {\n  return db.${resource}.update({\n    where: { id },\n    data: input\n  });\n}`
+        : `export async function delete${resource[0]?.toUpperCase() ?? "R"}${resource.slice(1)}(id: string) {\n  return db.${resource}.delete({ where: { id } });\n}`;
+
+  const levelNotes = level === "beginner"
+    ? [
+        "Start with one screen, one button, one API route, and one predictable JSON response.",
+        "Always show loading, success, empty, and error states. That is real frontend work.",
+        "Do not connect components directly to the database. Go through an API or server layer.",
+      ]
+    : level === "intermediate"
+      ? [
+          "Separate UI state from fetch logic so your components stay readable.",
+          "Normalize validation errors into a shape your inputs can render easily.",
+          "Reuse a small API helper instead of duplicating fetch options everywhere.",
+        ]
+      : level === "advanced"
+        ? [
+            "Use optimistic updates carefully for faster-feeling UI, but keep rollback paths.",
+            "Keep route handlers thin and move business logic into services.",
+            "Return only the fields the screen needs, not the whole database record.",
+          ]
+        : [
+            "Add auth, CSRF or cookie/session strategy, rate limiting, and audit logging.",
+            "Document error contracts so frontend and backend agree on field names and codes.",
+            "Think in retries, idempotency, observability, and rollback-safe mutations.",
+          ];
+
+  const stageCards = [
+    ["1. Browser UI", action === "fetch-list" ? "Page load, filter, or search starts the request." : "Form submit or action button starts the mutation."],
+    ["2. Frontend state", "Track loading, success, empty, and error state clearly."],
+    ["3. API route", `${method} ${endpoint} validates and shapes the response.`],
+    ["4. Service layer", "Business rules stay outside the component and outside the route body."],
+    ["5. Database", action === "fetch-list" ? `Read from ${resource}` : `${actionLabel} in ${resource} safely.`],
+    ["6. UI update", optimistic && action !== "fetch-list" ? "Optimistic state updates instantly, then revalidates." : "UI refreshes from trusted response data."],
+  ] as const;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Zero to hero map</div>
+            <div className="mt-2 text-sm text-muted-foreground">A guided lab for understanding how a frontend talks to a backend properly, from the first fetch call to production-ready patterns.</div>
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["beginner", "intermediate", "advanced", "production"] as const).map((item) => (
+              <button type="button" key={item} onClick={() => setLevel(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (level === item ? "bg-foreground text-background" : "text-muted-foreground")}>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["vanilla", "react", "next"] as const).map((item) => (
+              <button type="button" key={item} onClick={() => setFramework(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (framework === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Action</span>
+              <select value={action} onChange={(event) => setAction(event.target.value as typeof action)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="fetch-list">fetch list</option>
+                <option value="create-item">create item</option>
+                <option value="update-item">update item</option>
+                <option value="delete-item">delete item</option>
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Auth mode</span>
+              <select value={authMode} onChange={(event) => setAuthMode(event.target.value as typeof authMode)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="public">public</option>
+                <option value="bearer">bearer token</option>
+                <option value="cookie">cookie session</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Resource name</span>
+            <input value={resource} onChange={(event) => setResource(event.target.value.replace(/\s+/g, "-").toLowerCase() || "leads")} className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+          </label>
+
+          <label className="flex items-center gap-3 rounded-2xl border border-border bg-background px-3 py-3 text-sm text-muted-foreground">
+            <input type="checkbox" checked={optimistic} onChange={(event) => setOptimistic(event.target.checked)} />
+            <span>Show optimistic UI pattern for mutations</span>
+          </label>
+
+          <div className="rounded-2xl border border-border bg-background p-4">
+            <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">What changes here</div>
+            <div className="mt-2 text-sm text-foreground">{framework} + {actionLabel.toLowerCase()} + {authMode} auth</div>
+            <div className="mt-2 text-sm text-muted-foreground">The examples update together so beginners can see how frontend code, the API route, and the service layer connect.</div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div className="w-full rounded-[30px] border border-border bg-white p-4 text-left shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] sm:p-6">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Frontend → backend learning flow</div>
+                  <div className="mt-2 text-2xl font-semibold text-slate-950 sm:text-3xl">{actionLabel} with {framework}</div>
+                  <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+                    Learn the proper connection path: browser event, frontend state, API request, validation, service layer, database work, and UI refresh.
+                  </p>
+                </div>
+                <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.24em] text-slate-600">
+                  {method} {endpoint}
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {stageCards.map(([title, text]) => (
+                  <div key={title} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-sm font-semibold text-slate-900">{title}</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-600">{text}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-5 grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
+                <div className="rounded-[26px] border border-slate-200 bg-slate-950 p-4 text-slate-100">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-400">Mental model</div>
+                  <div className="mt-3 grid gap-2 text-sm">
+                    <div><span className="text-slate-400">Frontend owns:</span> form state, loading UI, retries, empty/error/success UX.</div>
+                    <div><span className="text-slate-400">Backend owns:</span> trust, validation, auth, business rules, database writes.</div>
+                    <div><span className="text-slate-400">Shared contract:</span> endpoint shape, field names, status codes, error format.</div>
+                  </div>
+                  {bodyExample ? (
+                    <pre className="mt-4 overflow-auto rounded-2xl bg-white/5 p-4 font-mono text-xs leading-6 text-slate-100">{bodyExample}</pre>
+                  ) : (
+                    <div className="mt-4 rounded-2xl bg-white/5 p-4 text-sm text-slate-300">This flow uses query params more than a JSON body because it is a read request.</div>
+                  )}
+                </div>
+
+                <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">{level} guidance</div>
+                  <div className="mt-3 grid gap-3">
+                    {levelNotes.map((item) => (
+                      <div key={item} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-700">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 xl:grid-cols-3">
+            <CodeBlock code={frontendCode} lang={framework === "next" ? "tsx" : "ts"} />
+            <CodeBlock code={routeCode} lang="ts" />
+            <CodeBlock code={serviceCode} lang="ts" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RestApiLabTool() {
+  const [framework, setFramework] = useState<"vanilla" | "react" | "next">("react");
+  const [method, setMethod] = useState<"GET" | "POST" | "PUT" | "PATCH" | "DELETE">("GET");
+  const [auth, setAuth] = useState<"none" | "bearer" | "cookie">("bearer");
+  const [endpoint, setEndpoint] = useState("/api/users?page=1&limit=10");
+  const [status, setStatus] = useState<200 | 201 | 400 | 401 | 404 | 500>(200);
+  const [payloadText, setPayloadText] = useState('{\n  "name": "Jwala Baheliya",\n  "role": "Senior Frontend Developer"\n}');
+
+  const parsedPayload = useMemo(() => {
+    try {
+      return { value: JSON.parse(payloadText), error: "" };
+    } catch (error) {
+      return { value: {}, error: error instanceof Error ? error.message : "Invalid JSON" };
+    }
+  }, [payloadText]);
+
+  const responseMap = {
+    200: { title: "200 OK", body: { data: [{ id: 1, name: "Jwala" }], page: 1, limit: 10 } },
+    201: { title: "201 Created", body: { id: 18, created: true } },
+    400: { title: "400 Bad Request", body: { error: "Validation failed", fields: { name: "Required" } } },
+    401: { title: "401 Unauthorized", body: { error: "Missing or invalid token" } },
+    404: { title: "404 Not Found", body: { error: "Resource not found" } },
+    500: { title: "500 Server Error", body: { error: "Unexpected server error" } },
+  } as const;
+
+  const fetchCode = `const response = await fetch("${endpoint}", {
+  method: "${method}",
+  headers: {
+    "Content-Type": "application/json",${auth === "bearer" ? '\n    "Authorization": "Bearer <token>",' : ""}
+  },${method === "GET" || method === "DELETE" ? "" : `\n  body: JSON.stringify(${JSON.stringify(parsedPayload.value, null, 2)}),`}
+});
+
+if (!response.ok) {
+  throw new Error("Request failed");
+}
+
+const data = await response.json();`;
+
+  const reactCode = `const [data, setData] = useState(null);
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
+const callApi = async () => {
+  setLoading(true);
+  setError("");
+  try {
+    ${fetchCode.split("\n").join("\n    ")}
+    setData(data);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : "Unknown error");
+  } finally {
+    setLoading(false);
+  }
+};`;
+
+  const nextCode = `// app/api/users/route.ts
+export async function ${method === "DELETE" ? "DELETE" : method}(request: Request) {
+  ${method === "GET" ? "const { searchParams } = new URL(request.url);" : "const body = await request.json();"}
+  // validate input, auth, and business rules here
+  return Response.json(${JSON.stringify(responseMap[status].body, null, 2)}, { status: ${status} });
+}`;
+
+  const beginnerNotes = [
+    "GET reads data. POST creates. PUT replaces. PATCH updates partly. DELETE removes.",
+    "Status codes matter as much as the JSON body. Your UI should react differently to 200, 400, 401, and 500.",
+    "Frontend should handle loading, empty, success, and error states clearly.",
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-4 xl:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="space-y-4 rounded-3xl border border-border bg-card p-4">
+          <div>
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">REST API concepts</div>
+            <div className="mt-2 text-sm text-muted-foreground">Learn methods, headers, auth, payloads, status codes, and response handling in one place before wiring the request into a real UI.</div>
+          </div>
+
+          <div className="inline-flex w-full flex-wrap rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+            {(["vanilla", "react", "next"] as const).map((item) => (
+              <button type="button" key={item} onClick={() => setFramework(item)} className={"flex-1 rounded-xl px-3 py-2 transition " + (framework === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+                {item}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Method</span>
+              <select value={method} onChange={(e) => setMethod(e.target.value as typeof method)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                {["GET", "POST", "PUT", "PATCH", "DELETE"].map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-1.5 text-xs font-mono">
+              <span className="uppercase tracking-widest text-muted-foreground">Auth</span>
+              <select value={auth} onChange={(e) => setAuth(e.target.value as typeof auth)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                <option value="none">none</option>
+                <option value="bearer">bearer token</option>
+                <option value="cookie">cookie session</option>
+              </select>
+            </label>
+          </div>
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Endpoint</span>
+            <input value={endpoint} onChange={(e) => setEndpoint(e.target.value)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm" />
+          </label>
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Example payload</span>
+            <textarea value={payloadText} onChange={(e) => setPayloadText(e.target.value)} className="min-h-[180px] rounded-2xl border border-border bg-background p-3 text-xs leading-6" spellCheck={false} />
+          </label>
+
+          <label className="grid gap-1.5 text-xs font-mono">
+            <span className="uppercase tracking-widest text-muted-foreground">Example status</span>
+            <select value={status} onChange={(e) => setStatus(Number(e.target.value) as typeof status)} className="rounded-xl border border-border bg-background px-3 py-2 text-sm">
+              {[200, 201, 400, 401, 404, 500].map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+          </label>
+
+          <div className={"rounded-2xl border p-4 text-xs " + (parsedPayload.error ? "border-rose-500/40 bg-rose-500/10 text-rose-700" : "border-border bg-background text-muted-foreground")}>
+            <div className="font-mono uppercase tracking-widest">{parsedPayload.error ? "Payload error" : "Quick reminder"}</div>
+            <div className="mt-2">{parsedPayload.error ? parsedPayload.error : "For GET requests, query params usually matter more than the request body."}</div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div className="w-full rounded-[30px] border border-border bg-white p-4 text-left shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] sm:p-6">
+              <div className="grid gap-4 lg:grid-cols-[1.02fr_.98fr]">
+                <div className="space-y-4">
+                  <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.28em] text-slate-700">
+                    REST API lab
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Beginner to advanced request flow</h3>
+                    <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
+                      A frontend should know what request it is sending, what success looks like, and how to react when the API answers with validation, auth, or server errors.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {beginnerNotes.map((item) => (
+                      <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+                        {item}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-[26px] border border-slate-200 bg-slate-950 p-4 text-slate-100">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-400">Request summary</div>
+                    <div className="mt-3 grid gap-2 text-sm">
+                      <div><span className="text-slate-400">Method:</span> {method}</div>
+                      <div><span className="text-slate-400">Endpoint:</span> {endpoint}</div>
+                      <div><span className="text-slate-400">Auth:</span> {auth}</div>
+                      <div><span className="text-slate-400">Framework tab:</span> {framework}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Sample response</div>
+                    <div className="mt-2 text-sm font-semibold text-slate-900">{responseMap[status].title}</div>
+                    <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-2xl bg-white p-4 font-mono text-xs leading-6 text-slate-900">{JSON.stringify(responseMap[status].body, null, 2)}</pre>
+                  </div>
+                  <div className="rounded-[26px] border border-slate-200 bg-white p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">How your UI should react</div>
+                    <div className="mt-3 grid gap-3">
+                      {status === 200 || status === 201 ? (
+                        <>
+                          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">Show success state and update the screen with fresh data.</div>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">Optionally reset the form or revalidate the list.</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-800">Show a clear error state instead of silently failing.</div>
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">Handle retry, login redirect, or field errors depending on the status code.</div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CodeBlock code={framework === "vanilla" ? fetchCode : framework === "react" ? reactCode : nextCode} lang={framework === "next" ? "ts" : "js"} />
+            <CodeBlock code={`// HTTP ideas to remember\n// GET    -> read data\n// POST   -> create data\n// PUT    -> replace data\n// PATCH  -> partially update data\n// DELETE -> remove data\n\n// Typical headers\n// Content-Type: application/json\n${auth === "bearer" ? "// Authorization: Bearer <token>\n" : ""}// Accept: application/json`} lang="http" />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -4194,9 +6490,12 @@ const TOOLS: Tool[] = [
   { id: "color", name: "Color Picker", category: "Color", icon: Palette, render: () => <ColorPicker /> },
   { id: "contrast", name: "Contrast Checker (WCAG)", category: "Color", icon: Gauge, render: () => <ContrastChecker /> },
   { id: "tw-color", name: "Tailwind Color Palette", category: "Color", icon: Palette, render: () => <TailwindPalette /> },
+  { id: "color-mix-oklch", name: "Color Mix / OKLCH Playground", category: "Color", keywords: "color-mix oklch oklab modern css color palette tokens", icon: Palette, render: () => <ColorMixOklchPlaygroundTool /> },
   { id: "fontpair", name: "Font Pair Generator", category: "Typography", icon: Type, render: () => <FontPair /> },
   { id: "resp", name: "Responsive Checker", category: "Responsive", icon: Smartphone, render: () => <ResponsiveChecker /> },
   { id: "mq", name: "Media Query Generator", category: "Responsive", icon: Smartphone, render: () => <MediaQueryGen /> },
+  { id: "container-query", name: "Container Query Playground", category: "Responsive", keywords: "container query @container component responsive modern css api", icon: Layout, render: () => <ContainerQueryPlaygroundTool /> },
+  { id: "view-transition", name: "View Transition Playground", category: "JavaScript", keywords: "view transition api document.startViewTransition shared element page transition", icon: Sparkles, render: () => <ViewTransitionPlaygroundTool /> },
   { id: "json", name: "JSON Formatter & Validator", category: "JavaScript", icon: FileJson, render: () => <JsonFormatter /> },
   { id: "b64", name: "Base64 Encode / Decode", category: "JavaScript", icon: Braces, render: () => <Base64Tool /> },
   { id: "url", name: "URL Encoder / Decoder", category: "JavaScript", icon: Link2, render: () => <UrlTool /> },
@@ -4233,6 +6532,10 @@ const TOOLS: Tool[] = [
   { id: "shadow-presets", name: "Box Shadow Presets Library", category: "CSS", keywords: "cards modals dropdowns", icon: Square, render: () => <BoxShadowPresetsTool /> },
   { id: "mesh", name: "Gradient Mesh / Hero Background", category: "Wow", keywords: "hero gradient mesh", icon: Sparkles, render: () => <GradientMeshTool /> },
   { id: "regex-lib", name: "Form Validation Regex Library", category: "Utilities", keywords: "email phone password otp validation", icon: Code2, render: () => <RegexLibraryTool /> },
+  { id: "forms-lab", name: "Forms Lab: Beginner to Advanced", category: "JavaScript", keywords: "forms react nextjs vanilla js csrf validation vapt formdata editor", icon: FileText, render: () => <FormsLabTool /> },
+  { id: "form-events-lab", name: "Form Events, Validation & CSRF Lab", category: "JavaScript", keywords: "form events validation blur input change submit csrf react nextjs vanilla", icon: FileText, render: () => <FormEventsCsrfLabTool /> },
+  { id: "rest-api-lab", name: "REST API Lab: Beginner to Advanced", category: "JavaScript", keywords: "rest api http methods headers fetch crud auth pagination react nextjs vanilla", icon: FileJson, render: () => <RestApiLabTool /> },
+  { id: "frontend-backend-lab", name: "Frontend to Backend Lab: Zero to Hero", category: "JavaScript", keywords: "frontend backend api fetch nextjs react vanilla auth validation loading error mutation architecture", icon: Link2, render: () => <FrontendBackendLabTool /> },
   { id: "json-types", name: "API JSON to TypeScript Types", category: "JavaScript", keywords: "json ts types zod", icon: FileJson, render: () => <JsonToTypesTool /> },
   { id: "storage", name: "LocalStorage / SessionStorage Playground", category: "JavaScript", keywords: "browser storage", icon: Terminal, render: () => <StoragePlaygroundTool /> },
   { id: "debounce-play", name: "Debounce / Throttle Playground", category: "JavaScript", keywords: "debounce throttle performance", icon: Timer, render: () => <DebounceThrottleTool /> },
@@ -4242,6 +6545,8 @@ const TOOLS: Tool[] = [
   { id: "og-preview", name: "Open Graph Preview Tool", category: "Utilities", keywords: "og social share meta", icon: Layout, render: () => <OgPreviewTool /> },
   { id: "clamp-space", name: "Clamp() Spacing Generator", category: "CSS", keywords: "fluid spacing clamp", icon: Ruler, render: () => <ClampSpacingTool /> },
   { id: "grid-overlay", name: "Grid Overlay / Layout Inspector", category: "Layout", keywords: "columns gutter layout", icon: Grid3x3, render: () => <GridOverlayTool /> },
+  { id: "scroll-snap", name: "Scroll Snap Builder", category: "Layout", keywords: "scroll snap carousel sections snap-type snap-align overflow", icon: Layout, render: () => <ScrollSnapBuilderTool /> },
+  { id: "database-lab", name: "Frontend to Database Lab", category: "JavaScript", keywords: "database sql prisma mongo supabase api insert validation schema", icon: FileJson, render: () => <DatabaseLabTool /> },
   { id: "anim-gallery", name: "Animation Presets Gallery", category: "CSS", keywords: "entrance hover motion", icon: Zap, render: () => <AnimationPresetsGalleryTool /> },
   { id: "img-placeholder", name: "Image Placeholder Generator", category: "Utilities", keywords: "blur shimmer dominant color", icon: ImageIcon, render: () => <ImagePlaceholderTool /> },
   { id: "sticky-scroll", name: "Sticky / Scroll Progress Generator", category: "JavaScript", keywords: "scroll progress sticky sidebar", icon: ScrollText, render: () => <StickyScrollTool /> },

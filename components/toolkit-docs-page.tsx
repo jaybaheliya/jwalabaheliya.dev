@@ -11,6 +11,8 @@ import {
   ExternalLink,
   Layers3,
   MousePointerClick,
+  PanelLeft,
+  PanelRight,
   Sparkles,
   Wand2,
 } from "lucide-react";
@@ -139,6 +141,8 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
   const steps = getToolSteps(tool);
   const [copied, setCopied] = useState(false);
   const [activeSection, setActiveSection] = useState<"overview" | "tool" | "usage">("overview");
+  const [leftRailOpen, setLeftRailOpen] = useState(true);
+  const [rightRailOpen, setRightRailOpen] = useState(true);
   const relatedTools = useMemo(
     () => TOOLKIT_DOCS.filter((item) => item.category === tool.category && item.id !== tool.id).slice(0, 3),
     [tool.category, tool.id],
@@ -183,7 +187,7 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen overflow-x-clip bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 md:px-6">
           <div className="flex items-center gap-4">
@@ -192,37 +196,59 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
             </Link>
             <div className="hidden md:block text-sm text-muted-foreground">Docs-style tool pages for SEO and direct sharing</div>
           </div>
-          <a href="mailto:jaybaheliya@gmail.com" className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
-            Hire me
-          </a>
+          <div className="flex items-center gap-2">
+            <a href="mailto:jaybaheliya@gmail.com" className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+              Hire me
+            </a>
+          </div>
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[1600px] gap-0 lg:grid-cols-[280px_minmax(0,1fr)_240px]">
+      <div className="mx-auto max-w-[1800px] overflow-x-clip lg:flex">
         <div className="border-b border-border px-4 py-4 lg:hidden">
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">{tool.category}</div>
-              <div className="mt-1 text-lg font-semibold text-foreground">{tool.name}</div>
+              <div className="mt-1 line-clamp-2 pr-2 text-lg font-semibold text-foreground">{tool.name}</div>
             </div>
-            <button onClick={() => void copyLink()} className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
+            <button onClick={() => void copyLink()} className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Link href="/toolkit" className="shrink-0 rounded-full border border-border px-3 py-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
               All tools
             </Link>
             {relatedTools.map((item) => (
-              <Link key={item.id} href={`/toolkit/${item.id}`} className="shrink-0 rounded-full border border-border px-3 py-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+              <Link key={item.id} href={`/toolkit/${item.id}`} className="truncate rounded-full border border-border px-3 py-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
                 {item.name}
               </Link>
             ))}
           </div>
         </div>
 
-        <aside className="hidden self-start border-r border-border lg:block lg:sticky lg:top-[65px] lg:h-[calc(100vh-65px)]">
-          <div className="h-full overflow-auto px-5 py-6">
+        <aside
+          className="relative hidden shrink-0 border-r border-border transition-[width] duration-300 ease-out lg:block"
+          style={{ width: leftRailOpen ? 280 : 18 }}
+        >
+          <button
+            onClick={() => setLeftRailOpen((current) => !current)}
+            className={
+              "absolute top-6 z-20 hidden h-16 w-7 items-center justify-center border border-border bg-background text-muted-foreground transition hover:w-8 hover:text-foreground lg:inline-flex " +
+              (leftRailOpen
+                ? "right-0 translate-x-full rounded-r-2xl border-l-0"
+                : "right-0 rounded-none border-x-0 border-y-0 bg-transparent hover:bg-muted/30")
+            }
+            aria-label={leftRailOpen ? "Hide left navigation" : "Show left navigation"}
+          >
+            <PanelLeft className={"h-4 w-4 transition-transform duration-300 " + (leftRailOpen ? "" : "rotate-180")} />
+          </button>
+          <div
+            className={
+              "sticky top-[65px] h-[calc(100vh-65px)] overflow-auto px-5 py-6 transition-all duration-300 ease-out " +
+              (leftRailOpen ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0 pointer-events-none")
+            }
+          >
             <div className="mb-5 flex items-center gap-2">
               {[Boxes, Layers3, Wand2].map((Icon, index) => (
                 <div key={index} className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
@@ -276,20 +302,20 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
           </div>
         </aside>
 
-        <main className="min-w-0 px-4 py-6 pb-28 md:px-8 md:py-8 md:pb-32 lg:px-12 lg:pb-8">
-          <div className="max-w-4xl">
+        <main className="min-w-0 px-4 py-6 pb-36 md:px-8 md:py-8 md:pb-32 lg:px-10 lg:pb-8 xl:px-12">
+          <div className="w-full max-w-none">
             <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground">{tool.category}</div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-6xl">{tool.name}</h1>
             <p className="mt-5 max-w-3xl text-base leading-8 text-muted-foreground md:text-lg">{getToolkitDescription(tool)}</p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <button onClick={() => void copyLink()} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
+              <button onClick={() => void copyLink()} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />} {copied ? "Copied" : "Copy link"}
               </button>
-              <Link href={`/toolkit/${randomTool.id}`} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
+              <Link href={`/toolkit/${randomTool.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
                 <Sparkles className="h-3.5 w-3.5" /> Random tool
               </Link>
-              <a href="#tool" onClick={jumpToSection("tool")} className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
+              <a href="#tool" onClick={jumpToSection("tool")} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
                 Try it now
               </a>
             </div>
@@ -391,7 +417,7 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
             </section>
 
             <section id="tool" className="mt-16 scroll-mt-24">
-              <div className="mb-6 flex items-center justify-between gap-4">
+              <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                 <div>
                   <h2 className="text-2xl font-semibold md:text-3xl">Live Tool</h2>
                   <p className="mt-2 text-sm text-muted-foreground">Interactive, client-side, and still running directly inside this docs page.</p>
@@ -423,7 +449,7 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
 
             {relatedTools.length > 0 && (
               <section className="mt-16">
-                <div className="mb-5 flex items-center justify-between gap-4">
+                <div className="mb-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                   <div>
                     <h2 className="text-2xl font-semibold md:text-3xl">Related Tools</h2>
                     <p className="mt-2 text-sm text-muted-foreground">More tools from the same category, so you can keep moving without going back to the full index.</p>
@@ -432,7 +458,7 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
                     Browse all <ExternalLink className="h-3.5 w-3.5" />
                   </Link>
                 </div>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                   {relatedTools.map((item) => (
                     <Link key={item.id} href={`/toolkit/${item.id}`} className="rounded-2xl border border-border bg-card p-4 transition hover:border-foreground/30 hover:bg-muted/30">
                       <div className="text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">{item.category}</div>
@@ -461,8 +487,28 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
           </div>
         </main>
 
-        <aside className="hidden self-start border-l border-border xl:block xl:sticky xl:top-[65px] xl:h-[calc(100vh-65px)]">
-          <div className="h-full overflow-auto px-6 py-8">
+        <aside
+          className="relative hidden shrink-0 border-l border-border transition-[width] duration-300 ease-out xl:block"
+          style={{ width: rightRailOpen ? 240 : 18 }}
+        >
+          <button
+            onClick={() => setRightRailOpen((current) => !current)}
+            className={
+              "absolute top-6 z-20 hidden h-16 w-7 items-center justify-center border border-border bg-background text-muted-foreground transition hover:w-8 hover:text-foreground xl:inline-flex " +
+              (rightRailOpen
+                ? "left-0 -translate-x-full rounded-l-2xl border-r-0"
+                : "left-0 rounded-none border-x-0 border-y-0 bg-transparent hover:bg-muted/30")
+            }
+            aria-label={rightRailOpen ? "Hide right navigation" : "Show right navigation"}
+          >
+            <PanelRight className={"h-4 w-4 transition-transform duration-300 " + (rightRailOpen ? "" : "rotate-180")} />
+          </button>
+          <div
+            className={
+              "sticky top-[65px] h-[calc(100vh-65px)] overflow-auto px-6 py-8 transition-all duration-300 ease-out " +
+              (rightRailOpen ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0 pointer-events-none")
+            }
+          >
             <div className="mb-6 flex gap-2">
               {[Sparkles, Copy, ExternalLink].map((Icon, index) => (
                 <div key={index} className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
@@ -485,20 +531,22 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
         </aside>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/92 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur lg:hidden">
-        <div className="grid grid-cols-4 gap-2">
-          <a href="#overview" onClick={jumpToSection("overview")} className={"rounded-2xl px-3 py-2 text-center text-[11px] font-mono uppercase tracking-widest transition " + (activeSection === "overview" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
+      <div className="fixed inset-x-0 bottom-3 z-40 px-3 pb-[env(safe-area-inset-bottom,0px)] pt-3 lg:hidden">
+        <div className="mx-auto max-w-[min(100%,22rem)] rounded-[24px] border border-border bg-background/96 p-2 shadow-[0_18px_48px_-24px_rgba(15,23,42,0.38)] backdrop-blur">
+          <div className="grid grid-cols-4 gap-2">
+            <a href="#overview" onClick={jumpToSection("overview")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "overview" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
             Overview
-          </a>
-          <a href="#tool" onClick={jumpToSection("tool")} className={"rounded-2xl px-3 py-2 text-center text-[11px] font-mono uppercase tracking-widest transition " + (activeSection === "tool" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
+            </a>
+            <a href="#tool" onClick={jumpToSection("tool")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "tool" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
             Tool
-          </a>
-          <a href="#usage" onClick={jumpToSection("usage")} className={"rounded-2xl px-3 py-2 text-center text-[11px] font-mono uppercase tracking-widest transition " + (activeSection === "usage" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
+            </a>
+            <a href="#usage" onClick={jumpToSection("usage")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "usage" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
             Steps
-          </a>
-          <Link href="/toolkit" className="rounded-2xl border border-border px-3 py-2 text-center text-[11px] font-mono uppercase tracking-widest text-muted-foreground">
+            </a>
+            <Link href="/toolkit" className="rounded-2xl border border-border px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
             All
-          </Link>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

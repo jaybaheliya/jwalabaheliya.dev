@@ -17,11 +17,11 @@ export function getSavedMode(): Mode {
     const saved = localStorage.getItem(KEY);
     if (saved === "light" || saved === "dark") return saved;
   } catch {}
-  return "dark";
+  return "light";
 }
 
 export function ThemeSwitcher() {
-  const [mode, setMode] = useState<Mode>("dark");
+  const [mode, setMode] = useState<Mode>("light");
 
   useEffect(() => {
     const m = getSavedMode();
