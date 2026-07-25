@@ -849,6 +849,83 @@ function UrlTool() {
   );
 }
 
+function SvgToCssTool() {
+  const [svg, setSvg] = useState(`<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="120" rx="24" fill="#18181b"/>
+  <path d="M28 60c10-16 22-24 36-24s26 8 36 24c-10 16-22 24-36 24S38 76 28 60Z" fill="#f59e0b"/>
+</svg>`);
+
+  const parsed = useMemo(() => {
+    const trimmed = svg.trim();
+    if (!trimmed) return { error: "Paste SVG markup to generate CSS.", dataUri: "", css: "", previewSvg: "" };
+
+    try {
+      const doc = new DOMParser().parseFromString(trimmed, "image/svg+xml");
+      if (doc.querySelector("parsererror")) {
+        return { error: "Invalid SVG markup. Check the tags and attributes.", dataUri: "", css: "", previewSvg: "" };
+      }
+
+      const svgEl = doc.documentElement;
+      svgEl.removeAttribute("width");
+      svgEl.removeAttribute("height");
+      svgEl.removeAttribute("style");
+      svgEl.setAttribute("width", "100%");
+      svgEl.setAttribute("height", "100%");
+      svgEl.setAttribute("preserveAspectRatio", svgEl.getAttribute("preserveAspectRatio") || "xMidYMid meet");
+
+      const compact = trimmed.replace(/>\s+</g, "><").replace(/\s{2,}/g, " ");
+      const encoded = encodeURIComponent(compact)
+        .replace(/%0A/g, "")
+        .replace(/%20/g, " ")
+        .replace(/%3D/g, "=")
+        .replace(/%3A/g, ":")
+        .replace(/%2F/g, "/");
+      const dataUri = `data:image/svg+xml,${encoded}`;
+      const css = `.element {\n  background-image: url("${dataUri}");\n  background-repeat: no-repeat;\n  background-position: center;\n  background-size: contain;\n}`;
+      const previewSvg = svgEl.outerHTML;
+
+      return { error: "", dataUri, css, previewSvg };
+    } catch {
+      return { error: "Could not parse that SVG.", dataUri: "", css: "", previewSvg: "" };
+    }
+  }, [svg]);
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-3">
+        <div className="text-xs font-mono text-muted-foreground">Paste raw SVG markup and get a CSS-ready background-image Data URI.</div>
+        <textarea value={svg} onChange={(e) => setSvg(e.target.value)} rows={14} className="w-full rounded-xl border border-border bg-background p-3 font-mono text-xs" />
+        {parsed.error
+          ? <div className="rounded-md border border-rose-500/40 bg-rose-500/10 p-2 text-xs font-mono text-rose-400">{parsed.error}</div>
+          : <CodeBlock code={parsed.dataUri} lang="data-uri" />}
+      </div>
+      <div className="space-y-3">
+        <div className="grid gap-3 md:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">SVG Preview</div>
+            <div className="grid min-h-[180px] place-items-center overflow-hidden rounded-lg border border-dashed border-border bg-white p-4 text-black">
+              <div
+                className="flex h-full max-h-[180px] w-full max-w-full items-center justify-center [&_svg]:max-h-full [&_svg]:max-w-full"
+                dangerouslySetInnerHTML={{ __html: parsed.error ? "" : parsed.previewSvg }}
+              />
+            </div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="mb-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">CSS Background</div>
+            <div className="grid min-h-[180px] place-items-center rounded-lg border border-dashed border-border bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.18),_transparent_55%),linear-gradient(135deg,_#111827,_#020617)] p-4">
+              <div
+                className="h-32 w-32 rounded-2xl border border-white/10 bg-center bg-no-repeat bg-contain"
+                style={{ backgroundImage: parsed.error ? "none" : `url("${parsed.dataUri}")` }}
+              />
+            </div>
+          </div>
+        </div>
+        <CodeBlock code={parsed.css} lang="css" />
+      </div>
+    </div>
+  );
+}
+
 function RegexTester() {
   const [pat, setPat] = useState("\\b\\w+@\\w+\\.[a-z]+\\b");
   const [flags, setFlags] = useState("gi");
@@ -2576,6 +2653,313 @@ function ImageToBase64() {
   const [out, setOut] = useState("");
   return <div className="space-y-3"><label className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm cursor-pointer"><ImageIcon className="h-4 w-4" /> Pick image<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; const r = new FileReader(); r.onload = () => setOut(String(r.result)); r.readAsDataURL(f); }} /></label>{out && <><img src={out} alt="preview" className="max-h-40 rounded-lg border border-border" /><CodeBlock code={out.slice(0, 400) + (out.length > 400 ? "…" : "")} /></>}</div>;
 }
+function ImageConverterTool() {
+  const [files, setFiles] = useState<File[]>([]);
+  const [items, setItems] = useState<Array<{
+    id: string;
+    fileName: string;
+    inputType: string;
+    inputSize: number;
+    width: number;
+    height: number;
+    sourceUrl: string;
+    outputUrl: string;
+    outputSize: number | null;
+    outputBlob: Blob | null;
+    error: string;
+  }>>([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [zipBusy, setZipBusy] = useState(false);
+  const [format, setFormat] = useState<"png" | "jpeg" | "webp">("webp");
+  const [quality, setQuality] = useState(0.9);
+
+  useEffect(() => () => {
+    items.forEach((item) => {
+      URL.revokeObjectURL(item.sourceUrl);
+      URL.revokeObjectURL(item.outputUrl);
+    });
+  }, [items]);
+
+  const fmtLabel = { png: "PNG", jpeg: "JPEG", webp: "WebP" } as const;
+  const mime = { png: "image/png", jpeg: "image/jpeg", webp: "image/webp" } as const;
+  const showQuality = format === "jpeg" || format === "webp";
+  const prettySize = (bytes: number | null) => bytes == null ? "-" : bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  const totalOriginal = items.reduce((sum, item) => sum + item.inputSize, 0);
+  const totalConverted = items.reduce((sum, item) => sum + (item.outputSize ?? 0), 0);
+  const hasOutput = items.some((item) => item.outputUrl);
+  const convertedCount = items.filter((item) => item.outputUrl && !item.error).length;
+
+  const convertOne = async (nextFile: File, nextFormat: "png" | "jpeg" | "webp", nextQuality: number) => {
+    const sourceUrl = URL.createObjectURL(nextFile);
+    const fallback = {
+      id: `${nextFile.name}-${nextFile.size}-${nextFile.lastModified}`,
+      fileName: nextFile.name,
+      inputType: nextFile.type || "image file",
+      inputSize: nextFile.size,
+      width: 0,
+      height: 0,
+      sourceUrl,
+      outputUrl: "",
+      outputSize: null,
+      outputBlob: null,
+      error: "",
+    };
+
+    let objectUrl = "";
+    setBusy(true);
+    try {
+      objectUrl = URL.createObjectURL(nextFile);
+      const img = new Image();
+      img.decoding = "async";
+
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Could not load this image."));
+        img.src = objectUrl;
+      });
+
+      const width = img.naturalWidth;
+      const height = img.naturalHeight;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas is not available in this browser.");
+
+      if (nextFormat === "jpeg") {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+      } else {
+        ctx.clearRect(0, 0, width, height);
+      }
+
+      ctx.drawImage(img, 0, 0);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, mime[nextFormat], nextQuality));
+      if (!blob) throw new Error("Conversion failed for the selected format.");
+
+      return {
+        ...fallback,
+        width,
+        height,
+        outputUrl: URL.createObjectURL(blob),
+        outputSize: blob.size,
+        outputBlob: blob,
+      };
+    } catch (err) {
+      return {
+        ...fallback,
+        error: err instanceof Error ? err.message : "Conversion failed.",
+      };
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  const rebuildItems = async (nextFiles: File[], nextFormat: "png" | "jpeg" | "webp", nextQuality: number) => {
+    if (nextFiles.length === 0) {
+      setItems((prev) => {
+        prev.forEach((item) => {
+          URL.revokeObjectURL(item.sourceUrl);
+          URL.revokeObjectURL(item.outputUrl);
+        });
+        return [];
+      });
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    const nextItems = [];
+    for (const nextFile of nextFiles) {
+      nextItems.push(await convertOne(nextFile, nextFormat, nextQuality));
+    }
+    setItems((prev) => {
+      prev.forEach((item) => {
+        URL.revokeObjectURL(item.sourceUrl);
+        URL.revokeObjectURL(item.outputUrl);
+      });
+      return nextItems;
+    });
+    setBusy(false);
+  };
+
+  const handlePick = async (pickedList: FileList | null) => {
+    const picked = Array.from(pickedList || []).filter((file) => file.type.startsWith("image/"));
+    if (picked.length === 0) return;
+    setFiles(picked);
+    await rebuildItems(picked, format, quality);
+  };
+
+  const updateFormat = async (nextFormat: "png" | "jpeg" | "webp") => {
+    setFormat(nextFormat);
+    if (files.length) await rebuildItems(files, nextFormat, quality);
+  };
+
+  const updateQuality = async (nextQuality: number) => {
+    setQuality(nextQuality);
+    if (files.length) await rebuildItems(files, format, nextQuality);
+  };
+
+  const downloadItem = (item: { fileName: string; outputUrl: string }) => {
+    const a = document.createElement("a");
+    a.href = item.outputUrl;
+    a.download = (item.fileName.replace(/\.[^.]+$/, "") || "converted-image") + "." + format;
+    a.click();
+  };
+
+  const downloadAll = () => {
+    items.filter((item) => item.outputUrl).forEach((item, index) => {
+      window.setTimeout(() => downloadItem(item), index * 120);
+    });
+  };
+
+  const downloadZip = async () => {
+    const ready = items.filter((item) => item.outputBlob);
+    if (ready.length === 0) return;
+    setZipBusy(true);
+    try {
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      ready.forEach((item) => {
+        zip.file((item.fileName.replace(/\.[^.]+$/, "") || "converted-image") + "." + format, item.outputBlob as Blob);
+      });
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `converted-images-${format}.zip`;
+      a.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setError("Could not generate ZIP download.");
+    } finally {
+      setZipBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm">
+          <ImageIcon className="h-4 w-4" /> Pick images
+          <input type="file" multiple accept="image/png,image/jpeg,image/webp,image/*" className="hidden" onChange={(e) => void handlePick(e.target.files)} />
+        </label>
+        <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">
+          {(["png", "jpeg", "webp"] as const).map((f) => (
+            <button key={f} onClick={() => void updateFormat(f)} className={"rounded-full px-3 py-1 uppercase " + (format === f ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
+              {fmtLabel[f]}
+            </button>
+          ))}
+        </div>
+        {showQuality && (
+          <div className="flex min-w-[220px] flex-1 items-center gap-3 rounded-full border border-border px-4 py-2">
+            <span className="text-[11px] font-mono uppercase text-muted-foreground">Quality</span>
+            <input type="range" min={0.1} max={1} step={0.05} value={quality} onChange={(e) => void updateQuality(+e.target.value)} className="flex-1 accent-[color:var(--accent)]" />
+            <span className="w-10 text-right text-xs font-mono">{Math.round(quality * 100)}</span>
+          </div>
+        )}
+        {hasOutput && (
+          <>
+            <button onClick={downloadAll} className="rounded-full border border-border px-4 py-2 text-xs font-mono uppercase hover:border-accent hover:text-accent">
+              Download all
+            </button>
+            <button onClick={() => void downloadZip()} disabled={zipBusy} className="rounded-full bg-accent px-4 py-2 text-xs font-mono uppercase text-accent-foreground disabled:opacity-60">
+              {zipBusy ? "Zipping..." : "Download ZIP"}
+            </button>
+          </>
+        )}
+      </div>
+
+      {!items.length ? (
+        <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          Upload one or many images to convert them between PNG, JPEG, and WebP right in the browser.
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Files</div>
+              <div className="mt-2 font-display text-2xl">{items.length}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Converted</div>
+              <div className="mt-2 font-display text-2xl">{convertedCount}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Original Total</div>
+              <div className="mt-2 font-display text-2xl">{prettySize(totalOriginal)}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Converted Total</div>
+              <div className="mt-2 font-display text-2xl">{prettySize(totalConverted)}</div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {items.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-border bg-card p-4">
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate font-display text-base font-semibold">{item.fileName}</div>
+                    <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{item.inputType}</div>
+                  </div>
+                  {item.outputUrl && (
+                    <button onClick={() => downloadItem(item)} className="shrink-0 rounded-full bg-accent px-3 py-1.5 text-[11px] font-mono uppercase text-accent-foreground">
+                      Download
+                    </button>
+                  )}
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <div className="mb-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Original</div>
+                    <div className="grid min-h-[160px] place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/20 p-3">
+                      <img src={item.sourceUrl} alt={`${item.fileName} original preview`} className="max-h-[150px] max-w-full rounded-lg object-contain" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Converted</div>
+                    <div className="grid min-h-[160px] place-items-center overflow-hidden rounded-xl border border-dashed border-border bg-muted/20 p-3">
+                      {item.outputUrl
+                        ? <img src={item.outputUrl} alt={`${item.fileName} converted preview`} className="max-h-[150px] max-w-full rounded-lg object-contain" />
+                        : <div className="text-xs font-mono text-muted-foreground">{item.error || "No output"}</div>}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs font-mono text-muted-foreground">
+                  <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                    <span>Dimensions</span>
+                    <span>{item.width && item.height ? `${item.width} x ${item.height}` : "-"}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                    <span>Original</span>
+                    <span>{prettySize(item.inputSize)}</span>
+                  </div>
+                  <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+                    <span>Converted</span>
+                    <span>{prettySize(item.outputSize)}</span>
+                  </div>
+                </div>
+                {item.error && <div className="mt-3 rounded-md border border-rose-500/40 bg-rose-500/10 p-2 text-xs font-mono text-rose-400">{item.error}</div>}
+              </div>
+            ))}
+          </div>
+
+          {format === "jpeg" && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs font-mono text-amber-300">
+              JPEG does not support transparency, so transparent areas are flattened onto white.
+            </div>
+          )}
+          {busy && <div className="text-xs font-mono text-muted-foreground">Converting files...</div>}
+          {error && <div className="rounded-md border border-rose-500/40 bg-rose-500/10 p-2 text-xs font-mono text-rose-400">{error}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+
 function CurlToFetch() {
   const [t, setT] = useState(`curl -X POST https://api.example.com/users -H 'Content-Type: application/json' -d '{"name":"JB"}'`);
   const conv = useMemo(() => {
@@ -2909,6 +3293,8 @@ const TOOLS: Tool[] = [
   { id: "cheat", name: "CSS Cheatsheet", category: "CSS", keywords: "reference snippets layout typography responsive animation forms modern css", icon: Percent, render: () => <CheatSheetComplete /> },
   { id: "diff", name: "Text Diff Checker", category: "Utilities", keywords: "compare", icon: FileText, render: () => <DiffChecker /> },
   { id: "js-gallery", name: "JavaScript Snippets — 70 Ready-made", category: "JavaScript", keywords: "modal accordion tabs dropdown sidebar hamburger slider carousel typing scramble password validation debounce throttle fetch search pagination drag drop upload counter clock stopwatch quote uuid localstorage query params formdata custom event download event delegation reduce map promise all memoize flatten group by retry deep clone sort once interview prep closure currying pipe binary search dfs event loop polyfill bind call apply lru cache", icon: Code2, render: () => <SnippetsGallery /> },
+  { id: "svg-css", name: "SVG to CSS Converter", category: "Utilities", keywords: "data uri background image encoder", icon: ImageIcon, render: () => <SvgToCssTool /> },
+  { id: "img-convert", name: "Image Format Converter", category: "Utilities", keywords: "png jpeg jpg webp convert image", icon: ImageIcon, render: () => <ImageConverterTool /> },
 ];
 
 
