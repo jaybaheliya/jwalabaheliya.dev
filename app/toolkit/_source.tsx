@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { resolveToolkitId } from "@/lib/toolkit-content";
 import {
   ArrowLeft, Copy, Check, Search, Star, X, Palette, Type, Square, Smartphone,
   Code2, Ruler, Wand2, Gauge, Hash, Sparkles, Layout, Zap, Component, Waves,
@@ -30,6 +31,7 @@ function ToolkitPage() {
   const [favs, setFavs] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [spotlightId, setSpotlightId] = useState("flex");
 
   useEffect(() => {
     try {
@@ -60,6 +62,13 @@ function ToolkitPage() {
     });
   }, [q, cat, favs, recent]);
 
+  const categoryCounts = useMemo(() => {
+    return TOOLS.reduce<Record<string, number>>((acc, tool) => {
+      acc[tool.category] = (acc[tool.category] || 0) + 1;
+      return acc;
+    }, {});
+  }, []);
+
   const searchRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
@@ -74,6 +83,14 @@ function ToolkitPage() {
   }, []);
 
   const openTool = TOOLS.find((t) => t.id === openId);
+  const spotlightTool = TOOLS.find((tool) => tool.id === spotlightId) ?? filtered[0] ?? TOOLS[0];
+  const spotlightTags = (spotlightTool.keywords || `${spotlightTool.category.toLowerCase()} live preview copy ready`)
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 4);
+  const featuredTools = ["flex", "grid-overlay", "json-types", "img-placeholder"]
+    .map((id) => TOOLS.find((tool) => tool.id === id))
+    .filter((tool): tool is Tool => Boolean(tool));
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -126,6 +143,115 @@ function ToolkitPage() {
         </p>
       </section>
 
+      <section className="mx-auto max-w-[1400px] px-4 md:px-8 pb-8">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,.95fr)]">
+          <div className="relative overflow-hidden rounded-[32px] border border-border bg-card p-6 md:p-8">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(245,158,11,0.14),transparent_26%),linear-gradient(180deg,rgba(127,127,127,0.05),transparent)]" />
+            <div className="relative">
+              <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Interactive Spotlight</div>
+              <div className="mt-3 max-w-3xl font-display text-3xl font-bold leading-[1.06] md:text-5xl">
+                Explore the toolkit like a <span className="text-accent">preview-driven lab</span>, not just a tool list.
+              </div>
+              <p className="mt-4 max-w-2xl text-sm text-muted-foreground md:text-base">
+                Hover any tool card below and this spotlight updates instantly. It makes the page feel more alive and helps people understand the route, category, and value before opening a tool.
+              </p>
+
+              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Tool Count</div>
+                  <div className="mt-2 text-3xl font-semibold">{TOOLS.length}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">live utilities in the toolkit</div>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">JavaScript</div>
+                  <div className="mt-2 text-3xl font-semibold">{categoryCounts.JavaScript || 0}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">code and conversion focused tools</div>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Favorites</div>
+                  <div className="mt-2 text-3xl font-semibold">{favs.length}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">saved for quick return visits</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[32px] border border-border bg-card p-5 md:p-6">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(127,127,127,0.05),transparent)]" />
+            <div className="relative space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Live Spotlight</div>
+                  <div className="mt-2 text-2xl font-semibold">{spotlightTool.name}</div>
+                  <div className="mt-1 text-sm text-muted-foreground">{spotlightTool.category} · route preview</div>
+                </div>
+                <Link href={`/toolkit/${spotlightTool.id}`} className="rounded-full border border-border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide text-muted-foreground transition hover:border-accent hover:text-accent">
+                  /toolkit/{spotlightTool.id}
+                </Link>
+              </div>
+
+              <div className="rounded-[28px] border border-border bg-background p-4">
+                <div className="grid gap-4 md:grid-cols-[1.1fr_.9fr]">
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-border bg-card p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/15 text-accent">
+                          <spotlightTool.icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <div className="font-display text-lg font-semibold">{spotlightTool.name}</div>
+                          <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">{spotlightTool.category}</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {spotlightTags.map((tag) => (
+                          <span key={tag} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="rounded-2xl border border-dashed border-border bg-card p-4">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Preview</div>
+                        <div className="mt-2 text-sm text-foreground">Live controls</div>
+                      </div>
+                      <div className="rounded-2xl border border-dashed border-border bg-card p-4">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Output</div>
+                        <div className="mt-2 text-sm text-foreground">Copy-ready result</div>
+                      </div>
+                      <div className="rounded-2xl border border-dashed border-border bg-card p-4">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Docs</div>
+                        <div className="mt-2 text-sm text-foreground">Shareable route</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[24px] border border-border bg-[linear-gradient(180deg,rgba(127,127,127,0.08),transparent)] p-4">
+                    <div className="space-y-3">
+                      <div className="rounded-2xl border border-border/70 bg-card p-3">
+                        <div className="h-3 w-20 rounded-full bg-accent/40" />
+                        <div className="mt-3 h-10 rounded-2xl bg-foreground/10" />
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                          <div className="h-16 rounded-2xl bg-accent/20" />
+                          <div className="h-16 rounded-2xl bg-foreground/10" />
+                          <div className="h-16 rounded-2xl bg-accent/15" />
+                        </div>
+                      </div>
+                      <div className="rounded-2xl border border-border/70 bg-card p-3">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Hint</div>
+                        <div className="mt-2 text-sm text-muted-foreground">Move across the grid below and the spotlight refreshes instantly.</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-[1400px] px-4 md:px-8 pb-24">
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
@@ -137,17 +263,21 @@ function ToolkitPage() {
               const Icon = t.icon;
               const isFav = favs.includes(t.id);
               return (
-                <button
+                <Link
                   key={t.id}
-                  onClick={() => { setOpenId(t.id); markRecent(t.id); }}
-                  className="group relative text-left rounded-2xl border border-border bg-card p-4 hover:border-accent/60 hover:-translate-y-0.5 transition-all"
+                  href={`/toolkit/${t.id}`}
+                  onClick={() => { markRecent(t.id); }}
+                  onMouseEnter={() => setSpotlightId(t.id)}
+                  onFocus={() => setSpotlightId(t.id)}
+                  className={"group relative text-left rounded-2xl border bg-card p-4 transition-all hover:-translate-y-0.5 " + (spotlightTool.id === t.id ? "border-accent/70 shadow-[0_0_0_1px_rgba(59,130,246,0.16)]" : "border-border hover:border-accent/60")}
                 >
+                  <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent opacity-0 transition group-hover:opacity-100" />
                   <div className="flex items-start justify-between gap-2">
                     <div className="h-10 w-10 rounded-xl bg-accent/15 text-accent grid place-items-center">
                       <Icon className="h-5 w-5" />
                     </div>
                     <span
-                      onClick={(e) => { e.stopPropagation(); toggleFav(t.id); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFav(t.id); }}
                       className={"h-8 w-8 grid place-items-center rounded-full border border-transparent hover:border-border transition " + (isFav ? "text-accent" : "text-muted-foreground/60")}
                       aria-label="favorite"
                       role="button"
@@ -158,7 +288,7 @@ function ToolkitPage() {
                   <div className="mt-3 font-display text-base font-semibold">{t.name}</div>
                   <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{t.category}</div>
                   <div className="mt-3 text-xs text-accent opacity-0 group-hover:opacity-100 transition font-mono">Open →</div>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -395,20 +525,60 @@ function Neumorphism() {
 }
 
 function CssGrid() {
+  const [mode, setMode] = useState<"fixed" | "auto-fit">("fixed");
   const [cols, setCols] = useState(3), [rows, setRows] = useState(2), [gap, setGap] = useState(12);
-  const css = "display: grid;\ngrid-template-columns: repeat(" + cols + ", 1fr);\ngrid-template-rows: repeat(" + rows + ", 1fr);\ngap: " + gap + "px;";
+  const [minCol, setMinCol] = useState(160), [rowHeight, setRowHeight] = useState(80);
+  const [justify, setJustify] = useState("stretch"), [align, setAlign] = useState("stretch");
+  const [selected, setSelected] = useState(1), [colSpan, setColSpan] = useState(2), [rowSpan, setRowSpan] = useState(1);
+  const total = mode === "fixed" ? cols * rows : 8;
+  const gridTemplateColumns = mode === "fixed" ? "repeat(" + cols + ", minmax(0, 1fr))" : "repeat(auto-fit, minmax(" + minCol + "px, 1fr))";
+  const gridTemplateRows = mode === "fixed" ? "repeat(" + rows + ", minmax(" + rowHeight + "px, auto))" : "auto";
+  const css = "display: grid;\n" +
+    "grid-template-columns: " + gridTemplateColumns + ";\n" +
+    (mode === "fixed" ? "grid-template-rows: " + gridTemplateRows + ";\n" : "") +
+    "gap: " + gap + "px;\n" +
+    "justify-items: " + justify + ";\n" +
+    "align-items: " + align + ";";
   return (
-    <div className="grid gap-5 md:grid-cols-2">
+    <div className="grid gap-5 xl:grid-cols-[1.05fr_.95fr]">
       <div className="space-y-3">
-        <Row label="Columns"><SliderInput value={cols} onChange={setCols} min={1} max={12} /></Row>
-        <Row label="Rows"><SliderInput value={rows} onChange={setRows} min={1} max={8} /></Row>
+        <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">
+          {(["fixed", "auto-fit"] as const).map((m) => <button key={m} onClick={() => setMode(m)} className={"rounded-full px-3 py-1 uppercase " + (mode === m ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>{m}</button>)}
+        </div>
+        {mode === "fixed" ? (
+          <>
+            <Row label="Columns"><SliderInput value={cols} onChange={setCols} min={1} max={12} /></Row>
+            <Row label="Rows"><SliderInput value={rows} onChange={setRows} min={1} max={8} /></Row>
+          </>
+        ) : (
+          <Row label="Min col"><SliderInput value={minCol} onChange={setMinCol} min={100} max={280} step={10} /></Row>
+        )}
+        <Row label="Row size"><SliderInput value={rowHeight} onChange={setRowHeight} min={48} max={180} step={4} /></Row>
         <Row label="Gap"><SliderInput value={gap} onChange={setGap} min={0} max={60} /></Row>
+        <div className="grid gap-3 md:grid-cols-2 text-xs font-mono">
+          <div className="flex items-center gap-2"><span className="w-24 uppercase text-muted-foreground">justify</span><SelectControl value={justify} onChange={setJustify} options={["stretch", "start", "center", "end"]} /></div>
+          <div className="flex items-center gap-2"><span className="w-24 uppercase text-muted-foreground">align</span><SelectControl value={align} onChange={setAlign} options={["stretch", "start", "center", "end"]} /></div>
+        </div>
         <CodeBlock code={css} />
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+          <div className="font-display text-base font-semibold">Selected item</div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="flex items-center gap-2 text-xs font-mono"><span className="w-16 uppercase text-muted-foreground">item</span><SelectControl value={String(selected)} onChange={(v) => setSelected(Number(v))} options={Array.from({ length: Math.min(total, 9) }, (_, i) => String(i + 1))} /></div>
+            <Row label="Col span"><SliderInput value={colSpan} onChange={setColSpan} min={1} max={Math.max(mode === "fixed" ? cols : 4, 1)} /></Row>
+            <Row label="Row span"><SliderInput value={rowSpan} onChange={setRowSpan} min={1} max={4} /></Row>
+          </div>
+        </div>
       </div>
       <Preview>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(" + cols + ",1fr)", gridTemplateRows: "repeat(" + rows + ",1fr)", gap, width: "100%", height: 220 }}>
-          {Array.from({ length: cols * rows }).map((_, i) => (
-            <div key={i} className="rounded-md bg-accent/30 border border-accent/50 grid place-items-center text-xs font-mono text-accent">{i + 1}</div>
+        <div style={{ display: "grid", gridTemplateColumns, gridTemplateRows, justifyItems: justify as React.CSSProperties["justifyItems"], alignItems: align as React.CSSProperties["alignItems"], gap, width: "100%", minHeight: 260 }}>
+          {Array.from({ length: total }).map((_, i) => (
+            <div
+              key={i}
+              style={i + 1 === selected ? { gridColumn: "span " + colSpan, gridRow: "span " + rowSpan } : undefined}
+              className={"rounded-md border grid place-items-center text-xs font-mono transition-all " + (i + 1 === selected ? "bg-accent text-accent-foreground border-accent" : "bg-accent/20 border-accent/40 text-accent")}
+            >
+              {i + 1}
+            </div>
           ))}
         </div>
       </Preview>
@@ -420,24 +590,82 @@ function FlexPlay() {
   const [dir, setDir] = useState<"row" | "row-reverse" | "column" | "column-reverse">("row");
   const [jc, setJc] = useState("flex-start");
   const [ai, setAi] = useState("stretch");
+  const [ac, setAc] = useState("stretch");
   const [wrap, setWrap] = useState(false);
-  const [gap, setGap] = useState(8);
-  const css = "display: flex;\nflex-direction: " + dir + ";\njustify-content: " + jc + ";\nalign-items: " + ai + ";\nflex-wrap: " + (wrap ? "wrap" : "nowrap") + ";\ngap: " + gap + "px;";
+  const [gap, setGap] = useState(8), [pad, setPad] = useState(12);
+  const [selected, setSelected] = useState(2), [grow, setGrow] = useState(1), [shrink, setShrink] = useState(1), [basis, setBasis] = useState(140), [order, setOrder] = useState(0), [itemAlign, setItemAlign] = useState("auto");
+  const css = "display: flex;\nflex-direction: " + dir + ";\njustify-content: " + jc + ";\nalign-items: " + ai + ";\nalign-content: " + ac + ";\nflex-wrap: " + (wrap ? "wrap" : "nowrap") + ";\ngap: " + gap + "px;\npadding: " + pad + "px;";
+  const itemCss = ".item-" + selected + " {\n  order: " + order + ";\n  flex: " + grow + " " + shrink + " " + basis + "px;\n  align-self: " + itemAlign + ";\n}";
+  const isColumn = dir.includes("column");
   return (
-    <div className="grid gap-5 md:grid-cols-2">
-      <div className="space-y-3 text-xs font-mono">
-        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">direction</span><SelectControl value={dir} onChange={(value) => setDir(value as typeof dir)} options={["row", "row-reverse", "column", "column-reverse"]} /></div>
-        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">justify</span><SelectControl value={jc} onChange={setJc} options={["flex-start", "center", "flex-end", "space-between", "space-around", "space-evenly"]} /></div>
-        <div className="flex flex-wrap gap-2 items-center"><span className="w-24 uppercase text-muted-foreground">align</span><SelectControl value={ai} onChange={setAi} options={["stretch", "flex-start", "center", "flex-end", "baseline"]} /></div>
-        <label className="flex items-center gap-2"><input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} /> wrap</label>
-        <Row label="Gap"><SliderInput value={gap} onChange={setGap} min={0} max={60} /></Row>
-        <CodeBlock code={css} />
-      </div>
-      <Preview>
-        <div style={{ display: "flex", flexDirection: dir, justifyContent: jc, alignItems: ai, flexWrap: wrap ? "wrap" : "nowrap", gap, width: "100%", height: 220 }}>
-          {[60, 90, 40, 80, 50].map((w, i) => <div key={i} style={{ width: w }} className="h-12 rounded bg-accent/40 border border-accent/60 grid place-items-center text-xs">{i + 1}</div>)}
+    <div className="grid gap-5 2xl:grid-cols-[minmax(340px,420px)_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-4 text-xs font-mono">
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+          <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">container controls</div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div className="space-y-1">
+              <div className="uppercase tracking-widest text-muted-foreground">direction</div>
+              <SelectControl value={dir} onChange={(value) => setDir(value as typeof dir)} options={["row", "row-reverse", "column", "column-reverse"]} />
+            </div>
+            <div className="space-y-1">
+              <div className="uppercase tracking-widest text-muted-foreground">justify</div>
+              <SelectControl value={jc} onChange={setJc} options={["flex-start", "center", "flex-end", "space-between", "space-around", "space-evenly"]} />
+            </div>
+            <div className="space-y-1">
+              <div className="uppercase tracking-widest text-muted-foreground">align items</div>
+              <SelectControl value={ai} onChange={setAi} options={["stretch", "flex-start", "center", "flex-end", "baseline"]} />
+            </div>
+            <div className="space-y-1">
+              <div className="uppercase tracking-widest text-muted-foreground">align content</div>
+              <SelectControl value={ac} onChange={setAc} options={["stretch", "flex-start", "center", "flex-end", "space-between", "space-around"]} />
+            </div>
+          </div>
+          <label className="flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2"><input type="checkbox" checked={wrap} onChange={(e) => setWrap(e.target.checked)} /> wrap items</label>
+          <Row label="Gap"><SliderInput value={gap} onChange={setGap} min={0} max={60} /></Row>
+          <Row label="Padding"><SliderInput value={pad} onChange={setPad} min={0} max={40} /></Row>
+          <CodeBlock code={css} />
         </div>
-      </Preview>
+
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-4">
+          <div className="font-display text-base font-semibold">Selected item</div>
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div className="space-y-1">
+              <div className="uppercase tracking-widest text-muted-foreground">item</div>
+              <SelectControl value={String(selected)} onChange={(v) => setSelected(Number(v))} options={["1", "2", "3", "4", "5"]} />
+            </div>
+            <div className="space-y-1">
+              <div className="uppercase tracking-widest text-muted-foreground">align self</div>
+              <SelectControl value={itemAlign} onChange={setItemAlign} options={["auto", "stretch", "flex-start", "center", "flex-end", "baseline"]} />
+            </div>
+            <Row label="Grow"><SliderInput value={grow} onChange={setGrow} min={0} max={4} /></Row>
+            <Row label="Shrink"><SliderInput value={shrink} onChange={setShrink} min={0} max={4} /></Row>
+            <Row label="Basis"><SliderInput value={basis} onChange={setBasis} min={40} max={220} step={10} /></Row>
+            <Row label="Order"><SliderInput value={order} onChange={setOrder} min={-3} max={5} /></Row>
+          </div>
+          <CodeBlock code={itemCss} lang="css" />
+        </div>
+      </div>
+      <div className="min-w-0 space-y-3">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-border bg-card px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">main axis</div>
+            <div className="mt-1 text-sm font-semibold">{isColumn ? "vertical" : "horizontal"}</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">cross axis</div>
+            <div className="mt-1 text-sm font-semibold">{isColumn ? "horizontal" : "vertical"}</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card px-3 py-2">
+            <div className="text-[10px] uppercase tracking-[0.28em] text-muted-foreground">selected flex</div>
+            <div className="mt-1 text-sm font-semibold">{grow} {shrink} {basis}px</div>
+          </div>
+        </div>
+        <Preview className="overflow-hidden">
+          <div style={{ display: "flex", flexDirection: dir, justifyContent: jc, alignItems: ai, alignContent: ac as React.CSSProperties["alignContent"], flexWrap: wrap ? "wrap" : "nowrap", gap, padding: pad, width: "100%", minHeight: isColumn ? 420 : 300, minWidth: 0 }}>
+            {[110, 150, 90, 130, 100].map((w, i) => <div key={i} style={i + 1 === selected ? { width: isColumn ? "100%" : w, minWidth: isColumn ? undefined : w, minHeight: isColumn ? basis : undefined, order, flex: grow + " " + shrink + " " + basis + "px", alignSelf: itemAlign as React.CSSProperties["alignSelf"] } : { width: isColumn ? "100%" : w, minWidth: isColumn ? undefined : w, minHeight: isColumn ? Math.max(72, w) : undefined }} className={"rounded-xl border grid place-items-center px-3 text-xs transition-all " + (isColumn ? "h-auto" : "h-14") + " " + (i + 1 === selected ? "bg-accent text-accent-foreground border-accent" : "bg-accent/35 border-accent/60 text-foreground")}>{i + 1}</div>)}
+          </div>
+        </Preview>
+      </div>
     </div>
   );
 }
@@ -3241,6 +3469,710 @@ function ComponentsLibrary() {
   );
 }
 
+function SvgOptimizerTool() {
+  const [svg, setSvg] = useState(`<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g class="icon-root" data-name="demo">
+    <rect width="120" height="120" rx="24" fill="#111827"/>
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M30 60c0-16.569 13.431-30 30-30s30 13.431 30 30-13.431 30-30 30-30-13.431-30-30Z" fill="#f59e0b"/>
+  </g>
+</svg>`);
+  const out = useMemo(() => {
+    try {
+      const doc = new DOMParser().parseFromString(svg.trim(), "image/svg+xml");
+      const root = doc.documentElement;
+      if (doc.querySelector("parsererror") || root.nodeName !== "svg") throw new Error("Invalid SVG");
+      root.querySelectorAll("*").forEach((el) => ["class", "data-name", "id", "style", "xml:space", "xmlns:xlink"].forEach((a) => el.removeAttribute(a)));
+      root.removeAttribute("width"); root.removeAttribute("height"); root.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+      const clean = root.outerHTML.replace(/>\s+</g, "><").replace(/\s{2,}/g, " ").trim();
+      const jsx = clean.replace(/class=/g, "className=").replace(/fill-rule=/g, "fillRule=").replace(/clip-rule=/g, "clipRule=").replace(/stroke-width=/g, "strokeWidth=").replace(/stroke-linecap=/g, "strokeLinecap=").replace(/stroke-linejoin=/g, "strokeLinejoin=");
+      return { clean, jsx, preview: clean, error: "" };
+    } catch {
+      return { clean: "", jsx: "", preview: "", error: "SVG parsing failed." };
+    }
+  }, [svg]);
+  return <div className="grid gap-4 lg:grid-cols-2"><div className="space-y-3"><textarea value={svg} onChange={(e) => setSvg(e.target.value)} rows={14} className="w-full rounded-xl border border-border bg-background p-3 font-mono text-xs" />{out.error ? <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400">{out.error}</div> : <CodeBlock code={out.clean} lang="svg" />}</div><div className="space-y-3"><Preview dark={false} className="overflow-hidden [&_svg]:max-h-56 [&_svg]:max-w-full"><div dangerouslySetInnerHTML={{ __html: out.preview }} /></Preview><CodeBlock code={out.jsx} lang="jsx" /></div></div>;
+}
+
+function HtmlJsxTool() {
+  const [mode, setMode] = useState<"html-jsx" | "jsx-html">("html-jsx");
+  const [value, setValue] = useState(`<label class="field">
+  <input readonly tabindex="0" />
+</label>`);
+  const out = useMemo(() => mode === "html-jsx" ? value.replace(/class=/g, "className=").replace(/for=/g, "htmlFor=").replace(/readonly/g, "readOnly").replace(/tabindex=/g, "tabIndex=") : value.replace(/className=/g, "class=").replace(/htmlFor=/g, "for=").replace(/readOnly/g, "readonly").replace(/tabIndex=/g, "tabindex="), [mode, value]);
+  return <div className="space-y-3"><div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">{([["html-jsx", "HTML → JSX"], ["jsx-html", "JSX → HTML"]] as const).map(([id, label]) => <button key={id} onClick={() => setMode(id)} className={"rounded-full px-3 py-1 " + (mode === id ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>{label}</button>)}</div><div className="grid gap-4 lg:grid-cols-2"><textarea value={value} onChange={(e) => setValue(e.target.value)} rows={12} className="rounded-xl border border-border bg-background p-3 font-mono text-xs" /><CodeBlock code={out} lang={mode === "html-jsx" ? "jsx" : "html"} /></div></div>;
+}
+
+function HtmlJsxToolFixed() {
+  const [mode, setMode] = useState<"html-jsx" | "jsx-html">("html-jsx");
+  const [value, setValue] = useState(`<label class="field" for="email">
+  <input readonly tabindex="0" style="border-radius: 12px; background-color: #111827;" />
+</label>`);
+
+  const out = useMemo(() => {
+    const htmlToJsxAttrs: Record<string, string> = {
+      class: "className",
+      for: "htmlFor",
+      tabindex: "tabIndex",
+      readonly: "readOnly",
+      maxlength: "maxLength",
+      minlength: "minLength",
+      autocomplete: "autoComplete",
+      autofocus: "autoFocus",
+      spellcheck: "spellCheck",
+      contenteditable: "contentEditable",
+      srcset: "srcSet",
+      crossorigin: "crossOrigin",
+      colspan: "colSpan",
+      rowspan: "rowSpan",
+      cellpadding: "cellPadding",
+      cellspacing: "cellSpacing",
+      fillrule: "fillRule",
+      cliprule: "clipRule",
+      strokewidth: "strokeWidth",
+      strokelinecap: "strokeLinecap",
+      strokelinejoin: "strokeLinejoin",
+      strokeopacity: "strokeOpacity",
+      fillopacity: "fillOpacity",
+      viewbox: "viewBox",
+    };
+    const jsxToHtmlAttrs: Record<string, string> = Object.fromEntries(
+      Object.entries(htmlToJsxAttrs).map(([htmlAttr, jsxAttr]) => [jsxAttr, htmlAttr]),
+    );
+    const booleanAttrs = new Set(["disabled", "checked", "selected", "multiple", "required", "readonly", "autofocus", "novalidate", "hidden", "open", "controls", "loop", "muted", "playsinline"]);
+    const cssPropToJs = (prop: string) => prop.trim().replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+    const jsPropToCss = (prop: string) => prop.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+    const convertHtmlStyleToJsx = (styleValue: string) => {
+      const pairs = styleValue.split(";").map((item) => item.trim()).filter(Boolean);
+      if (!pairs.length) return "{{}}";
+      return `{{ ${pairs.map((pair) => {
+        const [prop, rawValue] = pair.split(":");
+        return `${cssPropToJs(prop || "")}: "${(rawValue || "").trim().replace(/"/g, '\\"')}"`;
+      }).join(", ")} }}`;
+    };
+    const convertJsxStyleToHtml = (styleValue: string) => {
+      const body = styleValue.trim().replace(/^\{\{/, "").replace(/\}\}$/, "").trim();
+      if (!body) return '""';
+      const pairs = body.split(",").map((item) => item.trim()).filter(Boolean);
+      return `"${pairs.map((pair) => {
+        const [prop, rawValue] = pair.split(":").map((part) => part.trim());
+        return `${jsPropToCss(prop || "")}: ${(rawValue || "").replace(/^["']|["']$/g, "")}`;
+      }).join("; ")}"`;
+    };
+
+    if (mode === "html-jsx") {
+      let next = value;
+      next = next.replace(/<!--([\s\S]*?)-->/g, "{/*$1*/}");
+      next = next.replace(/\sstyle=(['"])(.*?)\1/gi, (_, _quote: string, styleValue: string) => ` style=${convertHtmlStyleToJsx(styleValue)}`);
+      next = next.replace(/<([a-zA-Z][^\s/>]*)([^>]*)>/g, (_full, tagName: string, attrs: string) => {
+        const rewritten = attrs.replace(/\s([:@a-zA-Z_][\w:.-]*)(?:=(["'])(.*?)\2)?/g, (_match, attrName: string, _q: string | undefined, attrValue: string | undefined) => {
+          const lower = attrName.toLowerCase();
+          const mapped = htmlToJsxAttrs[lower] || attrName;
+          if (booleanAttrs.has(lower) && typeof attrValue === "undefined") return ` ${mapped}={true}`;
+          return attrValue === undefined ? ` ${mapped}` : ` ${mapped}="${attrValue}"`;
+        });
+        return `<${tagName}${rewritten}>`;
+      });
+      return next;
+    }
+
+    let next = value;
+    next = next.replace(/\{\/\*([\s\S]*?)\*\/\}/g, "<!--$1-->");
+    next = next.replace(/\sstyle=\{\{([\s\S]*?)\}\}/g, (_match, body: string) => ` style=${convertJsxStyleToHtml(`{{${body}}}`)}`);
+    next = next.replace(/<([a-zA-Z][^\s/>]*)([^>]*)>/g, (_full, tagName: string, attrs: string) => {
+      const rewritten = attrs.replace(/\s([:@a-zA-Z_][\w:.-]*)(?:=(\{true\}|"[^"]*"|'[^']*'|\{[^}]*\}))?/g, (_match, attrName: string, attrValue: string | undefined) => {
+        const mapped = jsxToHtmlAttrs[attrName] || attrName;
+        if (attrValue === "{true}") return ` ${mapped}`;
+        if (!attrValue) return ` ${mapped}`;
+        if (attrValue.startsWith("{") && attrValue.endsWith("}")) return ` ${mapped}="${attrValue.slice(1, -1)}"`;
+        return ` ${mapped}=${attrValue}`;
+      });
+      return `<${tagName}${rewritten}>`;
+    });
+    return next;
+  }, [mode, value]);
+
+  return <div className="space-y-3"><div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">{([["html-jsx", "HTML → JSX"], ["jsx-html", "JSX → HTML"]] as const).map(([id, label]) => <button key={id} onClick={() => setMode(id)} className={"rounded-full px-3 py-1 " + (mode === id ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>{label}</button>)}</div><div className="grid gap-4 lg:grid-cols-2"><textarea value={value} onChange={(e) => setValue(e.target.value)} rows={12} className="rounded-xl border border-border bg-background p-3 font-mono text-xs" /><CodeBlock code={out} lang={mode === "html-jsx" ? "jsx" : "html"} /></div></div>;
+}
+
+function CssToTailwindTool() {
+  const [css, setCss] = useState(`display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 16px 24px;
+gap: 12px;
+border-radius: 16px;
+background: #111827;
+color: #ffffff;`);
+  const out = useMemo(() => {
+    const lines = css.split(";").map((l) => l.trim()).filter(Boolean);
+    const px = (v: string) => { const n = Number(v.replace("px", "")); return Number.isFinite(n) ? n / 4 : null; };
+    return lines.map((line) => {
+      const [propRaw, valueRaw] = line.split(":").map((x) => x.trim());
+      const prop = propRaw?.toLowerCase(); const value = valueRaw?.toLowerCase();
+      if (!prop || !value) return "";
+      if (prop === "display" && value === "flex") return "flex";
+      if (prop === "display" && value === "grid") return "grid";
+      if (prop === "align-items" && value === "center") return "items-center";
+      if (prop === "justify-content" && value === "center") return "justify-center";
+      if (prop === "justify-content" && value === "space-between") return "justify-between";
+      if (prop === "gap") return "gap-" + px(value);
+      if (prop === "border-radius") return px(value) === 4 ? "rounded-xl" : `rounded-[${value}]`;
+      if (prop === "padding") { const parts = value.split(/\s+/); if (parts.length === 2) return `py-${px(parts[0])} px-${px(parts[1])}`; if (parts.length === 1) return `p-${px(parts[0])}`; }
+      if (prop === "background" || prop === "background-color") return value.startsWith("#") ? `bg-[${value}]` : "";
+      if (prop === "color") return value.startsWith("#") ? `text-[${value}]` : "";
+      if (prop === "width") return value === "100%" ? "w-full" : "";
+      if (prop === "height") return value === "100%" ? "h-full" : "";
+      if (prop === "font-weight") return value === "600" ? "font-semibold" : value === "700" ? "font-bold" : "";
+      return `/* ${line} */`;
+    }).filter(Boolean).join(" ");
+  }, [css]);
+  return <div className="grid gap-4 lg:grid-cols-2"><textarea value={css} onChange={(e) => setCss(e.target.value)} rows={12} className="rounded-xl border border-border bg-background p-3 font-mono text-xs" /><CodeBlock code={out} lang="tailwind" /></div>;
+}
+
+function TailwindSorterTool() {
+  const [value, setValue] = useState("text-white px-4 flex rounded-xl py-2 px-4 items-center bg-black justify-between text-sm");
+  const out = useMemo(() => {
+    const rank = (token: string) => {
+      if (/^(absolute|relative|sticky|fixed)/.test(token)) return 1;
+      if (/^(flex|inline-flex|grid|block|hidden)/.test(token)) return 2;
+      if (/^(items-|justify-|content-|self-|place-)/.test(token)) return 3;
+      if (/^(p|m|gap|space-)/.test(token)) return 4;
+      if (/^(w-|h-|min-|max-)/.test(token)) return 5;
+      if (/^(text-|font-|leading-|tracking-)/.test(token)) return 6;
+      if (/^(bg-|from-|via-|to-)/.test(token)) return 7;
+      if (/^(border|rounded)/.test(token)) return 8;
+      if (/^(shadow|opacity|blur|ring)/.test(token)) return 9;
+      if (/^(hover:|focus:|active:|disabled:)/.test(token)) return 11;
+      return 10;
+    };
+    const tokens = Array.from(new Set(value.trim().split(/\s+/).filter(Boolean)));
+    return tokens.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b)).join(" ");
+  }, [value]);
+  return <div className="space-y-3"><textarea value={value} onChange={(e) => setValue(e.target.value)} rows={6} className="w-full rounded-xl border border-border bg-background p-3 font-mono text-xs" /><CodeBlock code={out} lang="tailwind" /></div>;
+}
+
+function BoxShadowPresetsTool() {
+  const presets = [{ name: "Card Soft", shadow: "0 12px 40px -18px rgba(15, 23, 42, .35)" }, { name: "Dropdown", shadow: "0 16px 36px -14px rgba(2, 6, 23, .38)" }, { name: "Modal", shadow: "0 28px 80px -24px rgba(2, 6, 23, .55)" }, { name: "Glow", shadow: "0 0 0 1px rgba(245,158,11,.18), 0 24px 60px -24px rgba(245,158,11,.55)" }];
+  return <div className="grid gap-4 md:grid-cols-2">{presets.map((p) => <div key={p.name} className="rounded-2xl border border-border bg-card p-4 space-y-3"><div className="font-display font-semibold">{p.name}</div><Preview dark={false}><div className="h-28 w-44 rounded-2xl bg-white" style={{ boxShadow: p.shadow }} /></Preview><CodeBlock code={`box-shadow: ${p.shadow};`} /></div>)}</div>;
+}
+
+function GradientMeshTool() {
+  const [c1, setC1] = useState("#f59e0b"), [c2, setC2] = useState("#06b6d4"), [c3, setC3] = useState("#fb7185");
+  const css = `background:\nradial-gradient(circle at 20% 20%, ${c1}, transparent 35%),\nradial-gradient(circle at 80% 20%, ${c2}, transparent 35%),\nradial-gradient(circle at 50% 80%, ${c3}, transparent 40%),\nlinear-gradient(135deg, #0f172a, #020617);`;
+  return <div className="space-y-4"><div className="flex gap-3 flex-wrap">{[c1, c2, c3].map((c, i) => <label key={i} className="text-xs font-mono flex items-center gap-2">Color {i + 1}<input type="color" value={c} onChange={(e) => [setC1, setC2, setC3][i](e.target.value)} className="h-8 w-10" /></label>)}</div><div className="rounded-3xl border border-border p-3"><div className="h-72 rounded-2xl" style={{ background: `radial-gradient(circle at 20% 20%, ${c1}, transparent 35%),radial-gradient(circle at 80% 20%, ${c2}, transparent 35%),radial-gradient(circle at 50% 80%, ${c3}, transparent 40%),linear-gradient(135deg, #0f172a, #020617)` }} /></div><CodeBlock code={css} /></div>;
+}
+
+function SkeletonLoaderTool() {
+  const [type, setType] = useState<"card" | "list" | "table">("card");
+  const code = {
+    card: `<div class="space-y-3 animate-pulse"><div class="h-40 rounded-2xl bg-muted"></div><div class="h-4 w-2/3 rounded bg-muted"></div><div class="h-4 w-1/2 rounded bg-muted"></div></div>`,
+    list: `<div class="space-y-3">${Array.from({ length: 4 }, () => `<div class="flex items-center gap-3 animate-pulse"><div class="h-10 w-10 rounded-full bg-muted"></div><div class="flex-1 space-y-2"><div class="h-4 w-1/3 rounded bg-muted"></div><div class="h-3 w-2/3 rounded bg-muted"></div></div></div>`).join("")}</div>`,
+    table: `<div class="space-y-2">${Array.from({ length: 5 }, () => `<div class="grid grid-cols-4 gap-3 animate-pulse"><div class="h-4 rounded bg-muted"></div><div class="h-4 rounded bg-muted"></div><div class="h-4 rounded bg-muted"></div><div class="h-4 rounded bg-muted"></div></div>`).join("")}</div>`,
+  } as const;
+  const preview = {
+    card: (
+      <div className="max-w-sm space-y-3 animate-pulse">
+        <div className="h-40 rounded-2xl bg-muted" />
+        <div className="h-4 w-2/3 rounded bg-muted" />
+        <div className="h-4 w-1/2 rounded bg-muted" />
+      </div>
+    ),
+    list: (
+      <div className="w-full max-w-md space-y-3">
+        {Array.from({ length: 4 }, (_, i) => (
+          <div key={i} className="flex items-center gap-3 animate-pulse">
+            <div className="h-10 w-10 rounded-full bg-muted" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-1/3 rounded bg-muted" />
+              <div className="h-3 w-2/3 rounded bg-muted" />
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+    table: (
+      <div className="w-full space-y-2">
+        {Array.from({ length: 5 }, (_, i) => (
+          <div key={i} className="grid grid-cols-4 gap-3 animate-pulse">
+            <div className="h-4 rounded bg-muted" />
+            <div className="h-4 rounded bg-muted" />
+            <div className="h-4 rounded bg-muted" />
+            <div className="h-4 rounded bg-muted" />
+          </div>
+        ))}
+      </div>
+    ),
+  } as const;
+  return <div className="space-y-4"><div className="flex gap-2">{(["card", "list", "table"] as const).map((k) => <button key={k} onClick={() => setType(k)} className={"rounded-full border px-3 py-1 text-xs font-mono uppercase " + (type === k ? "bg-accent text-accent-foreground border-accent" : "border-border")}>{k}</button>)}</div><div className="rounded-2xl border border-border bg-card p-5">{preview[type]}</div><CodeBlock code={code[type]} lang="html" /></div>;
+}
+
+function RegexLibraryTool() {
+  const presets = { email: String.raw`^[^\s@]+@[^\s@]+\.[^\s@]+$`, phone: String.raw`^\+?[0-9\s\-()]{8,20}$`, password: String.raw`^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$`, username: String.raw`^[a-z0-9_]{3,20}$`, otp: String.raw`^\d{4,8}$`, url: String.raw`^https?:\/\/[^\s/$.?#].[^\s]*$`, card: String.raw`^\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}$` } as const;
+  const [key, setKey] = useState<keyof typeof presets>("email");
+  const [text, setText] = useState("hello@example.com");
+  const ok = (() => { try { return new RegExp(presets[key]).test(text); } catch { return false; } })();
+  return <div className="space-y-3"><div className="flex gap-2 flex-wrap">{(Object.keys(presets) as Array<keyof typeof presets>).map((k) => <button key={k} onClick={() => setKey(k)} className={"rounded-full border px-3 py-1 text-xs font-mono uppercase " + (key === k ? "bg-accent text-accent-foreground border-accent" : "border-border")}>{k}</button>)}</div><input value={text} onChange={(e) => setText(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" /><div className={"rounded-lg border p-3 text-sm font-mono " + (ok ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400" : "border-rose-500/30 bg-rose-500/10 text-rose-400")}>{ok ? "Valid match" : "Does not match"}</div><CodeBlock code={presets[key]} lang="regex" /></div>;
+}
+
+function inferTs(name: string, value: unknown): string {
+  if (Array.isArray(value)) return value.length ? `${inferTs(name, value[0])}[]` : "unknown[]";
+  if (value === null) return "null";
+  if (typeof value === "object") return `{\n${Object.entries(value as Record<string, unknown>).map(([k, v]) => `  ${k}: ${inferTs(k, v)};`).join("\n")}\n}`;
+  return typeof value;
+}
+function inferZod(value: unknown): string {
+  if (Array.isArray(value)) return `z.array(${value.length ? inferZod(value[0]) : "z.unknown()"})`;
+  if (value === null) return "z.null()";
+  if (typeof value === "object") return `z.object({ ${Object.entries(value as Record<string, unknown>).map(([k, v]) => `${k}: ${inferZod(v)}`).join(", ")} })`;
+  if (typeof value === "string") return "z.string()";
+  if (typeof value === "number") return "z.number()";
+  if (typeof value === "boolean") return "z.boolean()";
+  return "z.unknown()";
+}
+function snapshotStorageEntries(storage: Storage | null) {
+  if (!storage) return [] as Array<{ key: string; value: string }>;
+  return Array.from({ length: storage.length }, (_, index) => {
+    const itemKey = storage.key(index) || `key-${index}`;
+    return { key: itemKey, value: storage.getItem(itemKey) || "" };
+  }).sort((a, b) => a.key.localeCompare(b.key));
+}
+function JsonToTypesTool() {
+  const [v, setV] = useState('{"id":1,"name":"Jwala","active":true,"skills":["react","next"],"meta":{"role":"frontend"}}');
+  const out = useMemo(() => { try { const parsed = JSON.parse(v); return { ts: `type Root = ${inferTs("Root", parsed)};`, zod: `const schema = ${inferZod(parsed)};`, error: "" }; } catch (e) { return { ts: "", zod: "", error: (e as Error).message }; } }, [v]);
+  return <div className="grid gap-4 lg:grid-cols-2"><textarea value={v} onChange={(e) => setV(e.target.value)} rows={14} className="rounded-xl border border-border bg-background p-3 font-mono text-xs" /><div className="space-y-3">{out.error ? <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400">{out.error}</div> : <><CodeBlock code={out.ts} lang="ts" /><CodeBlock code={out.zod} lang="ts" /></>}</div></div>;
+}
+
+function StoragePlaygroundTool() {
+  const [engine, setEngine] = useState<"localStorage" | "sessionStorage">("localStorage");
+  const [key, setKey] = useState("theme");
+  const [value, setValue] = useState('{"mode":"dark","sidebar":true}');
+  const [read, setRead] = useState("");
+  const [valueMode, setValueMode] = useState<"text" | "json">("json");
+  const [status, setStatus] = useState("Ready");
+  const [lastAction, setLastAction] = useState<"setItem" | "getItem" | "removeItem" | "clear">("setItem");
+  const [entries, setEntries] = useState<Array<{ key: string; value: string }>>([]);
+  const api = typeof window !== "undefined" ? window[engine] : null;
+
+  const refreshEntries = () => setEntries(snapshotStorageEntries(api));
+
+  useEffect(() => {
+    setEntries(snapshotStorageEntries(api));
+    setRead("");
+    setStatus(`Switched to ${engine}`);
+  }, [api, engine]);
+
+  const formatValueForCode = () => {
+    if (valueMode === "json") {
+      try {
+        return JSON.stringify(JSON.parse(value), null, 2);
+      } catch {
+        return JSON.stringify(value);
+      }
+    }
+    return JSON.stringify(value);
+  };
+
+  const setItem = () => {
+    if (!api || !key.trim()) return;
+    let nextValue = value;
+    if (valueMode === "json") {
+      try {
+        nextValue = JSON.stringify(JSON.parse(value));
+      } catch {
+        setStatus("Invalid JSON. Fix the value before saving.");
+        return;
+      }
+    }
+    api.setItem(key, nextValue);
+    setRead(nextValue);
+    setLastAction("setItem");
+    setStatus(`Saved "${key}" in ${engine}`);
+    refreshEntries();
+  };
+
+  const getItem = (nextKey = key) => {
+    if (!api || !nextKey.trim()) return;
+    const saved = api.getItem(nextKey);
+    setRead(saved ?? "");
+    setKey(nextKey);
+    setLastAction("getItem");
+    setStatus(saved === null ? `No item found for "${nextKey}"` : `Loaded "${nextKey}" from ${engine}`);
+  };
+
+  const removeItem = () => {
+    if (!api || !key.trim()) return;
+    api.removeItem(key);
+    setRead("");
+    setLastAction("removeItem");
+    setStatus(`Removed "${key}" from ${engine}`);
+    refreshEntries();
+  };
+
+  const clearItems = () => {
+    if (!api) return;
+    api.clear();
+    setRead("");
+    setLastAction("clear");
+    setStatus(`Cleared all ${engine} entries`);
+    refreshEntries();
+  };
+
+  const parsedRead = (() => {
+    if (!read) return "No value loaded yet.";
+    try {
+      return JSON.stringify(JSON.parse(read), null, 2);
+    } catch {
+      return read;
+    }
+  })();
+
+  const codeMap = {
+    setItem: valueMode === "json"
+      ? `const payload = ${formatValueForCode()};\n${engine}.setItem(${JSON.stringify(key)}, JSON.stringify(payload));`
+      : `${engine}.setItem(${JSON.stringify(key)}, ${JSON.stringify(value)});`,
+    getItem: `const saved = ${engine}.getItem(${JSON.stringify(key)});\nconst parsed = saved ? (() => {\n  try { return JSON.parse(saved); }\n  catch { return saved; }\n})() : null;`,
+    removeItem: `${engine}.removeItem(${JSON.stringify(key)});`,
+    clear: `${engine}.clear();`,
+  } as const;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-2 flex-wrap">
+        {(["localStorage", "sessionStorage"] as const).map((m) => (
+          <button key={m} onClick={() => setEngine(m)} className={"rounded-full border px-3 py-1 text-xs font-mono uppercase " + (engine === m ? "bg-accent text-accent-foreground border-accent" : "border-border")}>{m}</button>
+        ))}
+        {(["text", "json"] as const).map((m) => (
+          <button key={m} onClick={() => setValueMode(m)} className={"rounded-full border px-3 py-1 text-xs font-mono uppercase " + (valueMode === m ? "bg-foreground text-background border-foreground" : "border-border")}>{m} value</button>
+        ))}
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.05fr_.95fr]">
+        <div className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-2">
+            <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="storage key" className="rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+            <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+              {entries.length} item{entries.length === 1 ? "" : "s"} in {engine}
+            </div>
+          </div>
+
+          <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={8} placeholder={valueMode === "json" ? '{"mode":"dark"}' : "dark"} className="w-full rounded-xl border border-border bg-background p-3 font-mono text-xs" />
+
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={setItem} className="rounded-full bg-accent px-4 py-2 text-xs font-mono uppercase text-accent-foreground">Set item</button>
+            <button onClick={() => getItem()} className="rounded-full border border-border px-4 py-2 text-xs font-mono uppercase">Get item</button>
+            <button onClick={removeItem} className="rounded-full border border-border px-4 py-2 text-xs font-mono uppercase">Remove item</button>
+            <button onClick={clearItems} className="rounded-full border border-border px-4 py-2 text-xs font-mono uppercase">Clear all</button>
+          </div>
+
+          <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+            <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Result</div>
+            <div className="rounded-lg border border-border bg-background p-3 text-sm font-mono whitespace-pre-wrap break-words">{parsedRead}</div>
+            <div className="rounded-lg border border-border/70 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">{status}</div>
+          </div>
+
+          <CodeBlock code={codeMap[lastAction]} lang="js" />
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Stored entries</div>
+              <div className="mt-1 text-sm font-semibold">{engine}</div>
+            </div>
+            <button onClick={refreshEntries} className="rounded-full border border-border px-3 py-1 text-[11px] font-mono uppercase">Refresh</button>
+          </div>
+
+          {entries.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-6 text-sm text-muted-foreground">No entries saved yet. Add a key and value, then click `Set item`.</div>
+          ) : (
+            <div className="space-y-2 max-h-[460px] overflow-auto pr-1">
+              {entries.map((entry) => (
+                <button
+                  key={entry.key}
+                  onClick={() => { setKey(entry.key); setValue(entry.value); getItem(entry.key); }}
+                  className="w-full rounded-xl border border-border bg-background p-3 text-left transition hover:border-accent/50"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-mono uppercase tracking-widest text-muted-foreground">{entry.key}</div>
+                      <div className="mt-2 line-clamp-3 whitespace-pre-wrap break-words text-sm text-foreground">{entry.value}</div>
+                    </div>
+                    <span className="shrink-0 rounded-full border border-border px-2 py-1 text-[10px] font-mono uppercase text-muted-foreground">open</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DebounceThrottleTool() {
+  const [mode, setMode] = useState<"debounce" | "throttle">("debounce");
+  const [wait, setWait] = useState(300);
+  const code = mode === "debounce" ? `function debounce(fn, wait = ${wait}) {\n  let t;\n  return (...args) => {\n    clearTimeout(t);\n    t = setTimeout(() => fn(...args), wait);\n  };\n}` : `function throttle(fn, wait = ${wait}) {\n  let open = true;\n  return (...args) => {\n    if (!open) return;\n    open = false;\n    fn(...args);\n    setTimeout(() => { open = true; }, wait);\n  };\n}`;
+  return <div className="space-y-3"><div className="flex gap-2">{(["debounce", "throttle"] as const).map((m) => <button key={m} onClick={() => setMode(m)} className={"rounded-full border px-3 py-1 text-xs font-mono uppercase " + (mode === m ? "bg-accent text-accent-foreground border-accent" : "border-border")}>{m}</button>)}</div><Row label="wait"><SliderInput value={wait} onChange={setWait} min={50} max={1200} step={50} /></Row><CodeBlock code={code} lang="js" /></div>;
+}
+
+function BreakpointPreviewTool() {
+  const presets = [375, 768, 1024, 1280];
+  const [w, setW] = useState(768);
+  return <div className="space-y-4"><div className="flex gap-2 flex-wrap">{presets.map((p) => <button key={p} onClick={() => setW(p)} className={"rounded-full border px-3 py-1 text-xs font-mono " + (w === p ? "bg-accent text-accent-foreground border-accent" : "border-border")}>{p}px</button>)}<input type="number" value={w} onChange={(e) => setW(+e.target.value || 320)} className="w-28 rounded-full border border-border bg-background px-3 py-1 text-xs font-mono" /></div><div className="mx-auto rounded-[28px] border border-border bg-card p-3" style={{ width: Math.min(w, 960) }}><div className="rounded-[24px] border border-dashed border-border p-4"><div className={"grid gap-4 " + (w >= 900 ? "md:grid-cols-3" : w >= 640 ? "grid-cols-2" : "grid-cols-1")}><div className="rounded-2xl bg-accent/20 p-4">Card 1</div><div className="rounded-2xl bg-accent/10 p-4">Card 2</div><div className="rounded-2xl bg-accent/15 p-4">Card 3</div></div></div></div><CodeBlock code={`@media (min-width: ${w}px) {\n  /* custom breakpoint preview */\n}`} /></div>;
+}
+
+function AccessibleColorPairFinderTool() {
+  const [bg, setBg] = useState("#111827"), [fg, setFg] = useState("#ffffff");
+  const contrast = (a: string, b: string) => {
+    const lum = (hex: string) => { const { r, g, b } = hexToRgb(hex); const t = [r, g, b].map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; }); return 0.2126 * t[0] + 0.7152 * t[1] + 0.0722 * t[2]; };
+    const l1 = lum(a), l2 = lum(b); return ((Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)).toFixed(2);
+  };
+  const ratio = contrast(bg, fg);
+  const suggested = ["#ffffff", "#f8fafc", "#111827", "#020617", "#1f2937"].filter((c) => c !== fg).map((c) => ({ c, ratio: contrast(bg, c) })).sort((a, b) => Number(b.ratio) - Number(a.ratio)).slice(0, 3);
+  return <div className="space-y-4"><div className="flex gap-4 flex-wrap">{([["BG", bg, setBg], ["FG", fg, setFg]] as const).map(([l, v, s]) => <label key={l} className="text-xs font-mono flex items-center gap-2">{l}<input type="color" value={v} onChange={(e) => s(e.target.value)} className="h-8 w-10" /></label>)}</div><div className="rounded-2xl border border-border p-6" style={{ background: bg, color: fg }}><div className="text-2xl font-bold">Accessible color preview</div><p className="mt-2">Contrast ratio: {ratio}:1</p></div><div className="grid gap-3 md:grid-cols-3">{suggested.map((s) => <button key={s.c} onClick={() => setFg(s.c)} className="rounded-xl border border-border p-3 text-left"><div className="h-10 rounded-md" style={{ background: s.c }} /><div className="mt-2 text-xs font-mono">{s.c}</div><div className="text-xs text-muted-foreground">{s.ratio}:1</div></button>)}</div></div>;
+}
+
+function FaviconGeneratorTool() {
+  const [icons, setIcons] = useState<Array<{ size: number; url: string }>>([]);
+  useEffect(() => () => { icons.forEach((i) => URL.revokeObjectURL(i.url)); }, [icons]);
+  const build = async (file: File) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(); img.src = objectUrl; });
+    const sizes = [16, 32, 180, 192, 512];
+    const next: Array<{ size: number; url: string }> = [];
+    for (const size of sizes) {
+      const canvas = document.createElement("canvas"); canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d"); if (!ctx) continue;
+      ctx.drawImage(img, 0, 0, size, size);
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (blob) next.push({ size, url: URL.createObjectURL(blob) });
+    }
+    setIcons((prev) => { prev.forEach((i) => URL.revokeObjectURL(i.url)); return next; });
+  };
+  const tags = icons.map((i) => i.size === 180 ? `<link rel="apple-touch-icon" sizes="180x180" href="/icon-${i.size}.png" />` : `<link rel="icon" type="image/png" sizes="${i.size}x${i.size}" href="/icon-${i.size}.png" />`).join("\n");
+  return <div className="space-y-4"><label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm"><ImageIcon className="h-4 w-4" /> Upload image<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void build(f); }} /></label>{icons.length > 0 && <><div className="grid gap-4 md:grid-cols-5">{icons.map((i) => <div key={i.size} className="rounded-xl border border-border bg-card p-3 text-center space-y-2"><img src={i.url} alt={`${i.size}px favicon`} className="mx-auto h-16 w-16 rounded-lg border border-border" /><div className="text-xs font-mono">{i.size}px</div><a href={i.url} download={`icon-${i.size}.png`} className="inline-flex rounded-full border border-border px-3 py-1 text-[11px] font-mono uppercase">Download</a></div>)}</div><CodeBlock code={tags} lang="html" /></>}</div>;
+}
+
+function OgPreviewTool() {
+  const [title, setTitle] = useState("Frontend toolkit for developers"), [desc, setDesc] = useState("Live tools, previews, converters, and copy-ready snippets."), [site, setSite] = useState("jwalabaheliya.dev"), [image, setImage] = useState("/jwala-baheliya.jpg");
+  const code = `<meta property="og:title" content="${title}" />\n<meta property="og:description" content="${desc}" />\n<meta property="og:image" content="${image}" />\n<meta property="og:site_name" content="${site}" />`;
+  return <div className="grid gap-4 lg:grid-cols-2"><div className="space-y-3"><input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Title" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /><textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={4} className="w-full rounded-lg border border-border bg-background p-3 text-sm" /><input value={site} onChange={(e) => setSite(e.target.value)} placeholder="Site" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /><input value={image} onChange={(e) => setImage(e.target.value)} placeholder="Image URL" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" /><CodeBlock code={code} lang="html" /></div><div className="rounded-3xl border border-border bg-card p-4"><div className="overflow-hidden rounded-2xl border border-border"><div className="h-56 bg-cover bg-center" style={{ backgroundImage: `url(${image})` }} /><div className="space-y-2 p-4"><div className="text-xs uppercase tracking-widest text-muted-foreground">{site}</div><div className="font-display text-2xl font-semibold">{title}</div><p className="text-sm text-muted-foreground">{desc}</p></div></div></div></div>;
+}
+
+function ClampSpacingTool() {
+  const [prop, setProp] = useState("padding"), [min, setMin] = useState(16), [max, setMax] = useState(80), [minVw] = useState(360), [maxVw, setMaxVw] = useState(1440);
+  const clamp = `clamp(${min}px, ${min}px + (${max - min}) * ((100vw - ${minVw}px) / (${maxVw - minVw})), ${max}px)`;
+  return <div className="space-y-4"><div className="grid gap-3 md:grid-cols-4"><select value={prop} onChange={(e) => setProp(e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm"><option>padding</option><option>margin</option><option>gap</option></select><input type="number" value={min} onChange={(e) => setMin(+e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" /><input type="number" value={max} onChange={(e) => setMax(+e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" /><input type="number" value={maxVw} onChange={(e) => setMaxVw(+e.target.value)} className="rounded-lg border border-border bg-background px-3 py-2 text-sm" /></div><CodeBlock code={`${prop}: ${clamp};`} /><div className="rounded-2xl border border-border bg-card p-4"><div className="rounded-2xl bg-accent/15" style={{ [prop]: clamp } as React.CSSProperties }>Fluid spacing preview</div></div></div>;
+}
+
+function GridOverlayTool() {
+  const [cols, setCols] = useState(12);
+  const [gutter, setGutter] = useState(24);
+  const [containerWidth, setContainerWidth] = useState(1200);
+  const [pagePadding, setPagePadding] = useState(32);
+  const [rowHeight, setRowHeight] = useState(120);
+  const [overlayOpacity, setOverlayOpacity] = useState(28);
+  const [rows, setRows] = useState(6);
+  const [showLabels, setShowLabels] = useState(true);
+  const [showContent, setShowContent] = useState(true);
+  const [mode, setMode] = useState<"fixed" | "minmax" | "auto-fit">("fixed");
+
+  const template = mode === "minmax"
+    ? `repeat(${cols}, minmax(48px, 1fr))`
+    : mode === "auto-fit"
+      ? `repeat(auto-fit, minmax(${Math.max(120, Math.round(containerWidth / Math.max(cols, 1) / 1.5))}px, 1fr))`
+      : `repeat(${cols}, minmax(0, 1fr))`;
+  const availableWidth = Math.max(containerWidth - gutter * (cols - 1), 0);
+  const columnWidth = mode === "auto-fit" ? null : availableWidth / cols;
+  const contentPadding = Math.max(Math.round(pagePadding * 0.75), 16);
+  const code = [
+    ".layout-shell {",
+    `  max-width: ${containerWidth}px;`,
+    `  padding-inline: ${pagePadding}px;`,
+    "  margin-inline: auto;",
+    "}",
+    "",
+    ".layout-grid {",
+    "  display: grid;",
+    `  grid-template-columns: ${template};`,
+    `  column-gap: ${gutter}px;`,
+    `  row-gap: ${Math.round(gutter * 1.25)}px;`,
+    "}",
+  ].join("\n");
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <Row label="mode">
+          <select value={mode} onChange={(e) => setMode(e.target.value as "fixed" | "minmax" | "auto-fit")} className="col-span-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-mono uppercase tracking-widest text-foreground">
+            <option value="fixed">fixed 12-col</option>
+            <option value="minmax">minmax cols</option>
+            <option value="auto-fit">auto-fit grid</option>
+          </select>
+        </Row>
+        <Row label="columns"><SliderInput value={cols} onChange={setCols} min={2} max={16} /></Row>
+        <Row label="gutter"><SliderInput value={gutter} onChange={setGutter} min={0} max={48} /></Row>
+        <Row label="rows"><SliderInput value={rows} onChange={setRows} min={3} max={10} /></Row>
+        <Row label="max width"><SliderInput value={containerWidth} onChange={setContainerWidth} min={720} max={1600} step={20} /></Row>
+        <Row label="padding"><SliderInput value={pagePadding} onChange={setPagePadding} min={0} max={80} step={4} /></Row>
+        <Row label="row height"><SliderInput value={rowHeight} onChange={setRowHeight} min={72} max={180} step={4} /></Row>
+        <Row label="opacity"><SliderInput value={overlayOpacity} onChange={setOverlayOpacity} min={8} max={60} step={2} /></Row>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-4">
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+          <input type="checkbox" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />
+          column labels
+        </label>
+        <label className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-xs font-mono uppercase tracking-widest text-muted-foreground">
+          <input type="checkbox" checked={showContent} onChange={(e) => setShowContent(e.target.checked)} />
+          content preview
+        </label>
+        <div className="rounded-xl border border-border bg-card px-3 py-2">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">column width</div>
+          <div className="mt-1 text-sm font-semibold text-foreground">{columnWidth ? `${columnWidth.toFixed(1)}px` : "fluid"}</div>
+        </div>
+        <div className="rounded-xl border border-border bg-card px-3 py-2">
+          <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">template</div>
+          <div className="mt-1 truncate text-sm font-semibold text-foreground">{template}</div>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-border bg-card p-3 md:p-4">
+        <div className="rounded-[24px] border border-border bg-background p-3 md:p-5">
+          <div
+            className="mx-auto overflow-hidden rounded-[24px] border border-border bg-[linear-gradient(180deg,rgba(127,127,127,0.06),transparent)]"
+            style={{ maxWidth: containerWidth + pagePadding * 2, paddingInline: pagePadding, paddingBlock: contentPadding }}
+          >
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card/80 px-4 py-3">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">layout inspector</div>
+                <div className="mt-1 text-sm font-semibold text-foreground">Container, gutters, and real content alignment</div>
+              </div>
+              <div className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                {containerWidth}px container
+              </div>
+            </div>
+
+            <div className="relative mx-auto" style={{ maxWidth: containerWidth }}>
+              {showContent && (
+                <div className="space-y-5">
+                  <div className="grid gap-5 md:grid-cols-[1.35fr_0.65fr]">
+                    <div className="rounded-[24px] border border-border bg-card p-6 shadow-sm">
+                      <div className="h-3 w-24 rounded-full bg-accent/30" />
+                      <div className="mt-4 h-10 max-w-[24rem] rounded-2xl bg-foreground/10" />
+                      <div className="mt-3 space-y-2">
+                        <div className="h-3 rounded-full bg-foreground/10" />
+                        <div className="h-3 w-[90%] rounded-full bg-foreground/10" />
+                        <div className="h-3 w-[68%] rounded-full bg-foreground/10" />
+                      </div>
+                      <div className="mt-5 flex gap-3">
+                        <div className="h-10 w-28 rounded-full bg-accent/85" />
+                        <div className="h-10 w-24 rounded-full border border-border bg-background" />
+                      </div>
+                    </div>
+                    <div className="grid gap-5">
+                      <div className="rounded-[24px] border border-border bg-card p-5">
+                        <div className="h-3 w-20 rounded-full bg-foreground/10" />
+                        <div className="mt-4 h-24 rounded-2xl bg-accent/15" />
+                      </div>
+                      <div className="rounded-[24px] border border-border bg-card p-5">
+                        <div className="h-3 w-16 rounded-full bg-foreground/10" />
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                          <div className="h-16 rounded-2xl bg-foreground/10" />
+                          <div className="h-16 rounded-2xl bg-foreground/10" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-5 md:grid-cols-3">
+                    {Array.from({ length: 3 }, (_, cardIndex) => (
+                      <div key={cardIndex} className="rounded-[24px] border border-border bg-card p-5">
+                        <div className="h-32 rounded-[18px] bg-accent/12" />
+                        <div className="mt-4 h-4 w-2/3 rounded-full bg-foreground/10" />
+                        <div className="mt-3 space-y-2">
+                          <div className="h-3 rounded-full bg-foreground/10" />
+                          <div className="h-3 w-[86%] rounded-full bg-foreground/10" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div
+                className="pointer-events-none absolute inset-0 grid"
+                style={{
+                  gridTemplateColumns: template,
+                  columnGap: gutter,
+                  rowGap: Math.round(gutter * 1.25),
+                  gridTemplateRows: `repeat(${rows}, minmax(${rowHeight}px, 1fr))`,
+                }}
+              >
+                {Array.from({ length: cols * rows }, (_, index) => {
+                  const currentCol = (index % cols) + 1;
+                  const currentRow = Math.floor(index / cols) + 1;
+                  return (
+                    <div
+                      key={index}
+                      className="relative rounded-xl border border-accent/30 bg-accent/20"
+                      style={{ opacity: Math.max(overlayOpacity / 100, 0.08) }}
+                    >
+                      <div className="absolute inset-x-0 top-0 h-px border-t border-dashed border-accent/70" />
+                      {showLabels && (
+                        <span className="absolute left-2 top-2 rounded-full bg-background/90 px-2 py-1 text-[10px] font-mono uppercase tracking-widest text-accent shadow-sm">
+                          c{currentCol} / r{currentRow}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <CodeBlock code={code} />
+    </div>
+  );
+}
+
+function AnimationPresetsGalleryTool() {
+  const presets = [{ name: "Fade Up", keyframes: `@keyframes fadeUp { from { opacity:0; transform:translateY(16px);} to { opacity:1; transform:translateY(0);} }`, anim: "fadeUp .6s ease both" }, { name: "Scale In", keyframes: `@keyframes scaleIn { from { opacity:0; transform:scale(.92);} to { opacity:1; transform:scale(1);} }`, anim: "scaleIn .45s ease both" }, { name: "Slide In", keyframes: `@keyframes slideIn { from { opacity:0; transform:translateX(-20px);} to { opacity:1; transform:translateX(0);} }`, anim: "slideIn .5s ease both" }];
+  const [run, setRun] = useState(0);
+  return <div className="space-y-4"><div className="flex justify-end"><button onClick={() => setRun((v) => v + 1)} className="rounded-full border border-border px-3 py-1 text-[11px] font-mono uppercase tracking-wide">Replay all</button></div><div className="grid gap-4 md:grid-cols-3">{presets.map((p, index) => <div key={p.name} className="rounded-2xl border border-border bg-card p-4 space-y-3"><div className="flex items-center justify-between gap-3"><div className="font-display font-semibold">{p.name}</div><button onClick={() => setRun((v) => v + index + 1)} className="rounded-full border border-border px-3 py-1 text-[11px] font-mono uppercase tracking-wide text-muted-foreground hover:text-foreground">Replay</button></div><Preview><style>{p.keyframes}</style><div key={`${p.name}-${run}`} className="rounded-2xl bg-accent px-6 py-4 text-accent-foreground" style={{ animation: p.anim }}>Preview</div></Preview><CodeBlock code={`${p.keyframes}\n\n.element { animation: ${p.anim}; }`} /></div>)}</div></div>;
+}
+
+function ImagePlaceholderTool() {
+  const [src, setSrc] = useState(""), [dominant, setDominant] = useState("#111827"), [tiny, setTiny] = useState("");
+  const shimmerSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400"><defs><linearGradient id="g"><stop stop-color="#e5e7eb" offset="20%"/><stop stop-color="#f8fafc" offset="50%"/><stop stop-color="#e5e7eb" offset="70%"/></linearGradient></defs><rect width="600" height="400" fill="#e5e7eb"/><rect width="600" height="400" fill="url(#g)"><animate attributeName="x" from="-600" to="600" dur="1.2s" repeatCount="indefinite"/></rect></svg>`;
+  const shimmer = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(shimmerSvg)}`;
+  const dominantCss = `.image-placeholder {\n  background: ${dominant};\n}`;
+  const blurCss = `.image-blur-placeholder {\n  background-image: url("${tiny}");\n  background-size: cover;\n  background-position: center;\n  filter: blur(18px);\n  transform: scale(1.04);\n}`;
+  const shimmerCss = `.image-shimmer {\n  position: relative;\n  overflow: hidden;\n  background: #e5e7eb;\n}\n\n.image-shimmer::after {\n  content: "";\n  position: absolute;\n  inset: 0;\n  background-image: url("${shimmer}");\n  background-size: cover;\n  background-position: center;\n  animation: shimmerMove 1.2s linear infinite;\n}\n\n@keyframes shimmerMove {\n  from { transform: translateX(-100%); }\n  to { transform: translateX(100%); }\n}`;
+  const skeletonHtml = `<div class="skeleton-card">\n  <div class="skeleton skeleton-media"></div>\n  <div class="skeleton skeleton-line skeleton-line-lg"></div>\n  <div class="skeleton skeleton-line"></div>\n  <div class="skeleton skeleton-line skeleton-line-sm"></div>\n</div>`;
+  const skeletonCss = `.skeleton-card {\n  display: grid;\n  gap: 12px;\n}\n\n.skeleton {\n  position: relative;\n  overflow: hidden;\n  border-radius: 16px;\n  background: #e5e7eb;\n}\n\n.skeleton::after {\n  content: "";\n  position: absolute;\n  inset: 0;\n  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.72) 50%, transparent 100%);\n  transform: translateX(-100%);\n  animation: skeletonShimmer 1.25s linear infinite;\n}\n\n.skeleton-media {\n  height: 160px;\n}\n\n.skeleton-line {\n  height: 14px;\n}\n\n.skeleton-line-lg {\n  width: 72%;\n}\n\n.skeleton-line-sm {\n  width: 48%;\n}\n\n@keyframes skeletonShimmer {\n  to { transform: translateX(100%); }\n}`;
+  const onPick = async (file: File) => {
+    const objectUrl = URL.createObjectURL(file); setSrc(objectUrl);
+    const img = new Image(); await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(); img.src = objectUrl; });
+    const canvas = document.createElement("canvas"); canvas.width = 12; canvas.height = 12;
+    const ctx = canvas.getContext("2d"); if (!ctx) return;
+    ctx.drawImage(img, 0, 0, 12, 12); const d = ctx.getImageData(0, 0, 12, 12).data; let r = 0, g = 0, b = 0;
+    for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i + 1]; b += d[i + 2]; }
+    const n = d.length / 4; setDominant(rgbToHex(Math.round(r / n), Math.round(g / n), Math.round(b / n))); setTiny(canvas.toDataURL("image/jpeg", 0.5));
+  };
+  return <div className="space-y-4"><label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm"><ImageIcon className="h-4 w-4" /> Upload image<input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPick(f); }} /></label>{src && <div className="space-y-4"><div className="grid gap-4 md:grid-cols-3"><div className="rounded-2xl border border-border bg-card p-4"><div className="text-xs font-mono text-muted-foreground">Dominant color</div><div className="mt-3 h-24 rounded-xl" style={{ background: dominant }} /><CodeBlock code={dominant} lang="hex" /><CodeBlock code={dominantCss} lang="css" /></div><div className="rounded-2xl border border-border bg-card p-4"><div className="text-xs font-mono text-muted-foreground">Blur placeholder</div><img src={tiny} alt="tiny placeholder" className="mt-3 h-24 w-full rounded-xl border border-border object-cover" /><CodeBlock code={tiny} lang="data-url" /><CodeBlock code={blurCss} lang="css" /></div><div className="rounded-2xl border border-border bg-card p-4"><div className="text-xs font-mono text-muted-foreground">Shimmer placeholder</div><img src={shimmer} alt="shimmer placeholder" className="mt-3 h-24 w-full rounded-xl border border-border object-cover bg-muted" /><CodeBlock code={shimmer.slice(0, 220) + "..."} lang="data-url" /><CodeBlock code={shimmerCss} lang="css" /></div></div><div className="rounded-2xl border border-border bg-card p-4 space-y-4"><div><div className="text-xs font-mono text-muted-foreground">Skeleton placeholder</div><div className="mt-3 max-w-sm space-y-3"><div className="relative h-40 overflow-hidden rounded-2xl bg-muted"><div className="absolute inset-0 -translate-x-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent)] animate-[skeletonShimmer_1.25s_linear_infinite]" /></div><div className="relative h-4 w-2/3 overflow-hidden rounded bg-muted"><div className="absolute inset-0 -translate-x-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent)] animate-[skeletonShimmer_1.25s_linear_infinite]" /></div><div className="relative h-4 w-full overflow-hidden rounded bg-muted"><div className="absolute inset-0 -translate-x-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent)] animate-[skeletonShimmer_1.25s_linear_infinite]" /></div><div className="relative h-4 w-1/2 overflow-hidden rounded bg-muted"><div className="absolute inset-0 -translate-x-full bg-[linear-gradient(90deg,transparent,rgba(255,255,255,.72),transparent)] animate-[skeletonShimmer_1.25s_linear_infinite]" /></div></div></div><style>{`@keyframes skeletonShimmer { to { transform: translateX(100%); } }`}</style><div className="grid gap-4 lg:grid-cols-2"><CodeBlock code={skeletonHtml} lang="html" /><CodeBlock code={skeletonCss} lang="css" /></div></div></div>}</div>;
+}
+
+function StickyScrollTool() {
+  const code = `const progress = () => {\n  const total = document.documentElement.scrollHeight - innerHeight;\n  const value = (scrollY / total) * 100;\n  document.documentElement.style.setProperty("--scroll-progress", value + "%");\n};\naddEventListener("scroll", progress);`;
+  return <div className="space-y-4"><div className="rounded-2xl border border-border bg-card p-4"><div className="sticky top-4 rounded-2xl border border-dashed border-border bg-background p-4"><div className="mb-3 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full w-2/3 bg-accent" /></div><div className="grid gap-4 md:grid-cols-[220px_1fr]"><div className="rounded-xl border border-border p-3 text-sm">Sticky sidebar</div><div className="space-y-3">{Array.from({ length: 5 }, (_, i) => <div key={i} className="rounded-xl border border-border p-4 text-sm">Scroll section {i + 1}</div>)}</div></div></div></div><CodeBlock code={code} lang="js" /></div>;
+}
+
 /* ---------- Registry ---------- */
 const TOOLS: Tool[] = [
   { id: "shadow", name: "Box Shadow Generator", category: "CSS", keywords: "css shadow", icon: Square, render: () => <BoxShadow /> },
@@ -3265,10 +4197,10 @@ const TOOLS: Tool[] = [
   { id: "fontpair", name: "Font Pair Generator", category: "Typography", icon: Type, render: () => <FontPair /> },
   { id: "resp", name: "Responsive Checker", category: "Responsive", icon: Smartphone, render: () => <ResponsiveChecker /> },
   { id: "mq", name: "Media Query Generator", category: "Responsive", icon: Smartphone, render: () => <MediaQueryGen /> },
-  { id: "json", name: "JSON Formatter & Validator", category: "Utilities", icon: FileJson, render: () => <JsonFormatter /> },
-  { id: "b64", name: "Base64 Encode / Decode", category: "Utilities", icon: Braces, render: () => <Base64Tool /> },
-  { id: "url", name: "URL Encoder / Decoder", category: "Utilities", icon: Link2, render: () => <UrlTool /> },
-  { id: "regex", name: "Regex Tester", category: "Utilities", icon: Code2, render: () => <RegexTester /> },
+  { id: "json", name: "JSON Formatter & Validator", category: "JavaScript", icon: FileJson, render: () => <JsonFormatter /> },
+  { id: "b64", name: "Base64 Encode / Decode", category: "JavaScript", icon: Braces, render: () => <Base64Tool /> },
+  { id: "url", name: "URL Encoder / Decoder", category: "JavaScript", icon: Link2, render: () => <UrlTool /> },
+  { id: "regex", name: "Regex Tester", category: "JavaScript", icon: Code2, render: () => <RegexTester /> },
   { id: "uuid", name: "UUID Generator", category: "Utilities", icon: KeyRound, render: () => <UuidGen /> },
   { id: "slug", name: "Slug Generator", category: "Utilities", icon: Hash, render: () => <SlugGen /> },
   { id: "case", name: "Case Converter", category: "Utilities", icon: Type, render: () => <CaseConvert /> },
@@ -3277,7 +4209,6 @@ const TOOLS: Tool[] = [
   { id: "lorem", name: "Lorem Ipsum Generator", category: "Utilities", icon: Hash, render: () => <LoremGen /> },
   { id: "qr", name: "QR Code Generator", category: "Utilities", icon: QrCode, render: () => <QrCodeTool /> },
   { id: "units", name: "PX ↔ REM ↔ EM Converter", category: "Utilities", icon: Ruler, render: () => <UnitConv /> },
-  { id: "js-snippets", name: "JavaScript Snippets Library", category: "JavaScript", keywords: "vanilla scroll debounce throttle typing counter", icon: Code2, render: () => <JsSnippetsLibrary /> },
   { id: "interview-lab", name: "Interactive Interview Lab", category: "JavaScript", keywords: "interview prep event loop closures arrays dom event propagation bubbling capture quiz practice", icon: Terminal, render: () => <InteractiveInterviewLab /> },
   { id: "components", name: "Components Library", category: "Components", keywords: "buttons cards badges alerts", icon: Component, render: () => <ComponentsLibrary /> },
   { id: "text-shadow", name: "Text Shadow Generator", category: "CSS", icon: Type, render: () => <TextShadowGen /> },
@@ -3286,16 +4217,47 @@ const TOOLS: Tool[] = [
   { id: "meta-tags", name: "Meta Tag Generator", category: "Utilities", keywords: "seo open graph og twitter", icon: Tag, render: () => <MetaTagsGen /> },
   { id: "entities", name: "HTML Entity Encoder", category: "Utilities", keywords: "escape html", icon: Braces, render: () => <HtmlEntities /> },
   { id: "text-stats", name: "Word & Character Counter", category: "Utilities", keywords: "reading time", icon: FileText, render: () => <TextStats /> },
-  { id: "jwt", name: "JWT Decoder", category: "Utilities", keywords: "token auth", icon: Lock, render: () => <JwtDecoder /> },
+  { id: "jwt", name: "JWT Decoder", category: "JavaScript", keywords: "token auth", icon: Lock, render: () => <JwtDecoder /> },
   { id: "markdown", name: "Markdown Preview", category: "Utilities", keywords: "md live", icon: ScrollText, render: () => <MarkdownPreview /> },
   { id: "img64", name: "Image → Base64", category: "Utilities", keywords: "data url", icon: ImageIcon, render: () => <ImageToBase64 /> },
-  { id: "curl", name: "cURL → Fetch", category: "Utilities", keywords: "convert api", icon: Terminal, render: () => <CurlToFetch /> },
+  { id: "curl", name: "cURL → Fetch", category: "JavaScript", keywords: "convert api", icon: Terminal, render: () => <CurlToFetch /> },
   { id: "cheat", name: "CSS Cheatsheet", category: "CSS", keywords: "reference snippets layout typography responsive animation forms modern css", icon: Percent, render: () => <CheatSheetComplete /> },
-  { id: "diff", name: "Text Diff Checker", category: "Utilities", keywords: "compare", icon: FileText, render: () => <DiffChecker /> },
+  { id: "diff", name: "Text Diff Checker", category: "JavaScript", keywords: "compare text code", icon: FileText, render: () => <DiffChecker /> },
   { id: "js-gallery", name: "JavaScript Snippets — 70 Ready-made", category: "JavaScript", keywords: "modal accordion tabs dropdown sidebar hamburger slider carousel typing scramble password validation debounce throttle fetch search pagination drag drop upload counter clock stopwatch quote uuid localstorage query params formdata custom event download event delegation reduce map promise all memoize flatten group by retry deep clone sort once interview prep closure currying pipe binary search dfs event loop polyfill bind call apply lru cache", icon: Code2, render: () => <SnippetsGallery /> },
   { id: "svg-css", name: "SVG to CSS Converter", category: "Utilities", keywords: "data uri background image encoder", icon: ImageIcon, render: () => <SvgToCssTool /> },
   { id: "img-convert", name: "Image Format Converter", category: "Utilities", keywords: "png jpeg jpg webp convert image", icon: ImageIcon, render: () => <ImageConverterTool /> },
+  { id: "svg-cleanup", name: "SVG Optimizer + Cleanup", category: "Utilities", keywords: "svg optimize cleanup react", icon: ImageIcon, render: () => <SvgOptimizerTool /> },
+  { id: "html-jsx", name: "HTML to JSX / JSX to HTML", category: "JavaScript", keywords: "convert markup react", icon: Braces, render: () => <HtmlJsxToolFixed /> },
+  { id: "css-tw", name: "CSS to Tailwind Converter", category: "CSS", keywords: "tailwind convert", icon: Wand2, render: () => <CssToTailwindTool /> },
+  { id: "tw-sort", name: "Tailwind Class Sorter / Merger", category: "Utilities", keywords: "tailwind sort dedupe classes", icon: Type, render: () => <TailwindSorterTool /> },
+  { id: "shadow-presets", name: "Box Shadow Presets Library", category: "CSS", keywords: "cards modals dropdowns", icon: Square, render: () => <BoxShadowPresetsTool /> },
+  { id: "mesh", name: "Gradient Mesh / Hero Background", category: "Wow", keywords: "hero gradient mesh", icon: Sparkles, render: () => <GradientMeshTool /> },
+  { id: "regex-lib", name: "Form Validation Regex Library", category: "Utilities", keywords: "email phone password otp validation", icon: Code2, render: () => <RegexLibraryTool /> },
+  { id: "json-types", name: "API JSON to TypeScript Types", category: "JavaScript", keywords: "json ts types zod", icon: FileJson, render: () => <JsonToTypesTool /> },
+  { id: "storage", name: "LocalStorage / SessionStorage Playground", category: "JavaScript", keywords: "browser storage", icon: Terminal, render: () => <StoragePlaygroundTool /> },
+  { id: "debounce-play", name: "Debounce / Throttle Playground", category: "JavaScript", keywords: "debounce throttle performance", icon: Timer, render: () => <DebounceThrottleTool /> },
+  { id: "breakpoint-preview", name: "Breakpoint Preview + Device Frame Tester", category: "Responsive", keywords: "device viewport responsive", icon: Smartphone, render: () => <BreakpointPreviewTool /> },
+  { id: "a11y-pair", name: "Accessible Color Pair Finder", category: "Color", keywords: "contrast accessible wcag", icon: Gauge, render: () => <AccessibleColorPairFinderTool /> },
+  { id: "favicon-gen", name: "Favicons / App Icons Generator", category: "Utilities", keywords: "favicon app icon pwa", icon: ImageIcon, render: () => <FaviconGeneratorTool /> },
+  { id: "og-preview", name: "Open Graph Preview Tool", category: "Utilities", keywords: "og social share meta", icon: Layout, render: () => <OgPreviewTool /> },
+  { id: "clamp-space", name: "Clamp() Spacing Generator", category: "CSS", keywords: "fluid spacing clamp", icon: Ruler, render: () => <ClampSpacingTool /> },
+  { id: "grid-overlay", name: "Grid Overlay / Layout Inspector", category: "Layout", keywords: "columns gutter layout", icon: Grid3x3, render: () => <GridOverlayTool /> },
+  { id: "anim-gallery", name: "Animation Presets Gallery", category: "CSS", keywords: "entrance hover motion", icon: Zap, render: () => <AnimationPresetsGalleryTool /> },
+  { id: "img-placeholder", name: "Image Placeholder Generator", category: "Utilities", keywords: "blur shimmer dominant color", icon: ImageIcon, render: () => <ImagePlaceholderTool /> },
+  { id: "sticky-scroll", name: "Sticky / Scroll Progress Generator", category: "JavaScript", keywords: "scroll progress sticky sidebar", icon: ScrollText, render: () => <StickyScrollTool /> },
 ];
+
+export function ToolkitToolRenderer({ id }: { id: string }) {
+  const tool = TOOLS.find((item) => item.id === resolveToolkitId(id));
+  if (!tool) {
+    return (
+      <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+        Tool not found.
+      </div>
+    );
+  }
+  return <>{tool.render()}</>;
+}
 
 
 export default ToolkitPage;
