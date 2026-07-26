@@ -113,6 +113,10 @@ export const TOOLKIT_DOCS: ToolkitDoc[] = [
   { id: "anim-gallery", name: "Animation Presets Gallery", category: "CSS", keywords: "entrance hover motion" },
   { id: "img-placeholder", name: "Image Placeholder Generator", category: "Utilities", keywords: "blur shimmer dominant color" },
   { id: "sticky-scroll", name: "Sticky / Scroll Progress Generator", category: "JavaScript", keywords: "scroll progress sticky sidebar" },
+  { id: "ai-prompt-builder", name: "Frontend AI Prompt Builder", category: "Utilities", keywords: "ai prompt chatgpt claude copilot frontend scaffold ui component" },
+  { id: "ai-ui-review", name: "AI UI Review Prompt Builder", category: "Utilities", keywords: "ai ui review accessibility responsive design qa frontend prompt" },
+  { id: "ai-state-copy", name: "UI State Copy Prompt Builder", category: "Utilities", keywords: "ai ux copy loading empty error validation microcopy prompt" },
+  { id: "ai-bug-debug", name: "Frontend Bug Debug Prompt", category: "Utilities", keywords: "ai debug frontend bug react nextjs dom prompt reproduction" },
 ];
 
 export const TOOLKIT_DOCS_BY_ID = Object.fromEntries(

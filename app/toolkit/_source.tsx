@@ -6469,6 +6469,130 @@ function StickyScrollTool() {
   return <div className="space-y-4"><div className="rounded-2xl border border-border bg-card p-4"><div className="sticky top-4 rounded-2xl border border-dashed border-border bg-background p-4"><div className="mb-3 h-1.5 rounded-full bg-muted overflow-hidden"><div className="h-full w-2/3 bg-accent" /></div><div className="grid gap-4 md:grid-cols-[220px_1fr]"><div className="rounded-xl border border-border p-3 text-sm">Sticky sidebar</div><div className="space-y-3">{Array.from({ length: 5 }, (_, i) => <div key={i} className="rounded-xl border border-border p-4 text-sm">Scroll section {i + 1}</div>)}</div></div></div></div><CodeBlock code={code} lang="js" /></div>;
 }
 
+function FrontendAiPromptTool() {
+  const [task, setTask] = useState("Build a responsive pricing section for a SaaS landing page.");
+  const [stack, setStack] = useState("Next.js, TypeScript, Tailwind CSS");
+  const [constraints, setConstraints] = useState("Accessible markup, mobile first, clean component structure, subtle motion only.");
+  const [output, setOutput] = useState("Return production-ready JSX, Tailwind classes, and a short explanation of the layout decisions.");
+  const prompt = `Act as a senior frontend developer.\n\nTask:\n${task}\n\nStack:\n${stack}\n\nConstraints:\n${constraints}\n\nOutput requirements:\n${output}\n\nAlso include:\n- semantic HTML choices\n- accessibility considerations\n- responsive behavior\n- states for hover, focus, loading, empty, and error where relevant\n- any assumptions you are making`;
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-3">
+        <textarea value={task} onChange={(e) => setTask(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="What should the AI build or help with?" />
+        <input value={stack} onChange={(e) => setStack(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="Stack" />
+        <textarea value={constraints} onChange={(e) => setConstraints(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Constraints" />
+        <textarea value={output} onChange={(e) => setOutput(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Output requirements" />
+      </div>
+      <div className="space-y-3">
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Frontend AI prompt</div>
+              <div className="text-sm text-muted-foreground">Copy, refine, and paste into ChatGPT, Claude, or Copilot Chat.</div>
+            </div>
+            <CopyBtn value={prompt} />
+          </div>
+          <CodeBlock code={prompt} lang="md" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AiUiReviewTool() {
+  const [screen, setScreen] = useState("Marketing hero with CTA, trust logos, and product screenshot.");
+  const [focus, setFocus] = useState("Accessibility, visual hierarchy, spacing rhythm, and mobile responsiveness.");
+  const review = `Review this frontend UI like a senior design-minded frontend engineer.\n\nScreen:\n${screen}\n\nFocus areas:\n${focus}\n\nReturn feedback in these sections:\n1. What is working well\n2. UX or clarity issues\n3. Accessibility concerns\n4. Responsive risks\n5. Visual polish ideas\n6. Priority fixes before launch\n\nKeep the feedback practical and implementation-oriented.`;
+  const checklist = [
+    "Semantic headings and landmark structure",
+    "Clear focus states and keyboard reachability",
+    "Readable contrast and type scale",
+    "Consistent spacing rhythm across sections",
+    "Empty, loading, and error states where needed",
+    "Mobile overflow, wrapping, and tap target checks",
+  ];
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-3">
+        <textarea value={screen} onChange={(e) => setScreen(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Describe the screen or component" />
+        <textarea value={focus} onChange={(e) => setFocus(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Which areas should the review focus on?" />
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Quick review checklist</div>
+          <div className="mt-3 grid gap-2">
+            {checklist.map((item) => (
+              <div key={item} className="rounded-xl border border-border/70 bg-background/60 px-3 py-2 text-sm text-foreground/90">{item}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">AI UI review prompt</div>
+            <div className="text-sm text-muted-foreground">Useful for design QA, frontend critique, and polish passes.</div>
+          </div>
+          <CopyBtn value={review} />
+        </div>
+        <CodeBlock code={review} lang="md" />
+      </div>
+    </div>
+  );
+}
+
+function UiStateCopyPromptTool() {
+  const [feature, setFeature] = useState("Job application form");
+  const [tone, setTone] = useState("Clear, calm, and slightly polished");
+  const [brand, setBrand] = useState("Professional portfolio for a senior frontend developer");
+  const prompt = `Act as a UX writer working with a frontend developer.\n\nFeature:\n${feature}\n\nBrand / product context:\n${brand}\n\nTone:\n${tone}\n\nWrite concise UI copy for these states:\n- loading\n- success\n- empty\n- error\n- validation hint\n- destructive action confirmation\n\nKeep each line short, realistic, and ready for production UI. Return the result in a neat JSON shape with keys for each state.`;
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-3">
+        <input value={feature} onChange={(e) => setFeature(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="Feature or flow" />
+        <textarea value={brand} onChange={(e) => setBrand(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Brand or product context" />
+        <textarea value={tone} onChange={(e) => setTone(e.target.value)} rows={3} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Tone" />
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">UI state copy prompt</div>
+            <div className="text-sm text-muted-foreground">Useful for empty states, validation copy, and error messaging.</div>
+          </div>
+          <CopyBtn value={prompt} />
+        </div>
+        <CodeBlock code={prompt} lang="md" />
+      </div>
+    </div>
+  );
+}
+
+function FrontendBugPromptTool() {
+  const [bug, setBug] = useState("Mobile navigation drawer closes, but body scroll stays locked after tapping a link.");
+  const [expected, setExpected] = useState("Drawer closes and page scroll is restored immediately.");
+  const [stack, setStack] = useState("Next.js, React, TypeScript, Tailwind CSS");
+  const [notes, setNotes] = useState("Issue happens on iPhone Safari. State is managed in a client component. There is a useEffect that toggles overflow-hidden on body.");
+  const prompt = `Act as a senior frontend debugging partner.\n\nBug summary:\n${bug}\n\nExpected behavior:\n${expected}\n\nStack:\n${stack}\n\nNotes:\n${notes}\n\nHelp me debug this by returning:\n1. likely root causes\n2. the first checks to run in devtools\n3. the safest fix approach\n4. any React or DOM cleanup issues to inspect\n5. a small example patch if appropriate\n\nKeep the answer practical and focused on reproducible debugging steps.`;
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-3">
+        <textarea value={bug} onChange={(e) => setBug(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Describe the bug" />
+        <textarea value={expected} onChange={(e) => setExpected(e.target.value)} rows={3} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Expected behavior" />
+        <input value={stack} onChange={(e) => setStack(e.target.value)} className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm" placeholder="Stack" />
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="w-full rounded-xl border border-border bg-background p-3 text-sm" placeholder="Extra notes" />
+      </div>
+      <div className="rounded-2xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Frontend bug debug prompt</div>
+            <div className="text-sm text-muted-foreground">Turns messy bug notes into a clean AI debugging request.</div>
+          </div>
+          <CopyBtn value={prompt} />
+        </div>
+        <CodeBlock code={prompt} lang="md" />
+      </div>
+    </div>
+  );
+}
+
 /* ---------- Registry ---------- */
 const TOOLS: Tool[] = [
   { id: "shadow", name: "Box Shadow Generator", category: "CSS", keywords: "css shadow", icon: Square, render: () => <BoxShadow /> },
@@ -6550,6 +6674,10 @@ const TOOLS: Tool[] = [
   { id: "anim-gallery", name: "Animation Presets Gallery", category: "CSS", keywords: "entrance hover motion", icon: Zap, render: () => <AnimationPresetsGalleryTool /> },
   { id: "img-placeholder", name: "Image Placeholder Generator", category: "Utilities", keywords: "blur shimmer dominant color", icon: ImageIcon, render: () => <ImagePlaceholderTool /> },
   { id: "sticky-scroll", name: "Sticky / Scroll Progress Generator", category: "JavaScript", keywords: "scroll progress sticky sidebar", icon: ScrollText, render: () => <StickyScrollTool /> },
+  { id: "ai-prompt-builder", name: "Frontend AI Prompt Builder", category: "Utilities", keywords: "ai prompt chatgpt claude copilot frontend scaffold ui component", icon: Sparkles, render: () => <FrontendAiPromptTool /> },
+  { id: "ai-ui-review", name: "AI UI Review Prompt Builder", category: "Utilities", keywords: "ai ui review accessibility responsive design qa frontend prompt", icon: Gauge, render: () => <AiUiReviewTool /> },
+  { id: "ai-state-copy", name: "UI State Copy Prompt Builder", category: "Utilities", keywords: "ai ux copy loading empty error validation microcopy prompt", icon: FileText, render: () => <UiStateCopyPromptTool /> },
+  { id: "ai-bug-debug", name: "Frontend Bug Debug Prompt", category: "Utilities", keywords: "ai debug frontend bug react nextjs dom prompt reproduction", icon: Terminal, render: () => <FrontendBugPromptTool /> },
 ];
 
 export function ToolkitToolRenderer({ id }: { id: string }) {
