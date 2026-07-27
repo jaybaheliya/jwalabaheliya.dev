@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useId, useMemo, useReducer, useRef, useState, useTransition } from "react";
 import { resolveToolkitId } from "@/lib/toolkit-content";
 import {
   ArrowLeft, Copy, Check, Search, Star, X, Palette, Type, Square, Smartphone,
@@ -31,6 +31,7 @@ const LAB_TOOL_IDS = new Set([
   "database-lab",
   "rest-api-lab",
   "frontend-backend-lab",
+  "react-playground-lab",
   "interview-lab",
   "container-query",
   "view-transition",
@@ -38,14 +39,90 @@ const LAB_TOOL_IDS = new Set([
   "scroll-snap",
 ]);
 
+const CATEGORY_META: Record<Category, { blurb: string; tone: string }> = {
+  CSS: {
+    blurb: "Generators, effects, and visual polish for shipping UI faster.",
+    tone: "from-sky-500/18 via-cyan-500/10 to-transparent",
+  },
+  Layout: {
+    blurb: "Grids, flex, spacing, and structure tools for page systems.",
+    tone: "from-emerald-500/18 via-teal-500/10 to-transparent",
+  },
+  JavaScript: {
+    blurb: "Snippets, debuggers, converters, and hands-on frontend labs.",
+    tone: "from-amber-500/18 via-orange-500/10 to-transparent",
+  },
+  Color: {
+    blurb: "Palettes, contrast, and modern color system helpers.",
+    tone: "from-fuchsia-500/16 via-pink-500/10 to-transparent",
+  },
+  Typography: {
+    blurb: "Font pairing, fluid type, and text-focused helpers.",
+    tone: "from-violet-500/16 via-indigo-500/10 to-transparent",
+  },
+  Responsive: {
+    blurb: "Breakpoints, previews, and tools for multi-screen confidence.",
+    tone: "from-blue-500/18 via-indigo-500/10 to-transparent",
+  },
+  Utilities: {
+    blurb: "Fast everyday helpers for content, encoding, and productivity.",
+    tone: "from-slate-500/18 via-zinc-500/10 to-transparent",
+  },
+  Components: {
+    blurb: "Reusable patterns and UI building blocks.",
+    tone: "from-rose-500/16 via-orange-500/10 to-transparent",
+  },
+  Wow: {
+    blurb: "More expressive visuals for hero sections and standout moments.",
+    tone: "from-cyan-500/18 via-sky-500/10 to-transparent",
+  },
+};
+
+const DISCOVERY_LANES = [
+  {
+    id: "build",
+    label: "Build Layouts",
+    description: "Structure pages, sections, and responsive systems.",
+    icon: Layout,
+    category: "Layout" as const,
+    picks: ["flex", "grid", "grid-overlay", "scroll-snap", "breakpoint-preview"],
+  },
+  {
+    id: "style",
+    label: "Style & Motion",
+    description: "Shape, polish, animate, and add visual personality.",
+    icon: Sparkles,
+    category: "CSS" as const,
+    picks: ["gradient", "shadow", "glass", "anim-gallery", "bezier"],
+  },
+  {
+    id: "convert",
+    label: "Convert & Clean",
+    description: "Turn raw input into usable frontend-ready output.",
+    icon: Braces,
+    category: "Utilities" as const,
+    picks: ["json-types", "html-jsx", "curl", "svg-css", "svg-cleanup"],
+  },
+  {
+    id: "learn",
+    label: "Labs & Practice",
+    description: "Explore concepts with guided, interactive playgrounds.",
+    icon: Wand2,
+    category: "JavaScript" as const,
+    picks: ["interview-lab", "forms-lab", "rest-api-lab", "database-lab", "view-transition"],
+  },
+];
+
+const QUICK_START_IDS = ["gradient", "json-types", "flex", "color-mix-oklch", "img-placeholder", "forms-lab"];
+
 function ToolkitPage() {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<Category | "All" | "Favorites" | "Recent" | "Labs">("All");
   const [favs, setFavs] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
-  const [openId, setOpenId] = useState<string | null>(null);
   const [spotlightId, setSpotlightId] = useState("flex");
   const resultsRef = useRef<HTMLElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     try {
@@ -59,6 +136,7 @@ function ToolkitPage() {
     setFavs(next);
     localStorage.setItem("tk:favs", JSON.stringify(next));
   };
+
   const markRecent = (id: string) => {
     const next = [id, ...recent.filter((r) => r !== id)].slice(0, 8);
     setRecent(next);
@@ -66,17 +144,19 @@ function ToolkitPage() {
   };
 
   const filtered = useMemo(() => {
-    const t = q.trim().toLowerCase();
+    const term = q.trim().toLowerCase();
     return TOOLS.filter((tool) => {
       if (cat === "Favorites") return favs.includes(tool.id);
       if (cat === "Recent") return recent.includes(tool.id);
       if (cat === "Labs") {
         if (!LAB_TOOL_IDS.has(tool.id)) return false;
-      } else if (cat !== "All" && tool.category !== cat) return false;
-      if (!t) return true;
-      return (tool.name + " " + tool.category + " " + (tool.keywords ?? "")).toLowerCase().includes(t);
+      } else if (cat !== "All" && tool.category !== cat) {
+        return false;
+      }
+      if (!term) return true;
+      return `${tool.name} ${tool.category} ${tool.keywords ?? ""}`.toLowerCase().includes(term);
     });
-  }, [q, cat, favs, recent]);
+  }, [cat, favs, q, recent]);
 
   const categoryCounts = useMemo(() => {
     return TOOLS.reduce<Record<string, number>>((acc, tool) => {
@@ -85,14 +165,22 @@ function ToolkitPage() {
     }, {});
   }, []);
 
-  const searchRef = useRef<HTMLInputElement>(null);
+  const groupedFiltered = useMemo(() => {
+    return (["CSS", "Layout", "JavaScript", "Color", "Typography", "Responsive", "Utilities", "Components", "Wow"] as Category[])
+      .map((category) => ({
+        category,
+        tools: filtered.filter((tool) => tool.category === category),
+      }))
+      .filter((group) => group.tools.length > 0);
+  }, [filtered]);
+
   useEffect(() => {
     const on = (e: KeyboardEvent) => {
       const tag = (document.activeElement as HTMLElement | null)?.tagName;
       if (e.key === "/" && tag !== "INPUT" && tag !== "TEXTAREA") {
-        e.preventDefault(); searchRef.current?.focus();
+        e.preventDefault();
+        searchRef.current?.focus();
       }
-      if (e.key === "Escape") setOpenId(null);
     };
     window.addEventListener("keydown", on);
     return () => window.removeEventListener("keydown", on);
@@ -110,247 +198,354 @@ function ToolkitPage() {
     focusResults();
   };
 
-  const openTool = TOOLS.find((t) => t.id === openId);
   const spotlightTool = TOOLS.find((tool) => tool.id === spotlightId) ?? filtered[0] ?? TOOLS[0];
+  const spotlightLane = DISCOVERY_LANES.find((lane) => lane.picks.includes(spotlightTool.id)) ?? DISCOVERY_LANES[0];
   const spotlightTags = (spotlightTool.keywords || `${spotlightTool.category.toLowerCase()} live preview copy ready`)
     .split(/\s+/)
     .filter(Boolean)
     .slice(0, 4);
-  const featuredTools = ["flex", "grid-overlay", "json-types", "img-placeholder"]
-    .map((id) => TOOLS.find((tool) => tool.id === id))
-    .filter((tool): tool is Tool => Boolean(tool));
+  const isDefaultBrowse = !q.trim() && cat === "All";
+  const recentTools = recent.map((id) => TOOLS.find((tool) => tool.id === id)).filter((tool): tool is Tool => Boolean(tool));
+  const favoriteTools = favs.map((id) => TOOLS.find((tool) => tool.id === id)).filter((tool): tool is Tool => Boolean(tool));
+  const quickStartTools = QUICK_START_IDS.map((id) => TOOLS.find((tool) => tool.id === id)).filter((tool): tool is Tool => Boolean(tool));
+  const topRailTools = recentTools.length > 0 ? recentTools.slice(0, 4) : favoriteTools.length > 0 ? favoriteTools.slice(0, 4) : quickStartTools.slice(0, 4);
+
+  const renderToolCard = (tool: Tool, emphasized = false) => {
+    const Icon = tool.icon;
+    const isFav = favs.includes(tool.id);
+
+    return (
+      <Link
+        key={tool.id}
+        href={`/toolkit/${tool.id}`}
+        onClick={() => markRecent(tool.id)}
+        onMouseEnter={() => setSpotlightId(tool.id)}
+        onFocus={() => setSpotlightId(tool.id)}
+        className={"group relative rounded-[22px] border p-3.5 text-left transition-all hover:-translate-y-0.5 " + (emphasized ? "border-accent/45 bg-background md:col-span-2" : "border-border bg-card hover:border-accent/60")}
+      >
+        <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent opacity-0 transition group-hover:opacity-100" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-accent/15 text-accent">
+            <Icon className="h-4.5 w-4.5" />
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleFav(tool.id);
+            }}
+            className={"grid h-8 w-8 place-items-center rounded-full border border-transparent transition hover:border-border " + (isFav ? "text-accent" : "text-muted-foreground/60")}
+            aria-label="favorite"
+          >
+            <Star className="h-4 w-4" fill={isFav ? "currentColor" : "none"} />
+          </button>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          {emphasized ? (
+            <span className="rounded-full bg-accent/12 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-accent">
+              Start here
+            </span>
+          ) : null}
+          <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{tool.category}</span>
+        </div>
+        <div className="mt-2 font-display text-[1.02rem] font-semibold leading-6">{tool.name}</div>
+        <div className="mt-3 flex items-center gap-2 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+          <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-accent">
+            Open
+          </span>
+          <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
+            Preview
+          </span>
+        </div>
+      </Link>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/80 border-b border-border/60">
-        <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 md:px-8 py-3">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-[1400px] items-center gap-3 px-4 py-3 md:px-8">
           <Link href="/" className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back</span>
           </Link>
-          <div className="hidden md:block font-display text-lg font-bold tracking-tight">
+          <div className="hidden font-display text-lg font-bold tracking-tight md:block">
             Toolkit<span className="text-accent">.</span>
           </div>
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               ref={searchRef}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search tools…  press /"
-              className="w-full rounded-full border border-border bg-card/60 pl-9 pr-9 py-2 text-sm outline-none focus:ring-2 focus:ring-accent/40"
+              placeholder="Search tools... press /"
+              className="w-full rounded-full border border-border bg-card/60 py-2 pl-9 pr-9 text-sm outline-none focus:ring-2 focus:ring-accent/40"
             />
-            {q && (
-              <button onClick={() => setQ("")} className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 grid place-items-center rounded-full hover:bg-muted">
+            {q ? (
+              <button type="button" onClick={() => setQ("")} className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full hover:bg-muted">
                 <X className="h-3.5 w-3.5" />
               </button>
-            )}
+            ) : null}
           </div>
-          <a href="mailto:jaybaheliya@gmail.com" className="hidden sm:inline-flex min-h-9 items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground">Hire me</a>
+          <a href="mailto:jaybaheliya@gmail.com" className="hidden min-h-9 items-center gap-2 rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground sm:inline-flex">
+            Hire me
+          </a>
         </div>
 
-        <div className="mx-auto max-w-[1400px] px-4 md:px-8 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
-          {(["All", "Favorites", "Recent", "Labs", "CSS", "Layout", "JavaScript", "Color", "Typography", "Responsive", "Utilities", "Components", "Wow"] as const).map((c) => (
+        <div className="mx-auto flex max-w-[1400px] gap-2 overflow-x-auto px-4 pb-3 md:px-8">
+          {(["All", "Favorites", "Recent", "Labs", "CSS", "Layout", "JavaScript", "Color", "Typography", "Responsive", "Utilities", "Components", "Wow"] as const).map((chip) => (
             <button
               type="button"
-              key={c}
-              onClick={() => handleCategoryClick(c)}
-              className={"shrink-0 rounded-full border px-3 py-1 text-[11px] font-mono uppercase tracking-widest transition " + (cat === c ? "border-accent text-accent bg-accent/10" : "border-border text-muted-foreground hover:text-foreground")}
+              key={chip}
+              onClick={() => handleCategoryClick(chip)}
+              className={"shrink-0 rounded-full border px-3 py-1 text-[11px] font-mono uppercase tracking-widest transition " + (cat === chip ? "border-accent bg-accent/10 text-accent" : "border-border text-muted-foreground hover:text-foreground")}
             >
-              {c === "Favorites" ? "★ Favs (" + favs.length + ")" : c === "Recent" ? "Recent (" + recent.length + ")" : c}
+              {chip === "Favorites" ? `Favs (${favs.length})` : chip === "Recent" ? `Recent (${recent.length})` : chip}
             </button>
           ))}
         </div>
       </header>
 
-      <section className="mx-auto max-w-[1400px] px-4 md:px-8 pt-10 pb-4">
-        <div className="text-[11px] font-mono tracking-widest uppercase text-muted-foreground">Frontend toolkit · v2</div>
-        <h1 className="font-display text-3xl md:text-5xl font-bold mt-2 leading-[1.05]">
-          Tools. Live previews. <span className="text-accent">Copy‑ready.</span>
+      <section className="mx-auto max-w-[1400px] px-4 pb-4 pt-10 md:px-8">
+        <div className="text-[11px] font-mono uppercase tracking-widest text-muted-foreground">Frontend toolkit - v3</div>
+        <h1 className="mt-2 font-display text-3xl font-bold leading-[1.05] md:text-5xl">
+          Stop hunting. <span className="text-accent">Enter through intent.</span>
         </h1>
-        <p className="text-muted-foreground mt-3 max-w-2xl text-sm md:text-base">
-          Everything I reach for daily — CSS generators, JavaScript snippets, color and typography helpers, responsive checker and a components library. No sign‑ups, no backend.
+        <p className="mt-3 max-w-2xl text-sm text-muted-foreground md:text-base">
+          The toolkit now behaves more like a discovery console: start from the job to be done, inspect a spotlight, then move into stronger category shelves instead of a flat wall of cards.
         </p>
       </section>
 
-      <section className="mx-auto max-w-[1400px] px-4 md:px-8 pb-8">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,.95fr)]">
-          <div className="relative overflow-hidden rounded-[32px] border border-border bg-card p-6 md:p-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_78%_18%,rgba(245,158,11,0.14),transparent_26%),linear-gradient(180deg,rgba(127,127,127,0.05),transparent)]" />
-            <div className="relative">
-              <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Interactive Spotlight</div>
-              <div className="mt-3 max-w-3xl font-display text-3xl font-bold leading-[1.06] md:text-5xl">
-                Explore the toolkit like a <span className="text-accent">preview-driven lab</span>, not just a tool list.
-              </div>
-              <p className="mt-4 max-w-2xl text-sm text-muted-foreground md:text-base">
-                Hover any tool card below and this spotlight updates instantly. It makes the page feel more alive and helps people understand the route, category, and value before opening a tool.
+      <section className="mx-auto max-w-[1400px] px-4 pb-8 md:px-8">
+        <div className="rounded-[36px] border border-border bg-card p-6 md:p-8">
+          <div className="grid gap-8 xl:grid-cols-[minmax(0,1.05fr)_minmax(320px,.95fr)] xl:items-start">
+            <div>
+              <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Toolkit Command Center</div>
+              <h2 className="mt-4 max-w-3xl font-display text-4xl font-bold leading-[0.98] md:text-6xl">
+                Find the right tool <span className="text-accent">without guessing</span>.
+              </h2>
+              <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground">
+                Search directly, jump into a recent tool, or browse by workflow. The landing page should help you decide fast, not ask you to decode it.
               </p>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Tool Count</div>
+              <div className="mt-8 rounded-[28px] border border-border bg-background/80 p-4">
+                <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Quick Actions</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => searchRef.current?.focus()}
+                    className="inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground hover:border-accent hover:text-accent"
+                  >
+                    Press / to search
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQ("");
+                      setCat("All");
+                      focusResults();
+                    }}
+                    className="inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground hover:border-accent hover:text-accent"
+                  >
+                    Browse all
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCategoryClick("Favorites")}
+                    className="inline-flex min-h-10 items-center rounded-full border border-border px-4 py-2 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground hover:border-accent hover:text-accent"
+                  >
+                    Favorites
+                  </button>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2.5">
+                  {topRailTools.map((tool) => (
+                    <button
+                      key={tool.id}
+                      type="button"
+                      onClick={() => {
+                        setSpotlightId(tool.id);
+                        markRecent(tool.id);
+                      }}
+                      className={"rounded-full border px-3 py-1.5 text-left text-[11px] font-mono uppercase tracking-[0.22em] transition " + (spotlightTool.id === tool.id ? "border-accent bg-accent/10 text-accent" : "border-border bg-card text-muted-foreground hover:border-accent/50 hover:text-foreground")}
+                    >
+                      {tool.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <div className="rounded-[22px] border border-border bg-background/80 px-4 py-3">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">Tools</div>
                   <div className="mt-2 text-3xl font-semibold">{TOOLS.length}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">live utilities in the toolkit</div>
                 </div>
-                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">JavaScript</div>
-                  <div className="mt-2 text-3xl font-semibold">{categoryCounts.JavaScript || 0}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">code and conversion focused tools</div>
-                </div>
-                <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Favorites</div>
+                <div className="rounded-[22px] border border-border bg-background/80 px-4 py-3">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">Favorites</div>
                   <div className="mt-2 text-3xl font-semibold">{favs.length}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">saved for quick return visits</div>
+                </div>
+                <div className="rounded-[22px] border border-border bg-background/80 px-4 py-3">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">Recent</div>
+                  <div className="mt-2 text-3xl font-semibold">{recent.length}</div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="relative overflow-hidden rounded-[32px] border border-border bg-card p-5 md:p-6">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_28%),linear-gradient(180deg,rgba(127,127,127,0.05),transparent)]" />
-            <div className="relative space-y-4">
+            <div className="rounded-[30px] border border-border bg-background/85 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Live Spotlight</div>
-                  <div className="mt-2 text-2xl font-semibold">{spotlightTool.name}</div>
-                  <div className="mt-1 text-sm text-muted-foreground">{spotlightTool.category} · route preview</div>
+                  <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Spotlight</div>
+                  <div className="mt-3 font-display text-3xl font-bold leading-tight md:text-4xl">{spotlightTool.name}</div>
+                  <div className="mt-2 text-sm text-muted-foreground">{spotlightLane.label} lane</div>
                 </div>
                 <Link href={`/toolkit/${spotlightTool.id}`} className="rounded-full border border-border px-3 py-1.5 text-[11px] font-mono uppercase tracking-wide text-muted-foreground transition hover:border-accent hover:text-accent">
-                  /toolkit/{spotlightTool.id}
+                  Open
                 </Link>
               </div>
 
-              <div className="rounded-[28px] border border-border bg-background p-4">
-                <div className="grid gap-4 md:grid-cols-[1.1fr_.9fr]">
-                  <div className="space-y-4">
-                    <div className="rounded-2xl border border-border bg-card p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-accent/15 text-accent">
-                          <spotlightTool.icon className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <div className="font-display text-lg font-semibold">{spotlightTool.name}</div>
-                          <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">{spotlightTool.category}</div>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {spotlightTags.map((tag) => (
-                          <span key={tag} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div className="rounded-2xl border border-dashed border-border bg-card p-4">
-                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Preview</div>
-                        <div className="mt-2 text-sm text-foreground">Live controls</div>
-                      </div>
-                      <div className="rounded-2xl border border-dashed border-border bg-card p-4">
-                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Output</div>
-                        <div className="mt-2 text-sm text-foreground">Copy-ready result</div>
-                      </div>
-                      <div className="rounded-2xl border border-dashed border-border bg-card p-4">
-                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Docs</div>
-                        <div className="mt-2 text-sm text-foreground">Shareable route</div>
-                      </div>
-                    </div>
+              <div className="mt-5 rounded-[24px] border border-border bg-card p-4">
+                <div className="flex items-start gap-3">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-accent/15 text-accent">
+                    <spotlightTool.icon className="h-5 w-5" />
                   </div>
-
-                  <div className="rounded-[24px] border border-border bg-[linear-gradient(180deg,rgba(127,127,127,0.08),transparent)] p-4">
-                    <div className="space-y-3">
-                      <div className="rounded-2xl border border-border/70 bg-card p-3">
-                        <div className="h-3 w-20 rounded-full bg-accent/40" />
-                        <div className="mt-3 h-10 rounded-2xl bg-foreground/10" />
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                          <div className="h-16 rounded-2xl bg-accent/20" />
-                          <div className="h-16 rounded-2xl bg-foreground/10" />
-                          <div className="h-16 rounded-2xl bg-accent/15" />
-                        </div>
-                      </div>
-                      <div className="rounded-2xl border border-border/70 bg-card p-3">
-                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Hint</div>
-                        <div className="mt-2 text-sm text-muted-foreground">Move across the grid below and the spotlight refreshes instantly.</div>
-                      </div>
-                    </div>
+                  <div>
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Why this tool</div>
+                    <p className="mt-2 text-base leading-7 text-foreground">{CATEGORY_META[spotlightTool.category].blurb}</p>
                   </div>
                 </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {spotlightTags.map((tag) => (
+                    <span key={tag} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                {spotlightLane.picks.slice(0, 3).map((id) => {
+                  const tool = TOOLS.find((item) => item.id === id);
+                  if (!tool) return null;
+                  return (
+                    <button
+                      type="button"
+                      key={id}
+                      onClick={() => setSpotlightId(id)}
+                      className={"flex w-full items-center justify-between rounded-2xl border px-3 py-3 text-left text-sm transition " + (tool.id === spotlightTool.id ? "border-accent bg-accent/10 text-accent" : "border-border bg-card text-foreground hover:border-accent/40 hover:bg-muted/50")}
+                    >
+                      <span>{tool.name}</span>
+                      <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">{tool.category}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
+
+        <div className="mt-6 rounded-[32px] border border-border bg-card p-4 md:p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Workflow Lanes</div>
+            <div className="hidden rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground md:block">
+              hover to scout
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+            {DISCOVERY_LANES.map((lane, index) => {
+              const LaneIcon = lane.icon;
+              const active = spotlightLane.id === lane.id;
+              return (
+                <button
+                  key={lane.id}
+                  type="button"
+                  onClick={() => handleCategoryClick(lane.category)}
+                  onMouseEnter={() => setSpotlightId(lane.picks[0])}
+                  className={"group relative overflow-hidden rounded-[28px] p-4 text-left transition-all " + (active ? "bg-[linear-gradient(180deg,rgba(59,130,246,0.14),rgba(255,255,255,0.98))] shadow-[0_18px_44px_rgba(59,130,246,0.14)] ring-1 ring-accent/35" : "bg-[linear-gradient(180deg,#ffffff,rgba(248,250,252,0.96))] ring-1 ring-border hover:-translate-y-0.5 hover:ring-accent/30")}
+                >
+                  <div className={"absolute inset-x-0 top-0 h-1 transition " + (active ? "bg-accent" : "bg-transparent group-hover:bg-accent/45")} />
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="pt-1 font-mono text-[10px] uppercase tracking-[0.28em] text-muted-foreground">
+                      0{index + 1}
+                    </div>
+                    <div className={"rounded-full px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.22em] " + (active ? "bg-white/80 text-accent" : "bg-muted text-muted-foreground")}>
+                      {lane.category}
+                    </div>
+                  </div>
+                  <div className="mt-5 flex items-start gap-4">
+                    <div className={"grid h-12 w-12 shrink-0 place-items-center rounded-[18px] transition " + (active ? "bg-white text-accent shadow-sm" : "bg-accent/12 text-accent")}>
+                      <LaneIcon className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-display text-xl font-semibold leading-6">{lane.label}</div>
+                      <p className="mt-2 text-sm leading-7 text-muted-foreground">{lane.description}</p>
+                    </div>
+                  </div>
+                  <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/70 pt-3">
+                    <div className="flex flex-wrap gap-2">
+                      {lane.picks.slice(0, 2).map((id) => {
+                        const tool = TOOLS.find((item) => item.id === id);
+                        if (!tool) return null;
+                        return (
+                          <span key={id} className="rounded-full border border-border bg-white/80 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.18em] text-muted-foreground">
+                            {tool.name}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <span className={"text-[10px] font-mono uppercase tracking-[0.22em] transition " + (active ? "text-accent" : "text-muted-foreground group-hover:text-accent")}>
+                      Scout
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
-      <section ref={resultsRef} className="mx-auto max-w-[1400px] scroll-mt-28 px-4 md:px-8 pb-24">
+      <section ref={resultsRef} className="mx-auto max-w-[1400px] scroll-mt-28 px-4 pb-24 md:px-8">
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
-            No tools match “{q}”. Try a different keyword.
+            No tools match "{q}". Try a different keyword.
+          </div>
+        ) : isDefaultBrowse ? (
+          <div className="space-y-10">
+            {groupedFiltered.map(({ category, tools }) => (
+              <section key={category} className="overflow-hidden rounded-[28px] border border-border bg-card">
+                <div className={"bg-gradient-to-r px-5 py-5 md:px-6 " + CATEGORY_META[category].tone}>
+                  <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                    <div>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Category Shelf</div>
+                      <h2 className="mt-2 font-display text-2xl font-semibold md:text-3xl">{category}</h2>
+                      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{CATEGORY_META[category].blurb}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCategoryClick(category)}
+                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-background/80 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent"
+                    >
+                      Focus {category} ({tools.length})
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
+                  {tools.slice(0, 8).map((tool, index) => renderToolCard(tool, index === 0))}
+                </div>
+              </section>
+            ))}
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((t) => {
-              const Icon = t.icon;
-              const isFav = favs.includes(t.id);
-              return (
-                <Link
-                  key={t.id}
-                  href={`/toolkit/${t.id}`}
-                  onClick={() => { markRecent(t.id); }}
-                  onMouseEnter={() => setSpotlightId(t.id)}
-                  onFocus={() => setSpotlightId(t.id)}
-                  className={"group relative text-left rounded-2xl border bg-card p-4 transition-all hover:-translate-y-0.5 " + (spotlightTool.id === t.id ? "border-accent/70 shadow-[0_0_0_1px_rgba(59,130,246,0.16)]" : "border-border hover:border-accent/60")}
-                >
-                  <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent opacity-0 transition group-hover:opacity-100" />
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="h-10 w-10 rounded-xl bg-accent/15 text-accent grid place-items-center">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFav(t.id); }}
-                      className={"h-8 w-8 grid place-items-center rounded-full border border-transparent hover:border-border transition " + (isFav ? "text-accent" : "text-muted-foreground/60")}
-                      aria-label="favorite"
-                      role="button"
-                    >
-                      <Star className="h-4 w-4" fill={isFav ? "currentColor" : "none"} />
-                    </span>
-                  </div>
-                  <div className="mt-3 font-display text-base font-semibold">{t.name}</div>
-                  <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{t.category}</div>
-                  <div className="mt-3 text-xs text-accent opacity-0 group-hover:opacity-100 transition font-mono">Open →</div>
-                </Link>
-              );
-            })}
+            {filtered.map((tool) => renderToolCard(tool))}
           </div>
         )}
       </section>
 
-      {openTool && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6" role="dialog" aria-modal>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setOpenId(null)} />
-          <div className="relative w-full sm:max-w-5xl max-h-[92vh] overflow-auto rounded-t-3xl sm:rounded-3xl border border-border bg-background shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-background/95 backdrop-blur px-5 py-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-9 w-9 rounded-xl bg-accent/15 text-accent grid place-items-center shrink-0">
-                  <openTool.icon className="h-4 w-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="font-display text-lg font-semibold truncate">{openTool.name}</div>
-                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{openTool.category}</div>
-                </div>
-              </div>
-              <button onClick={() => setOpenId(null)} className="h-9 w-9 grid place-items-center rounded-full border border-border hover:border-accent hover:text-accent">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="p-4 md:p-6">
-              {openTool.render()}
-            </div>
-          </div>
-        </div>
-      )}
-
       <footer className="border-t border-border/60 py-8 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-        Built by Jwala Baheliya · <Link href="/" className="hover:text-accent">Portfolio</Link> · <Link href="/tools" className="hover:text-accent">Recruiter tools</Link>
+        Built by Jwala Baheliya - <Link href="/" className="hover:text-accent">Portfolio</Link> - <Link href="/tools" className="hover:text-accent">Recruiter tools</Link>
       </footer>
     </div>
   );
@@ -726,6 +921,8 @@ function AspectRatio() {
   const [fit, setFit] = useState<"cover" | "contain">("cover");
   const computedHeight = Math.round((pxWidth * h) / w);
   const ratio = (w / h).toFixed(4);
+  const previewWidth = Math.min(pxWidth, 720);
+  const previewHeight = Math.round((previewWidth * h) / w);
   const css = mode === "css"
     ? "aspect-ratio: " + w + " / " + h + ";\nwidth: 100%;\nmax-width: " + pxWidth + "px;"
     : "width: " + pxWidth + "px;\nheight: " + computedHeight + "px;";
@@ -733,7 +930,7 @@ function AspectRatio() {
   const html = `<div class="media-frame">\n  <img src="/image.jpg" alt="" style="object-fit: ${fit};" />\n</div>`;
   return (
     <div className="grid gap-5 xl:grid-cols-[1.02fr_.98fr]">
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">
           {(["css", "fixed"] as const).map((item) => (
             <button key={item} onClick={() => setMode(item)} className={"rounded-full px-3 py-1 uppercase " + (mode === item ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>
@@ -792,9 +989,9 @@ function AspectRatio() {
           <CodeBlock code={html} lang="html" />
         </div>
       </div>
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         <Preview className="p-4 sm:p-6">
-          <div className="w-full max-w-2xl space-y-4">
+          <div className="w-full max-w-2xl min-w-0 space-y-4">
             <div className="rounded-xl border border-border bg-card px-3 py-2 text-left">
               <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">preview frame</div>
               <div className="mt-1 text-sm font-semibold">{mode === "css" ? "responsive aspect-ratio" : "fixed pixel dimensions"}</div>
@@ -803,14 +1000,21 @@ function AspectRatio() {
               className="relative mx-auto overflow-hidden rounded-2xl border border-accent/40 bg-accent/10 shadow-[0_20px_50px_-30px_rgba(59,130,246,0.5)]"
               style={mode === "css"
                 ? { aspectRatio: `${w} / ${h}`, width: "100%", maxWidth: `${pxWidth}px` }
-                : { width: `${Math.min(pxWidth, 720)}px`, height: `${Math.min(computedHeight, 420)}px`, maxWidth: "100%" }}
+                : { aspectRatio: `${w} / ${h}`, width: "100%", maxWidth: `${previewWidth}px` }}
             >
               <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(59,130,246,0.14),rgba(14,165,233,0.28))]" />
               <div className="absolute inset-4 rounded-[18px] border border-dashed border-accent/40" />
               <div className="absolute inset-0 grid place-items-center p-4 text-center">
                 <div>
                   <div className="text-sm font-semibold text-accent-foreground/90">{w}:{h} aspect frame</div>
-                  <div className="mt-1 font-mono text-xs text-muted-foreground">{pxWidth}px × {computedHeight}px</div>
+                  <div className="mt-1 font-mono text-xs text-muted-foreground">
+                    {mode === "css" ? `${pxWidth}px max width` : `${pxWidth}px x ${computedHeight}px`}
+                  </div>
+                  {mode === "fixed" ? (
+                    <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">
+                      scaled preview: {previewWidth}px x {previewHeight}px
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -3369,6 +3573,504 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
           <div className="grid gap-4 lg:grid-cols-2">
             <CodeBlock code={frameworkCode} lang={framework === "vanilla" ? "js" : "tsx"} />
             <CodeBlock code={csrfJs} lang="js" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ReactPlaygroundLabTool() {
+  const [section, setSection] = useState<"hooks" | "events">("hooks");
+  const [selectedHook, setSelectedHook] = useState("useState");
+  const [selectedEvent, setSelectedEvent] = useState("onClick");
+  const [name, setName] = useState("Jwala");
+  const [step, setStep] = useState(1);
+  const [count, setCount] = useState(2);
+  const [todos, setTodos] = useState(["Read React docs", "Trace render flow", "Practice events"]);
+  const [filter, setFilter] = useState("");
+  const deferredFilter = useDeferredValue(filter);
+  const [view, setView] = useState<"learn" | "practice">("learn");
+  const [isPending, startTransition] = useTransition();
+  const [effectLog, setEffectLog] = useState<string[]>(["ready"]);
+  const [eventLog, setEventLog] = useState<string[]>(["ready"]);
+  const [shouldStopBubble, setShouldStopBubble] = useState(true);
+  const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const generatedId = useId();
+
+  const [reducerState, dispatch] = useReducer(
+    (state: { count: number; history: string[] }, action: { type: "increment" | "decrement" | "reset" }) => {
+      if (action.type === "increment") {
+        const next = state.count + step;
+        return { count: next, history: [`increment -> ${next}`, ...state.history].slice(0, 6) };
+      }
+      if (action.type === "decrement") {
+        const next = Math.max(0, state.count - step);
+        return { count: next, history: [`decrement -> ${next}`, ...state.history].slice(0, 6) };
+      }
+      return { count: 0, history: ["reset -> 0", ...state.history].slice(0, 6) };
+    },
+    { count: 2, history: ["ready"] },
+  );
+
+  const hookGuides = [
+    {
+      id: "useState",
+      title: "useState",
+      summary: "Store local UI state like inputs, toggles, counters, tabs, and loading flags.",
+      useWhen: "A single component owns the value and updates are simple.",
+      code: `const [count, setCount] = useState(0);
+
+<button onClick={() => setCount((current) => current + 1)}>
+  {count}
+</button>`,
+    },
+    {
+      id: "useEffect",
+      title: "useEffect",
+      summary: "Run side effects after render, like fetches, subscriptions, timers, or syncing with outside systems.",
+      useWhen: "You need to do something after React commits UI to the screen.",
+      code: `useEffect(() => {
+  const id = setInterval(() => {
+    console.log("tick");
+  }, 1000);
+
+  return () => clearInterval(id);
+}, []);`,
+    },
+    {
+      id: "useRef",
+      title: "useRef",
+      summary: "Hold a mutable value or DOM reference without causing a re-render.",
+      useWhen: "You need to focus an input, measure an element, or keep a mutable instance handle.",
+      code: `const inputRef = useRef<HTMLInputElement>(null);
+
+<button onClick={() => inputRef.current?.focus()}>
+  Focus input
+</button>
+<input ref={inputRef} />`,
+    },
+    {
+      id: "useMemo",
+      title: "useMemo",
+      summary: "Cache an expensive derived value so it recalculates only when inputs change.",
+      useWhen: "The calculation is heavy or you need a stable derived value for child props.",
+      code: `const filtered = useMemo(() => {
+  return items.filter((item) => item.includes(query));
+}, [items, query]);`,
+    },
+    {
+      id: "useReducer",
+      title: "useReducer",
+      summary: "Manage multi-step state transitions when updates become more complex than one setter.",
+      useWhen: "You have state with branching actions like increment, reset, add, remove, or wizard steps.",
+      code: `const [state, dispatch] = useReducer(reducer, initialState);
+
+dispatch({ type: "increment" });
+dispatch({ type: "reset" });`,
+    },
+    {
+      id: "useContext",
+      title: "useContext",
+      summary: "Read shared values from a provider without drilling props through every component.",
+      useWhen: "Theme, auth, locale, feature flags, or app-wide settings need to be shared.",
+      code: `const ThemeContext = createContext("light");
+
+function Toolbar() {
+  const theme = useContext(ThemeContext);
+  return <div>{theme}</div>;
+}`,
+    },
+    {
+      id: "useId",
+      title: "useId",
+      summary: "Generate a stable unique id for accessibility relationships like label -> input.",
+      useWhen: "You need predictable ids in reusable components.",
+      code: `const id = useId();
+
+<label htmlFor={id}>Email</label>
+<input id={id} />`,
+    },
+    {
+      id: "useLayoutEffect",
+      title: "useLayoutEffect",
+      summary: "Run an effect before the browser paints, usually for measurements or layout correction.",
+      useWhen: "You need DOM measurement without visible flicker.",
+      code: `useLayoutEffect(() => {
+  const rect = ref.current?.getBoundingClientRect();
+  setWidth(rect?.width ?? 0);
+}, []);`,
+    },
+    {
+      id: "useTransition",
+      title: "useTransition",
+      summary: "Mark non-urgent updates so urgent interactions stay responsive.",
+      useWhen: "Switching views, filtering larger lists, or triggering slower UI updates.",
+      code: `const [isPending, startTransition] = useTransition();
+
+startTransition(() => {
+  setView("results");
+});`,
+    },
+    {
+      id: "useDeferredValue",
+      title: "useDeferredValue",
+      summary: "Lag a value slightly so the UI can stay snappy while expensive work catches up.",
+      useWhen: "Typing into a search field that drives a heavier filtered view.",
+      code: `const deferredQuery = useDeferredValue(query);
+
+const filtered = useMemo(() => {
+  return items.filter((item) => item.includes(deferredQuery));
+}, [items, deferredQuery]);`,
+    },
+  ] as const;
+
+  const eventGuides = [
+    {
+      id: "onClick",
+      title: "onClick",
+      summary: "Respond to button presses, card actions, toggles, and custom UI controls.",
+      useWhen: "A user intentionally activates something with pointer or keyboard.",
+      code: `<button onClick={() => saveDraft()}>Save draft</button>`,
+    },
+    {
+      id: "onChange",
+      title: "onChange",
+      summary: "Read the latest value from text inputs, textareas, and selects.",
+      useWhen: "You want controlled form state in React.",
+      code: `const [email, setEmail] = useState("");
+
+<input
+  value={email}
+  onChange={(event) => setEmail(event.target.value)}
+/>`,
+    },
+    {
+      id: "onSubmit",
+      title: "onSubmit",
+      summary: "Own the form submit flow and prevent full page reload.",
+      useWhen: "Validating, posting data, or handling errors in a React form.",
+      code: `<form onSubmit={(event) => {
+  event.preventDefault();
+  handleSubmit();
+}} />`,
+    },
+    {
+      id: "onFocus / onBlur",
+      title: "onFocus / onBlur",
+      summary: "Track field entry/exit for hints, validation timing, or active styling.",
+      useWhen: "You want to reveal helper text or validate after the user leaves a field.",
+      code: `<input
+  onFocus={() => setActive(true)}
+  onBlur={() => setActive(false)}
+/>`,
+    },
+    {
+      id: "onKeyDown",
+      title: "onKeyDown",
+      summary: "Watch keyboard shortcuts, Enter presses, Escape, and accessibility actions.",
+      useWhen: "Implementing command input, modal escape, or keyboard-first UX.",
+      code: `<input
+  onKeyDown={(event) => {
+    if (event.key === "Enter") submit();
+  }}
+/>`,
+    },
+    {
+      id: "onPointerDown",
+      title: "onPointerDown",
+      summary: "Handle lower-level pointer interactions for drag, press, or drawing style UIs.",
+      useWhen: "Building sliders, canvases, drag surfaces, or press interactions.",
+      code: `<div
+  onPointerDown={(event) => beginDrag(event.clientX, event.clientY)}
+/>`,
+    },
+  ] as const;
+
+  const selectedHookGuide = hookGuides.find((item) => item.id === selectedHook) ?? hookGuides[0];
+  const selectedEventGuide = eventGuides.find((item) => item.id === selectedEvent) ?? eventGuides[0];
+
+  const filteredTodos = useMemo(() => {
+    const term = deferredFilter.trim().toLowerCase();
+    if (!term) return todos;
+    return todos.filter((todo) => todo.toLowerCase().includes(term));
+  }, [deferredFilter, todos]);
+
+  const derivedSummary = useMemo(() => {
+    return `${name} is practicing ${todos.length} React items with a count of ${count}.`;
+  }, [count, name, todos.length]);
+
+  useEffect(() => {
+    if (section !== "hooks") return;
+    setEffectLog((current) => [`effect -> count ${count}`, ...current].slice(0, 6));
+  }, [count, section]);
+
+  const switchView = (nextView: "learn" | "practice") => {
+    startTransition(() => {
+      setView(nextView);
+    });
+  };
+
+  const pushEventLog = (label: string) => {
+    setEventLog((current) => [label, ...current].slice(0, 8));
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-[32px] border border-border bg-card p-4 md:p-6">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_360px]">
+          <div className="space-y-4">
+            <div className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-mono uppercase tracking-[0.28em] text-emerald-700">
+              React study section
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold tracking-tight text-foreground md:text-4xl">Learn React hooks and events with code-first examples</h3>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-muted-foreground md:text-base">
+                This section is built like a study surface. Pick a hook or event, read what it does, copy the exact pattern, and use the live sandbox to see the behavior instead of memorizing disconnected snippets.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="rounded-2xl border border-border bg-background p-4">
+                <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Hooks covered</div>
+                <div className="mt-2 text-2xl font-semibold text-foreground">{hookGuides.length}</div>
+              </div>
+              <div className="rounded-2xl border border-border bg-background p-4">
+                <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Events covered</div>
+                <div className="mt-2 text-2xl font-semibold text-foreground">{eventGuides.length}</div>
+              </div>
+              <div className="rounded-2xl border border-border bg-background p-4">
+                <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Live mode</div>
+                <div className="mt-2 text-sm font-semibold text-foreground">{section === "hooks" ? selectedHookGuide.title : selectedEventGuide.title}</div>
+              </div>
+              <div className="rounded-2xl border border-border bg-background p-4">
+                <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Goal</div>
+                <div className="mt-2 text-sm font-semibold text-foreground">Learn by reading and touching the code.</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 rounded-[28px] border border-border bg-background p-4">
+            <div className="inline-flex w-full rounded-2xl border border-border p-1 text-[11px] font-mono uppercase tracking-wide">
+              {(["hooks", "events"] as const).map((item) => (
+                <button
+                  type="button"
+                  key={item}
+                  onClick={() => setSection(item)}
+                  className={"flex-1 rounded-xl px-3 py-2 transition " + (section === item ? "bg-foreground text-background" : "text-muted-foreground")}
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">How to study this</div>
+              <div className="mt-2 text-sm leading-7 text-muted-foreground">Pick one item, read the example, then trigger the live sandbox until you can explain why the UI changed.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="rounded-[28px] border border-border bg-card p-4">
+          <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">{section === "hooks" ? "Hooks catalog" : "Events catalog"}</div>
+          <div className="mt-3 space-y-2">
+            {(section === "hooks" ? hookGuides : eventGuides).map((item) => {
+              const active = section === "hooks" ? selectedHook === item.id : selectedEvent === item.id;
+              return (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => section === "hooks" ? setSelectedHook(item.id) : setSelectedEvent(item.id)}
+                  className={"w-full rounded-2xl border px-3 py-3 text-left transition " + (active ? "border-accent bg-accent/10 text-accent" : "border-border bg-background text-foreground hover:border-accent/40")}
+                >
+                  <div className="text-sm font-semibold">{item.title}</div>
+                  <div className="mt-1 text-xs leading-6 text-muted-foreground">{item.summary}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-[28px] border border-border bg-card p-4 md:p-5">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_360px]">
+              <div>
+                <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Reference</div>
+                <div className="mt-2 text-2xl font-semibold text-foreground">{section === "hooks" ? selectedHookGuide.title : selectedEventGuide.title}</div>
+                <p className="mt-3 text-sm leading-7 text-muted-foreground">{section === "hooks" ? selectedHookGuide.summary : selectedEventGuide.summary}</p>
+                <div className="mt-4 rounded-2xl border border-border bg-background p-4">
+                  <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Use it when</div>
+                  <div className="mt-2 text-sm leading-7 text-foreground">{section === "hooks" ? selectedHookGuide.useWhen : selectedEventGuide.useWhen}</div>
+                </div>
+              </div>
+              <CodeBlock code={section === "hooks" ? selectedHookGuide.code : selectedEventGuide.code} lang="tsx" />
+            </div>
+          </div>
+
+          <Preview className="overflow-hidden p-4 sm:p-6" dark={false}>
+            <div className="w-full rounded-[30px] border border-border bg-white p-4 text-left shadow-[0_18px_50px_-32px_rgba(15,23,42,0.35)] sm:p-6">
+              {section === "hooks" ? (
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.04fr)_320px]">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Hooks sandbox</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">Change state, trigger reducer updates, and watch effects log</div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="grid gap-1.5">
+                        <span className="text-sm font-medium text-slate-900">Name</span>
+                        <input ref={inputRef} id={generatedId} value={name} onChange={(event) => setName(event.target.value)} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" />
+                      </label>
+                      <label className="grid gap-1.5">
+                        <span className="text-sm font-medium text-slate-900">Step</span>
+                        <input type="number" min={1} max={5} value={step} onChange={(event) => setStep(Math.max(1, Number(event.target.value) || 1))} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" />
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      <button type="button" onClick={() => setCount((current) => current + step)} className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white">useState +{step}</button>
+                      <button type="button" onClick={() => dispatch({ type: "increment" })} className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700">Reducer +{step}</button>
+                      <button type="button" onClick={() => setTodos((current) => [...current, `Practice ${selectedHookGuide.title}`])} className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700">Add todo</button>
+                      <button type="button" onClick={() => inputRef.current?.focus()} className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700">Focus input</button>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">useState count</div>
+                        <div className="mt-2 text-4xl font-semibold text-slate-950">{count}</div>
+                      </div>
+                      <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                        <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">useReducer count</div>
+                        <div className="mt-2 text-4xl font-semibold text-slate-950">{reducerState.count}</div>
+                      </div>
+                    </div>
+                    <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">useTransition + useDeferredValue</div>
+                          <div className="mt-2 text-sm text-slate-700">Switch view and filter todos without blocking the UI.</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => switchView("learn")} className={"rounded-full px-3 py-1.5 text-xs font-mono uppercase tracking-[0.2em] " + (view === "learn" ? "bg-slate-950 text-white" : "border border-slate-200 text-slate-600")}>Learn</button>
+                          <button type="button" onClick={() => switchView("practice")} className={"rounded-full px-3 py-1.5 text-xs font-mono uppercase tracking-[0.2em] " + (view === "practice" ? "bg-slate-950 text-white" : "border border-slate-200 text-slate-600")}>Practice</button>
+                        </div>
+                      </div>
+                      <input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Filter todos" className="mt-4 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none" />
+                      <div className="mt-2 text-xs text-slate-500">{isPending ? "transition pending..." : `deferred filter: ${deferredFilter || "none"}`}</div>
+                      <div className="mt-3 space-y-2">
+                        {filteredTodos.map((todo) => (
+                          <div key={todo} className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700">{view === "learn" ? todo : `Practice: ${todo}`}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="rounded-[26px] border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Derived summary</div>
+                      <div className="mt-2 text-sm leading-7 text-slate-700">{derivedSummary}</div>
+                    </div>
+                    <div className="rounded-[26px] border border-slate-200 bg-white p-4">
+                      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Recent effect logs</div>
+                      <div className="mt-3 space-y-2">
+                        {effectLog.map((item) => (
+                          <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">{item}</div>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-[26px] border border-slate-200 bg-white p-4">
+                      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Reducer history</div>
+                      <div className="mt-3 space-y-2">
+                        {reducerState.history.map((item) => (
+                          <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">{item}</div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid gap-4 xl:grid-cols-[minmax(0,1.06fr)_320px]">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Events sandbox</div>
+                      <div className="mt-2 text-xl font-semibold text-slate-950">Trigger form and pointer events, then inspect the order</div>
+                    </div>
+                    <label className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                      <input type="checkbox" checked={shouldStopBubble} onChange={(event) => setShouldStopBubble(event.target.checked)} />
+                      stop bubbling when clicking the inner button
+                    </label>
+                    <div
+                      onClick={() => pushEventLog("parent click")}
+                      onPointerDown={() => pushEventLog("pointer down")}
+                      className="rounded-[28px] border border-slate-200 bg-slate-50 p-5"
+                    >
+                      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Parent zone</div>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            pushEventLog("button click");
+                            if (shouldStopBubble) event.stopPropagation();
+                          }}
+                          className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-5 py-3 text-sm font-medium text-white"
+                        >
+                          Inner button
+                        </button>
+                        <input
+                          value={inputValue}
+                          onChange={(event) => {
+                            setInputValue(event.target.value);
+                            pushEventLog(`change -> ${event.target.value || "empty"}`);
+                          }}
+                          onFocus={() => pushEventLog("focus")}
+                          onBlur={() => pushEventLog("blur")}
+                          onKeyDown={(event) => pushEventLog(`key -> ${event.key}`)}
+                          placeholder="Type and press a key"
+                          className="min-w-[220px] rounded-full border border-slate-200 bg-white px-4 py-3 text-sm outline-none"
+                        />
+                        <form
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            pushEventLog("submit");
+                          }}
+                          className="flex"
+                        >
+                          <button type="submit" className="inline-flex min-h-11 items-center justify-center rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-medium text-slate-700">
+                            Submit
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="rounded-[26px] border border-slate-200 bg-white p-4">
+                    <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-slate-500">Event log</div>
+                    <div className="mt-3 space-y-2">
+                      {eventLog.map((item) => (
+                        <div key={item} className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700">{item}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Preview>
+
+          <div className="grid gap-4 xl:grid-cols-3">
+            <div className="rounded-3xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">What to notice</div>
+              <div className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
+                <div>Hooks solve different jobs. State stores values, effects sync with the outside world, refs hold mutable handles, reducers model transitions.</div>
+                <div>Events are just inputs to your UI state machine. Log them until you can predict their order before clicking.</div>
+                <div>The best way to learn React is to connect behavior to code, not memorize isolated API names.</div>
+              </div>
+            </div>
+            <div className="rounded-3xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Practice prompts</div>
+              <div className="mt-3 space-y-3 text-sm leading-7 text-muted-foreground">
+                <div>Rewrite the counter so every change goes through the reducer only.</div>
+                <div>Add field validation to the events sandbox and inspect when `blur` should run.</div>
+                <div>Turn the filtered todos into server data later and compare `useEffect` vs event-driven fetch.</div>
+              </div>
+            </div>
+            <CodeBlock code={section === "hooks" ? selectedHookGuide.code : selectedEventGuide.code} lang="tsx" />
           </div>
         </div>
       </div>
@@ -6660,6 +7362,7 @@ const TOOLS: Tool[] = [
   { id: "form-events-lab", name: "Form Events, Validation & CSRF Lab", category: "JavaScript", keywords: "form events validation blur input change submit csrf react nextjs vanilla", icon: FileText, render: () => <FormEventsCsrfLabTool /> },
   { id: "rest-api-lab", name: "REST API Lab: Beginner to Advanced", category: "JavaScript", keywords: "rest api http methods headers fetch crud auth pagination react nextjs vanilla", icon: FileJson, render: () => <RestApiLabTool /> },
   { id: "frontend-backend-lab", name: "Frontend to Backend Lab: Zero to Hero", category: "JavaScript", keywords: "frontend backend api fetch nextjs react vanilla auth validation loading error mutation architecture", icon: Link2, render: () => <FrontendBackendLabTool /> },
+  { id: "react-playground-lab", name: "React Playground Lab", category: "JavaScript", keywords: "react hooks events fetch useState useEffect useReducer useRef async learning playground", icon: Component, render: () => <ReactPlaygroundLabTool /> },
   { id: "json-types", name: "API JSON to TypeScript Types", category: "JavaScript", keywords: "json ts types zod", icon: FileJson, render: () => <JsonToTypesTool /> },
   { id: "storage", name: "LocalStorage / SessionStorage Playground", category: "JavaScript", keywords: "browser storage", icon: Terminal, render: () => <StoragePlaygroundTool /> },
   { id: "debounce-play", name: "Debounce / Throttle Playground", category: "JavaScript", keywords: "debounce throttle performance", icon: Timer, render: () => <DebounceThrottleTool /> },

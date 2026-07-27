@@ -99,6 +99,7 @@ export const TOOLKIT_DOCS: ToolkitDoc[] = [
   { id: "form-events-lab", name: "Form Events, Validation & CSRF Lab", category: "JavaScript", keywords: "form events validation blur input change submit csrf react nextjs vanilla" },
   { id: "rest-api-lab", name: "REST API Lab: Beginner to Advanced", category: "JavaScript", keywords: "rest api http methods headers fetch crud auth pagination react nextjs vanilla" },
   { id: "frontend-backend-lab", name: "Frontend to Backend Lab: Zero to Hero", category: "JavaScript", keywords: "frontend backend api fetch nextjs react vanilla auth validation loading error mutation architecture" },
+  { id: "react-playground-lab", name: "React Playground Lab", category: "JavaScript", keywords: "react hooks events fetch useState useEffect useReducer useRef async learning playground" },
   { id: "json-types", name: "API JSON to TypeScript Types", category: "JavaScript", keywords: "json ts types zod" },
   { id: "storage", name: "LocalStorage / SessionStorage Playground", category: "JavaScript", keywords: "browser storage" },
   { id: "debounce-play", name: "Debounce / Throttle Playground", category: "JavaScript", keywords: "debounce throttle performance" },
