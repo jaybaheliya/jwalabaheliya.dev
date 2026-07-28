@@ -7295,6 +7295,839 @@ function FrontendBugPromptTool() {
   );
 }
 
+function formatBytes(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const value = bytes / 1024 ** exponent;
+  return `${value.toFixed(value >= 100 || exponent === 0 ? 0 : 1)} ${units[exponent]}`;
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = filename;
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(href), 1500);
+}
+
+function safeName(name: string) {
+  return name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9-_]+/gi, "-").replace(/-+/g, "-").replace(/^-|-$/g, "") || "file";
+}
+
+function toArrayBuffer(bytes: Uint8Array) {
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  return copy.buffer;
+}
+
+function parsePageRanges(input: string, totalPages: number) {
+  const picked = new Set<number>();
+  for (const chunk of input.split(",")) {
+    const value = chunk.trim();
+    if (!value) continue;
+    const rangeMatch = value.match(/^(\d+)\s*-\s*(\d+)$/);
+    if (rangeMatch) {
+      const start = Number(rangeMatch[1]);
+      const end = Number(rangeMatch[2]);
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 1 || end < start || end > totalPages) return null;
+      for (let page = start; page <= end; page += 1) picked.add(page);
+      continue;
+    }
+    const page = Number(value);
+    if (!Number.isInteger(page) || page < 1 || page > totalPages) return null;
+    picked.add(page);
+  }
+  return [...picked].sort((a, b) => a - b);
+}
+
+type PdfQueueItem = {
+  id: string;
+  file: File;
+  pages?: number;
+  status: "reading" | "ready" | "error";
+  error?: string;
+};
+
+type ImageQueueItem = {
+  id: string;
+  file: File;
+  width?: number;
+  height?: number;
+  status: "reading" | "ready" | "error";
+  error?: string;
+};
+
+async function loadPdfLib() {
+  return import("pdf-lib");
+}
+
+async function loadPdfJs() {
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/build/pdf.worker.min.mjs", import.meta.url).toString();
+  return pdfjs;
+}
+
+async function readPdfPages(file: File) {
+  const { PDFDocument } = await loadPdfLib();
+  const doc = await PDFDocument.load(await file.arrayBuffer());
+  return doc.getPageCount();
+}
+
+async function readImageMeta(file: File) {
+  return new Promise<{ width: number; height: number }>((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      reject(new Error(`Could not read ${file.name}.`));
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+}
+
+function moveItem<T>(items: T[], from: number, to: number) {
+  if (to < 0 || to >= items.length) return items;
+  const next = [...items];
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
+function extractPdfLines(items: Array<{ str?: string; transform?: number[] }>) {
+  const rows = new Map<number, { y: number; parts: { x: number; text: string }[] }>();
+  for (const item of items) {
+    const text = item.str?.trim();
+    const transform = item.transform;
+    if (!text || !transform) continue;
+    const y = transform[5];
+    const x = transform[4];
+    const key = Math.round(y / 4) * 4;
+    const row = rows.get(key) ?? { y, parts: [] };
+    row.parts.push({ x, text });
+    rows.set(key, row);
+  }
+  return [...rows.values()]
+    .sort((a, b) => b.y - a.y)
+    .map((row) => row.parts.sort((a, b) => a.x - b.x).map((part) => part.text).join(" ").replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+}
+
+function PdfPanel({
+  eyebrow,
+  title,
+  description,
+  accent = "from-accent/20 via-accent/5 to-transparent",
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  accent?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="group relative overflow-hidden rounded-[28px] border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_24px_80px_-48px_rgba(56,189,248,0.35)]">
+      <div className={"pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-br opacity-70 transition duration-300 group-hover:opacity-100 " + accent} />
+      <div className="relative">
+        <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">{eyebrow}</div>
+        <div className="mt-2 font-display text-2xl font-semibold text-foreground">{title}</div>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">{description}</p>
+        <div className="mt-5">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function PdfStat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-background/65 p-4 transition-transform duration-200 hover:-translate-y-0.5">
+      <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">{label}</div>
+      <div className="mt-2 font-display text-2xl font-semibold text-foreground">{value}</div>
+      {hint ? <div className="mt-1 text-xs text-muted-foreground">{hint}</div> : null}
+    </div>
+  );
+}
+
+function PdfNote({
+  tone = "neutral",
+  children,
+}: {
+  tone?: "neutral" | "success" | "warn";
+  children: React.ReactNode;
+}) {
+  const toneClass = tone === "success"
+    ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-800 dark:text-emerald-100"
+    : tone === "warn"
+      ? "border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-100"
+      : "border-border bg-background/65 text-muted-foreground";
+  return <div className={`rounded-2xl border px-4 py-3 text-sm leading-6 transition-all duration-300 ${toneClass}`}>{children}</div>;
+}
+
+function PdfActionButton({
+  onClick,
+  disabled,
+  busy,
+  label,
+}: {
+  onClick: () => void | Promise<void>;
+  disabled?: boolean;
+  busy?: boolean;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => void onClick()}
+      disabled={disabled || busy}
+      className="inline-flex min-h-11 items-center justify-center rounded-full bg-accent px-5 py-2 text-sm font-medium text-accent-foreground transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-22px_rgba(56,189,248,0.7)] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+    >
+      {busy ? "Working..." : label}
+    </button>
+  );
+}
+
+function QueueUpload({
+  label,
+  description,
+  accept,
+  multiple,
+  onFiles,
+}: {
+  label: string;
+  description: string;
+  accept: string;
+  multiple?: boolean;
+  onFiles: (files: File[]) => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+
+  return (
+    <label
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragEnter={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+      }}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        onFiles(Array.from(e.dataTransfer.files ?? []));
+      }}
+      className={"group block cursor-pointer rounded-[24px] border border-dashed p-5 transition-all duration-300 hover:border-accent/45 hover:bg-background " + (dragOver ? "border-accent bg-accent/5 shadow-[0_20px_50px_-35px_rgba(56,189,248,0.55)]" : "border-border bg-background/60")}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="font-medium text-foreground transition-colors duration-300 group-hover:text-accent">{label}</div>
+          <div className="mt-1 text-sm leading-6 text-muted-foreground">{dragOver ? "Drop files here to add them instantly." : description}</div>
+        </div>
+        <div className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground transition-colors duration-300 group-hover:border-accent/40 group-hover:text-accent">
+          {dragOver ? "Drop" : "Browse"}
+        </div>
+      </div>
+      <input type="file" accept={accept} multiple={multiple} className="mt-4 block w-full text-sm" onChange={(e) => onFiles(Array.from(e.target.files ?? []))} />
+    </label>
+  );
+}
+
+function QueueItemShell({
+  draggable,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  active,
+  children,
+}: {
+  draggable?: boolean;
+  onDragStart?: () => void;
+  onDragOver?: (e: React.DragEvent<HTMLDivElement>) => void;
+  onDrop?: () => void;
+  onDragEnd?: () => void;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      draggable={draggable}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragEnd={onDragEnd}
+      className={"rounded-[22px] border bg-background/70 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/35 hover:bg-background " + (active ? "border-accent/60 shadow-[0_18px_40px_-28px_rgba(56,189,248,0.55)]" : "border-border")}
+    >
+      {children}
+    </div>
+  );
+}
+
+function MergePdfTool() {
+  const [items, setItems] = useState<PdfQueueItem[]>([]);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState("merged-document");
+  const [status, setStatus] = useState("Load at least two PDFs, then fine-tune the order before merging.");
+
+  const addFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    const queued = files.map((file, index) => ({
+      id: `${file.name}-${file.lastModified}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+      file,
+      status: "reading" as const,
+    }));
+    setItems((current) => [...current, ...queued]);
+    setStatus(`Inspecting ${files.length} PDF ${files.length === 1 ? "file" : "files"}...`);
+    await Promise.all(queued.map(async (entry) => {
+      try {
+        const pages = await readPdfPages(entry.file);
+        setItems((current) => current.map((item) => item.id === entry.id ? { ...item, status: "ready", pages } : item));
+      } catch (error) {
+        setItems((current) => current.map((item) => item.id === entry.id ? { ...item, status: "error", error: error instanceof Error ? error.message : "Invalid PDF file." } : item));
+      }
+    }));
+    setStatus("Order is exact from top to bottom. Move files before merging if needed.");
+  };
+
+  const readyItems = items.filter((item) => item.status === "ready");
+  const totalPages = readyItems.reduce((sum, item) => sum + (item.pages ?? 0), 0);
+
+  const merge = async () => {
+    if (readyItems.length < 2) return;
+    setBusy(true);
+    try {
+      const { PDFDocument } = await loadPdfLib();
+      const merged = await PDFDocument.create();
+      for (const item of readyItems) {
+        const source = await PDFDocument.load(await item.file.arrayBuffer());
+        const copied = await merged.copyPages(source, source.getPageIndices());
+        copied.forEach((page) => merged.addPage(page));
+      }
+      const bytes = await merged.save({ useObjectStreams: true });
+      downloadBlob(new Blob([toArrayBuffer(bytes)], { type: "application/pdf" }), `${safeName(fileName)}.pdf`);
+      setStatus(`Merged ${readyItems.length} PDFs in the visible order with ${totalPages} total pages.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not merge the selected PDFs.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
+      <PdfPanel eyebrow="Accurate Order" title="Merge PDF files" description="This merge follows the queue exactly from top to bottom. Page totals are read first so you can verify the stack before export.">
+        <div className="space-y-4">
+          <QueueUpload label="Build your merge queue" description="Add multiple PDFs, then move them up, down, or drag them into the exact order you want." accept="application/pdf" multiple onFiles={(files) => void addFiles(files)} />
+          <div className="space-y-3">
+            {items.length === 0 ? (
+              <QueueItemShell>
+                <div className="text-sm text-muted-foreground">No PDFs queued yet. Once files are loaded, you will see page counts and exact order controls here.</div>
+              </QueueItemShell>
+            ) : (
+              items.map((item, index) => (
+                <QueueItemShell
+                  key={item.id}
+                  draggable
+                  active={dragId === item.id}
+                  onDragStart={() => setDragId(item.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (!dragId || dragId === item.id) return;
+                    setItems((current) => {
+                      const from = current.findIndex((entry) => entry.id === dragId);
+                      const to = current.findIndex((entry) => entry.id === item.id);
+                      return from === -1 || to === -1 ? current : moveItem(current, from, to);
+                    });
+                    setDragId(null);
+                  }}
+                  onDragEnd={() => setDragId(null)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-accent/12 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-accent">{String(index + 1).padStart(2, "0")}</span>
+                        <span className="rounded-full border border-border px-2 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Drag</span>
+                        <div className="truncate text-sm font-medium text-foreground">{item.file.name}</div>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <span>{formatBytes(item.file.size)}</span>
+                        <span>•</span>
+                        <span>{item.status === "ready" ? `${item.pages} pages` : item.status === "reading" ? "Reading pages..." : item.error ?? "Could not read file"}</span>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button type="button" onClick={() => setItems((current) => moveItem(current, index, index - 1))} disabled={index === 0} className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent disabled:opacity-40">Up</button>
+                      <button type="button" onClick={() => setItems((current) => moveItem(current, index, index + 1))} disabled={index === items.length - 1} className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent disabled:opacity-40">Down</button>
+                      <button type="button" onClick={() => setItems((current) => current.filter((entry) => entry.id !== item.id))} className="grid h-9 w-9 place-items-center rounded-full border border-border text-muted-foreground transition hover:border-rose-400/40 hover:text-rose-300"><X className="h-4 w-4" /></button>
+                    </div>
+                  </div>
+                </QueueItemShell>
+              ))
+            )}
+          </div>
+        </div>
+      </PdfPanel>
+      <PdfPanel eyebrow="Merge Summary" title="Review before export" description="The output includes only PDFs that parsed successfully, in the order you see here." accent="from-sky-500/18 via-cyan-500/8 to-transparent">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PdfStat label="Ready files" value={String(readyItems.length)} />
+            <PdfStat label="Total pages" value={String(totalPages)} />
+          </div>
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Output name</span>
+            <input value={fileName} onChange={(e) => setFileName(e.target.value)} className="w-full rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm transition focus:border-accent focus:outline-none" />
+          </label>
+          <PdfNote tone={readyItems.length >= 2 ? "success" : "warn"}>{status}</PdfNote>
+          <PdfActionButton onClick={merge} disabled={readyItems.length < 2} busy={busy} label="Merge PDF files" />
+        </div>
+      </PdfPanel>
+    </div>
+  );
+}
+
+function CompressPdfTool() {
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("This tool creates a lighter optimized copy when the PDF still has structural overhead. It does not aggressively recompress embedded images.");
+  const [stats, setStats] = useState<{ before: number; after: number } | null>(null);
+
+  const compress = async () => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const { PDFDocument } = await loadPdfLib();
+      const doc = await PDFDocument.load(await file.arrayBuffer());
+      const bytes = await doc.save({ useObjectStreams: true, addDefaultPage: false, updateFieldAppearances: false });
+      downloadBlob(new Blob([toArrayBuffer(bytes)], { type: "application/pdf" }), `${safeName(file.name)}-optimized.pdf`);
+      setStats({ before: file.size, after: bytes.length });
+      const delta = file.size - bytes.length;
+      setMessage(delta > 0 ? `Saved ${formatBytes(delta)} by rewriting the document with object streams and cleaner structure.` : "Finished. This PDF was already close to fully optimized, so file size stayed similar.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not optimize this PDF.");
+      setStats(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.05fr_.95fr]">
+      <PdfPanel eyebrow="Honest Compression" title="Compress PDF files" description="This is a light optimization pass. The tool is accurate about what it can improve and shows you the actual before/after result.">
+        <div className="space-y-4">
+          <QueueUpload label="Select one PDF" description="Best for documents with export overhead, duplicated object streams, or unoptimized structure. You can also drag a PDF straight into this panel." accept="application/pdf" onFiles={(files) => setFile(files[0] ?? null)} />
+          {file ? (
+            <QueueItemShell>
+              <div className="text-sm font-medium text-foreground">{file.name}</div>
+              <div className="mt-2 text-xs text-muted-foreground">{formatBytes(file.size)}</div>
+            </QueueItemShell>
+          ) : null}
+        </div>
+      </PdfPanel>
+      <PdfPanel eyebrow="Result" title="See the real size delta" description="No vague promise here. If the PDF is already optimized, the tool says so instead of pretending it compressed more.">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PdfStat label="Original" value={stats ? formatBytes(stats.before) : "—"} />
+            <PdfStat label="Optimized" value={stats ? formatBytes(stats.after) : "—"} />
+          </div>
+          <PdfNote tone={stats && stats.after < stats.before ? "success" : "warn"}>{message}</PdfNote>
+          <PdfActionButton onClick={compress} disabled={!file} busy={busy} label="Create optimized copy" />
+        </div>
+      </PdfPanel>
+    </div>
+  );
+}
+
+function JpgToPdfTool() {
+  const [items, setItems] = useState<ImageQueueItem[]>([]);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("Build the image order, then choose whether pages should keep original image size or fit onto A4 pages.");
+  const [layoutMode, setLayoutMode] = useState<"original" | "a4">("a4");
+  const [margin, setMargin] = useState(24);
+  const [fileName, setFileName] = useState("images-to-pdf");
+
+  const addImages = async (files: File[]) => {
+    if (files.length === 0) return;
+    const queued = files.map((file, index) => ({
+      id: `${file.name}-${file.lastModified}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+      file,
+      status: "reading" as const,
+    }));
+    setItems((current) => [...current, ...queued]);
+    await Promise.all(queued.map(async (entry) => {
+      try {
+        const meta = await readImageMeta(entry.file);
+        setItems((current) => current.map((item) => item.id === entry.id ? { ...item, ...meta, status: "ready" } : item));
+      } catch (error) {
+        setItems((current) => current.map((item) => item.id === entry.id ? { ...item, status: "error", error: error instanceof Error ? error.message : "Invalid image." } : item));
+      }
+    }));
+    setMessage("Image order is exact from top to bottom. Move pages before exporting if needed.");
+  };
+
+  const readyItems = items.filter((item) => item.status === "ready");
+
+  const convert = async () => {
+    if (readyItems.length === 0) return;
+    setBusy(true);
+    try {
+      const { PDFDocument } = await loadPdfLib();
+      const pdf = await PDFDocument.create();
+      const a4 = { width: 595.28, height: 841.89 };
+      for (const item of readyItems) {
+        const bytes = await item.file.arrayBuffer();
+        const lower = item.file.name.toLowerCase();
+        const image = lower.endsWith(".png") ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+        if (layoutMode === "original") {
+          const page = pdf.addPage([image.width, image.height]);
+          page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+        } else {
+          const page = pdf.addPage([a4.width, a4.height]);
+          const maxWidth = a4.width - margin * 2;
+          const maxHeight = a4.height - margin * 2;
+          const ratio = Math.min(maxWidth / image.width, maxHeight / image.height);
+          const width = image.width * ratio;
+          const height = image.height * ratio;
+          page.drawImage(image, {
+            x: (a4.width - width) / 2,
+            y: (a4.height - height) / 2,
+            width,
+            height,
+          });
+        }
+      }
+      const out = await pdf.save({ useObjectStreams: true });
+      downloadBlob(new Blob([toArrayBuffer(out)], { type: "application/pdf" }), `${safeName(fileName)}.pdf`);
+      setMessage(`Built a ${readyItems.length}-page PDF using ${layoutMode === "a4" ? "A4 fit mode" : "original image size mode"}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not convert these images into a PDF.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+      <PdfPanel eyebrow="Sequence Builder" title="JPG to PDF" description="This version is more capable: reorder images, choose page layout, and control margins so the output behaves predictably.">
+        <div className="space-y-4">
+          <QueueUpload label="Add JPG, JPEG, or PNG files" description="The queue becomes your final PDF page order, and you can drag files to reorder them." accept="image/jpeg,image/jpg,image/png" multiple onFiles={(files) => void addImages(files)} />
+          <div className="space-y-3">
+            {items.length === 0 ? (
+              <QueueItemShell>
+                <div className="text-sm text-muted-foreground">No images loaded yet. Add files to build the PDF queue.</div>
+              </QueueItemShell>
+            ) : (
+              items.map((item, index) => (
+                <QueueItemShell
+                  key={item.id}
+                  draggable
+                  active={dragId === item.id}
+                  onDragStart={() => setDragId(item.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (!dragId || dragId === item.id) return;
+                    setItems((current) => {
+                      const from = current.findIndex((entry) => entry.id === dragId);
+                      const to = current.findIndex((entry) => entry.id === item.id);
+                      return from === -1 || to === -1 ? current : moveItem(current, from, to);
+                    });
+                    setDragId(null);
+                  }}
+                  onDragEnd={() => setDragId(null)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full bg-accent/12 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-accent">{String(index + 1).padStart(2, "0")}</span>
+                        <span className="rounded-full border border-border px-2 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Drag</span>
+                        <div className="truncate text-sm font-medium text-foreground">{item.file.name}</div>
+                      </div>
+                      <div className="mt-2 text-xs text-muted-foreground">
+                        {item.status === "ready" ? `${item.width} × ${item.height}px • ${formatBytes(item.file.size)}` : item.status === "reading" ? "Reading dimensions..." : item.error ?? "Could not read image"}
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button type="button" onClick={() => setItems((current) => moveItem(current, index, index - 1))} disabled={index === 0} className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent disabled:opacity-40">Up</button>
+                      <button type="button" onClick={() => setItems((current) => moveItem(current, index, index + 1))} disabled={index === items.length - 1} className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent disabled:opacity-40">Down</button>
+                    </div>
+                  </div>
+                </QueueItemShell>
+              ))
+            )}
+          </div>
+        </div>
+      </PdfPanel>
+      <PdfPanel eyebrow="Export Layout" title="Control the page fit" description="Choose whether each image should preserve its own page size or be centered onto A4 pages with margins.">
+        <div className="space-y-4">
+          <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono uppercase tracking-widest">
+            <button type="button" onClick={() => setLayoutMode("a4")} className={"rounded-full px-4 py-2 transition " + (layoutMode === "a4" ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>A4 fit</button>
+            <button type="button" onClick={() => setLayoutMode("original")} className={"rounded-full px-4 py-2 transition " + (layoutMode === "original" ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>Original size</button>
+          </div>
+          <div className="rounded-2xl border border-border bg-background/65 p-4">
+            <div className="mb-3 text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Margin</div>
+            <SliderInput value={margin} onChange={setMargin} min={0} max={72} step={4} />
+          </div>
+          <label className="block">
+            <span className="mb-2 block text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Output name</span>
+            <input value={fileName} onChange={(e) => setFileName(e.target.value)} className="w-full rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm transition focus:border-accent focus:outline-none" />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PdfStat label="Images ready" value={String(readyItems.length)} />
+            <PdfStat label="Layout mode" value={layoutMode === "a4" ? "A4" : "Native"} />
+          </div>
+          <PdfNote tone={readyItems.length > 0 ? "success" : "warn"}>{message}</PdfNote>
+          <PdfActionButton onClick={convert} disabled={readyItems.length === 0} busy={busy} label="Convert images to PDF" />
+        </div>
+      </PdfPanel>
+    </div>
+  );
+}
+
+function PdfToWordTool() {
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("This is now explicitly a text-first PDF to Word export. It keeps page breaks and line order more accurately than a plain text join.");
+  const [preview, setPreview] = useState("");
+
+  const convert = async () => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const pdfjs = await loadPdfJs();
+      const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pageTexts: string[] = [];
+      for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber += 1) {
+        const page = await doc.getPage(pageNumber);
+        const content = await page.getTextContent();
+        const lines = extractPdfLines(content.items as Array<{ str?: string; transform?: number[] }>);
+        pageTexts.push(lines.join("\n") || `Page ${pageNumber}`);
+      }
+      const { Document, Packer, Paragraph, TextRun } = await import("docx");
+      const wordDoc = new Document({
+        sections: [{
+          children: pageTexts.flatMap((text, index) => [
+            new Paragraph({ children: [new TextRun({ text: `Page ${index + 1}`, bold: true })] }),
+            ...text.split("\n").map((line) => new Paragraph(line)),
+            new Paragraph(""),
+          ]),
+        }],
+      });
+      const buffer = await Packer.toBlob(wordDoc);
+      downloadBlob(buffer, `${safeName(file.name)}.docx`);
+      setPreview(pageTexts.slice(0, 2).join("\n\n"));
+      setMessage(`Extracted structured text from ${doc.numPages} page${doc.numPages === 1 ? "" : "s"} into a .docx file with page breaks preserved.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not convert this PDF to Word.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+      <PdfPanel eyebrow="Text-first Export" title="PDF to WORD Converter" description="This tool is now more accurate about what it does: it extracts readable text with line grouping and page breaks, rather than pretending to recreate every visual layout detail.">
+        <div className="space-y-4">
+          <QueueUpload label="Select one PDF" description="Best for text-based documents, reports, and notes where editable content matters more than exact visual fidelity. Drag and drop works here too." accept="application/pdf" onFiles={(files) => setFile(files[0] ?? null)} />
+          {file ? <QueueItemShell><div className="text-sm font-medium text-foreground">{file.name}</div><div className="mt-2 text-xs text-muted-foreground">{formatBytes(file.size)}</div></QueueItemShell> : null}
+          <PdfActionButton onClick={convert} disabled={!file} busy={busy} label="Extract into Word" />
+        </div>
+      </PdfPanel>
+      <PdfPanel eyebrow="Preview" title="Check the extracted structure" description="You can quickly judge if the text grouping looks right before you use the `.docx` file.">
+        <div className="space-y-4">
+          <PdfNote tone={preview ? "success" : "warn"}>{message}</PdfNote>
+          <div className="rounded-[24px] border border-border bg-background/70 p-4">
+            <div className="text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Extracted sample</div>
+            <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap text-sm leading-6 text-foreground">{preview || "Your extracted text preview will appear here after conversion."}</pre>
+          </div>
+        </div>
+      </PdfPanel>
+    </div>
+  );
+}
+
+function SplitPdfTool() {
+  const [file, setFile] = useState<File | null>(null);
+  const [totalPages, setTotalPages] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"all" | "custom">("all");
+  const [pages, setPages] = useState("");
+  const [message, setMessage] = useState("Choose whether to split every page or export only a precise custom page range.");
+
+  const onPick = async (nextFile: File | null) => {
+    setFile(nextFile);
+    setTotalPages(null);
+    if (!nextFile) return;
+    try {
+      const count = await readPdfPages(nextFile);
+      setTotalPages(count);
+      setMessage(`Loaded ${count} pages. ${mode === "all" ? "Each page will become its own PDF." : "Now enter the exact pages you want."}`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not inspect this PDF.");
+    }
+  };
+
+  const split = async () => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const { PDFDocument } = await loadPdfLib();
+      const zipModule = await import("jszip");
+      const zip = new zipModule.default();
+      const source = await PDFDocument.load(await file.arrayBuffer());
+      const selectedPages = mode === "custom"
+        ? parsePageRanges(pages, source.getPageCount())
+        : Array.from({ length: source.getPageCount() }, (_, index) => index + 1);
+      if (!selectedPages || selectedPages.length === 0) {
+        throw new Error(`Use valid page numbers between 1 and ${source.getPageCount()}.`);
+      }
+      for (const pageNumber of selectedPages) {
+        const next = await PDFDocument.create();
+        const [copied] = await next.copyPages(source, [pageNumber - 1]);
+        next.addPage(copied);
+        const bytes = await next.save({ useObjectStreams: true });
+        zip.file(`${safeName(file.name)}-page-${pageNumber}.pdf`, bytes);
+      }
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(blob, `${safeName(file.name)}-split.zip`);
+      setMessage(`Created ${selectedPages.length} split PDF file${selectedPages.length === 1 ? "" : "s"} and packed them into a ZIP.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not split this PDF.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+      <PdfPanel eyebrow="Page Control" title="Split PDF file" description="This version makes the split mode obvious first, then lets you export either every page or only the exact pages you request.">
+        <div className="space-y-4">
+          <QueueUpload label="Select one PDF" description="The page count is inspected first so range validation is accurate. Drag and drop is supported here too." accept="application/pdf" onFiles={(files) => void onPick(files[0] ?? null)} />
+          <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono uppercase tracking-widest">
+            <button type="button" onClick={() => setMode("all")} className={"rounded-full px-4 py-2 transition " + (mode === "all" ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>Every page</button>
+            <button type="button" onClick={() => setMode("custom")} className={"rounded-full px-4 py-2 transition " + (mode === "custom" ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>Custom range</button>
+          </div>
+          {mode === "custom" ? (
+            <label className="block">
+              <span className="mb-2 block text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Pages</span>
+              <input value={pages} onChange={(e) => setPages(e.target.value)} placeholder="Example: 1-3,5,8" className="w-full rounded-2xl border border-border bg-background/70 px-4 py-3 text-sm transition focus:border-accent focus:outline-none" />
+            </label>
+          ) : null}
+          <PdfActionButton onClick={split} disabled={!file || (mode === "custom" && !pages.trim())} busy={busy} label="Split PDF file" />
+        </div>
+      </PdfPanel>
+      <PdfPanel eyebrow="Validation" title="Range summary" description="Page count is surfaced before export so the custom range input stays grounded and less error-prone.">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PdfStat label="PDF pages" value={totalPages ? String(totalPages) : "—"} />
+            <PdfStat label="Mode" value={mode === "all" ? "All pages" : "Custom"} />
+          </div>
+          <PdfNote tone={totalPages ? "success" : "warn"}>{message}</PdfNote>
+        </div>
+      </PdfPanel>
+    </div>
+  );
+}
+
+function PdfToJpgTool() {
+  const [file, setFile] = useState<File | null>(null);
+  const [scale, setScale] = useState(1.75);
+  const [quality, setQuality] = useState(0.92);
+  const [pages, setPages] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("Choose a render scale and JPG quality, then export every page into a ZIP file.");
+
+  const onPick = async (nextFile: File | null) => {
+    setFile(nextFile);
+    setPages(null);
+    if (!nextFile) return;
+    try {
+      const count = await readPdfPages(nextFile);
+      setPages(count);
+      setMessage(`Loaded ${count} pages. Higher scale improves detail, while quality affects JPG compression.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not inspect this PDF.");
+    }
+  };
+
+  const convert = async () => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const pdfjs = await loadPdfJs();
+      const zipModule = await import("jszip");
+      const zip = new zipModule.default();
+      const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      for (let pageNumber = 1; pageNumber <= doc.numPages; pageNumber += 1) {
+        const page = await doc.getPage(pageNumber);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Canvas rendering is not available in this browser.");
+        await page.render({ canvas, canvasContext: context, viewport }).promise;
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+        if (!blob) throw new Error(`Could not export page ${pageNumber} as JPG.`);
+        zip.file(`${safeName(file.name)}-page-${pageNumber}.jpg`, blob);
+      }
+      const archive = await zip.generateAsync({ type: "blob" });
+      downloadBlob(archive, `${safeName(file.name)}-jpg.zip`);
+      setMessage(`Exported ${doc.numPages} page${doc.numPages === 1 ? "" : "s"} as JPG images at scale ${scale} and quality ${quality.toFixed(2)}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Could not convert this PDF to JPG.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+      <PdfPanel eyebrow="Render Controls" title="PDF to JPG" description="This one now feels more like a real export tool: you can tune detail level and JPG quality instead of just pressing one button.">
+        <div className="space-y-4">
+          <QueueUpload label="Select one PDF" description="Every page is rendered to canvas first, then packed into a ZIP of JPG files. Drag and drop works here too." accept="application/pdf" onFiles={(files) => void onPick(files[0] ?? null)} />
+          <div className="rounded-2xl border border-border bg-background/65 p-4">
+            <div className="mb-3 text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Render scale</div>
+            <SliderInput value={scale} onChange={setScale} min={1} max={3} step={0.25} />
+          </div>
+          <div className="rounded-2xl border border-border bg-background/65 p-4">
+            <div className="mb-3 text-[11px] font-mono uppercase tracking-[0.24em] text-muted-foreground">JPG quality</div>
+            <SliderInput value={quality} onChange={setQuality} min={0.6} max={1} step={0.05} />
+          </div>
+          <PdfActionButton onClick={convert} disabled={!file} busy={busy} label="Export JPG ZIP" />
+        </div>
+      </PdfPanel>
+      <PdfPanel eyebrow="Export Summary" title="Quality vs size" description="Higher scale sharpens text and vector detail. Higher JPG quality keeps gradients cleaner but usually increases the ZIP size.">
+        <div className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PdfStat label="PDF pages" value={pages ? String(pages) : "—"} />
+            <PdfStat label="Quality" value={quality.toFixed(2)} hint={`Scale ${scale}`} />
+          </div>
+          <PdfNote tone={pages ? "success" : "warn"}>{message}</PdfNote>
+        </div>
+      </PdfPanel>
+    </div>
+  );
+}
+
 /* ---------- Registry ---------- */
 const TOOLS: Tool[] = [
   { id: "shadow", name: "Box Shadow Generator", category: "CSS", keywords: "css shadow", icon: Square, render: () => <BoxShadow /> },
@@ -7381,6 +8214,12 @@ const TOOLS: Tool[] = [
   { id: "ai-ui-review", name: "AI UI Review Prompt Builder", category: "Utilities", keywords: "ai ui review accessibility responsive design qa frontend prompt", icon: Gauge, render: () => <AiUiReviewTool /> },
   { id: "ai-state-copy", name: "UI State Copy Prompt Builder", category: "Utilities", keywords: "ai ux copy loading empty error validation microcopy prompt", icon: FileText, render: () => <UiStateCopyPromptTool /> },
   { id: "ai-bug-debug", name: "Frontend Bug Debug Prompt", category: "Utilities", keywords: "ai debug frontend bug react nextjs dom prompt reproduction", icon: Terminal, render: () => <FrontendBugPromptTool /> },
+  { id: "pdf-merge", name: "Merge PDF files", category: "Utilities", keywords: "pdf merge combine documents", icon: FileText, render: () => <MergePdfTool /> },
+  { id: "pdf-compress", name: "Compress PDF files", category: "Utilities", keywords: "pdf compress optimize filesize", icon: FileText, render: () => <CompressPdfTool /> },
+  { id: "jpg-to-pdf", name: "JPG to PDF", category: "Utilities", keywords: "jpg jpeg png image to pdf convert", icon: ImageIcon, render: () => <JpgToPdfTool /> },
+  { id: "pdf-to-word", name: "PDF to WORD Converter", category: "Utilities", keywords: "pdf word docx text convert", icon: FileText, render: () => <PdfToWordTool /> },
+  { id: "pdf-split", name: "Split PDF file", category: "Utilities", keywords: "pdf split extract pages", icon: FileText, render: () => <SplitPdfTool /> },
+  { id: "pdf-to-jpg", name: "PDF to JPG", category: "Utilities", keywords: "pdf jpg images export pages", icon: ImageIcon, render: () => <PdfToJpgTool /> },
 ];
 
 export function ToolkitToolRenderer({ id }: { id: string }) {

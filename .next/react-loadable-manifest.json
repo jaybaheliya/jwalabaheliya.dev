@@ -1,4 +1,31 @@
 {
+  "app\\toolkit\\_source.tsx -> docx": {
+    "id": 1886,
+    "files": [
+      "static/chunks/8187f03c.5cfdcc97bb7f3cb0.js",
+      "static/chunks/304-322290112cfa4795.js"
+    ]
+  },
+  "app\\toolkit\\_source.tsx -> jszip": {
+    "id": 4453,
+    "files": [
+      "static/chunks/304-322290112cfa4795.js",
+      "static/chunks/453.8448f0b6df50fee9.js"
+    ]
+  },
+  "app\\toolkit\\_source.tsx -> pdf-lib": {
+    "id": 3127,
+    "files": [
+      "static/chunks/127.e799ebc09a1bcba6.js"
+    ]
+  },
+  "app\\toolkit\\_source.tsx -> pdfjs-dist": {
+    "id": 6898,
+    "files": [
+      "static/chunks/9b0008ae.b03875365637d5dd.js",
+      "static/chunks/304-322290112cfa4795.js"
+    ]
+  },
   "app\\toolkit\\_source.tsx -> sonner": {
     "id": 6609,
     "files": [

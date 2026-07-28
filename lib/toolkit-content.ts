@@ -118,6 +118,12 @@ export const TOOLKIT_DOCS: ToolkitDoc[] = [
   { id: "ai-ui-review", name: "AI UI Review Prompt Builder", category: "Utilities", keywords: "ai ui review accessibility responsive design qa frontend prompt" },
   { id: "ai-state-copy", name: "UI State Copy Prompt Builder", category: "Utilities", keywords: "ai ux copy loading empty error validation microcopy prompt" },
   { id: "ai-bug-debug", name: "Frontend Bug Debug Prompt", category: "Utilities", keywords: "ai debug frontend bug react nextjs dom prompt reproduction" },
+  { id: "pdf-merge", name: "Merge PDF files", category: "Utilities", keywords: "pdf merge combine documents" },
+  { id: "pdf-compress", name: "Compress PDF files", category: "Utilities", keywords: "pdf compress optimize filesize" },
+  { id: "jpg-to-pdf", name: "JPG to PDF", category: "Utilities", keywords: "jpg jpeg png image to pdf convert" },
+  { id: "pdf-to-word", name: "PDF to WORD Converter", category: "Utilities", keywords: "pdf word docx text convert" },
+  { id: "pdf-split", name: "Split PDF file", category: "Utilities", keywords: "pdf split extract pages" },
+  { id: "pdf-to-jpg", name: "PDF to JPG", category: "Utilities", keywords: "pdf jpg images export pages" },
 ];
 
 export const TOOLKIT_DOCS_BY_ID = Object.fromEntries(

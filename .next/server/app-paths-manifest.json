@@ -8,6 +8,7 @@
   "/tools/page": "app/tools/page.js",
   "/work/[slug]/page": "app/work/[slug]/page.js",
   "/notes/[slug]/page": "app/notes/[slug]/page.js",
+  "/toolkit/[slug]/page": "app/toolkit/[slug]/page.js",
   "/api/ask-resume/route": "app/api/ask-resume/route.js",
   "/api/skill-match/route": "app/api/skill-match/route.js"
 }
