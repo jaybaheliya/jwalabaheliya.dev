@@ -32,14 +32,6 @@
       "static/chunks/609-c293cc1aa3962fc8.js"
     ]
   },
-  "components\\playground.tsx -> @codesandbox/sandpack-react": {
-    "id": 1974,
-    "files": [
-      "static/chunks/e58a7f8f.ca7d26392de36087.js",
-      "static/chunks/363642f4.f38aae45752d8e8e.js",
-      "static/chunks/198.e69f9ca8f65008aa.js"
-    ]
-  },
   "components\\toolkit-snippets-extra.tsx -> sonner": {
     "id": 6609,
     "files": [

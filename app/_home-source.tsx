@@ -12,7 +12,6 @@ import { GithubStats } from "@/components/github-stats";
 import { CursorTrail } from "@/components/cursor-trail";
 import { MumbaiClock } from "@/components/mumbai-clock";
 import { ViewCounter } from "@/components/view-counter";
-import { Playground } from "@/components/playground";
 import { BusinessCard } from "@/components/business-card";
 
 const slugForTitle = (s: string) =>
@@ -317,7 +316,6 @@ function PortfolioPage() {
       <Metrics />
       <Currently />
       <Projects />
-      <Playground />
       <Experience />
       <Skills />
       <Achievements />
@@ -327,11 +325,29 @@ function PortfolioPage() {
       <BuiltWith />
       <Contact />
       <Footer />
+      <FloatingLiveCodeCTA />
       <SectionRail />
       <ScrollProgress />
       <CursorGlow />
       <CursorTrail />
     </main>
+  );
+}
+
+function FloatingLiveCodeCTA() {
+  return (
+    <Link
+      href="/toolkit#playground"
+      className="fixed bottom-20 right-4 z-40 inline-flex items-center gap-3 rounded-full border border-border bg-background/92 px-4 py-3 text-left shadow-[0_18px_50px_-24px_rgba(15,23,42,0.45)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45 sm:bottom-20"
+    >
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-foreground shadow-[0_12px_28px_-18px_rgba(56,189,248,0.8)]">
+        <Code2 className="h-4.5 w-4.5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Floating CTA</span>
+        <span className="mt-0.5 block font-display text-base font-semibold text-foreground">Live Code</span>
+      </span>
+    </Link>
   );
 }
 

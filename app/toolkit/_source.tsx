@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Loader2, FileText, Image as ImageIcon, Terminal, Lock, Tag, ScrollText, Percent } from "lucide-react";
 import { SnippetsGallery } from "@/components/toolkit-snippets-extra";
+import { Playground } from "@/components/playground";
 
 
 
@@ -505,6 +506,10 @@ function ToolkitPage() {
         </div>
       </section>
 
+      <div className="border-t border-border/60">
+        <Playground />
+      </div>
+
       <section ref={resultsRef} className="mx-auto max-w-[1400px] scroll-mt-28 px-4 pb-24 md:px-8">
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
@@ -547,11 +552,61 @@ function ToolkitPage() {
       <footer className="border-t border-border/60 py-8 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
         Built by Jwala Baheliya - <Link href="/" className="hover:text-accent">Portfolio</Link> - <Link href="/tools" className="hover:text-accent">Recruiter tools</Link>
       </footer>
+
+      <FloatingPlaygroundCTA />
     </div>
   );
 }
 
 /* ---------- helpers ---------- */
+function FloatingPlaygroundCTA() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const section = document.getElementById("playground");
+    if (!section) {
+      setVisible(false);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setVisible(!entry.isIntersecting);
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
+
+  const jumpToPlayground = () => {
+    const section = document.getElementById("playground");
+    if (!section) return;
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  return (
+    <div className={"pointer-events-none fixed right-5 top-24 z-40 hidden xl:block transition-all duration-300 " + (visible ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0")}>
+      <button
+        type="button"
+        onClick={jumpToPlayground}
+        className="pointer-events-auto group inline-flex items-center gap-3 rounded-full border border-border bg-background/92 px-3 py-3 shadow-[0_18px_50px_-24px_rgba(15,23,42,0.35)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45"
+        aria-label="Jump to live code playground"
+      >
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-foreground shadow-[0_12px_28px_-18px_rgba(56,189,248,0.8)]">
+          <Code2 className="h-4.5 w-4.5" />
+        </span>
+        <span className="min-w-0 text-left">
+          <span className="block text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Live Code</span>
+          <span className="mt-0.5 block font-display text-base font-semibold text-foreground">Open Playground</span>
+        </span>
+        <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)] transition-all duration-300 group-hover:scale-110" />
+      </button>
+    </div>
+  );
+}
+
 function CopyBtn({ value, label = "Copy" }: { value: string; label?: string }) {
   const [ok, setOk] = useState(false);
   return (

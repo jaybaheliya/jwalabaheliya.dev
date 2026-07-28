@@ -2,38 +2,6 @@
   "version": 3,
   "middleware": {},
   "functions": {
-    "/api/ask-resume/route": {
-      "files": [
-        "server/server-reference-manifest.js",
-        "server/app/api/ask-resume/route_client-reference-manifest.js",
-        "server/middleware-build-manifest.js",
-        "server/middleware-react-loadable-manifest.js",
-        "server/next-font-manifest.js",
-        "server/interception-route-rewrite-manifest.js",
-        "required-server-files.js",
-        "server/edge-runtime-webpack.js",
-        "server/edge-chunks/638.js",
-        "server/app/api/ask-resume/route.js"
-      ],
-      "entrypoint": "server/app/api/ask-resume/route.js",
-      "name": "app/api/ask-resume/route",
-      "page": "/api/ask-resume/route",
-      "matchers": [
-        {
-          "regexp": "^/api/ask\\-resume$",
-          "originalSource": "/api/ask-resume"
-        }
-      ],
-      "wasm": [],
-      "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "jU6CqxJkFhKh33MUeRZq8",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "pCjkF6c36ItfBxaFLIdANGM5Rjb9L3zE6EuPrYMLr0A=",
-        "__NEXT_PREVIEW_MODE_ID": "2dc86a315cf39c10e1756f4667a4ca06",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1a3f813e21a505d540803bbdc71ee3f52fadfff579b7734db39ab42b9e40a007",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "e38b73a2504a135bab5f9b61ed253bab45ad844b91b4c45fc9e745d94ac38235"
-      }
-    },
     "/api/skill-match/route": {
       "files": [
         "server/server-reference-manifest.js",
@@ -59,7 +27,39 @@
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "jU6CqxJkFhKh33MUeRZq8",
+        "__NEXT_BUILD_ID": "6BLEZ7eRL-3JdiIBAwpsu",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "pCjkF6c36ItfBxaFLIdANGM5Rjb9L3zE6EuPrYMLr0A=",
+        "__NEXT_PREVIEW_MODE_ID": "2dc86a315cf39c10e1756f4667a4ca06",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1a3f813e21a505d540803bbdc71ee3f52fadfff579b7734db39ab42b9e40a007",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "e38b73a2504a135bab5f9b61ed253bab45ad844b91b4c45fc9e745d94ac38235"
+      }
+    },
+    "/api/ask-resume/route": {
+      "files": [
+        "server/server-reference-manifest.js",
+        "server/app/api/ask-resume/route_client-reference-manifest.js",
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "required-server-files.js",
+        "server/edge-runtime-webpack.js",
+        "server/edge-chunks/638.js",
+        "server/app/api/ask-resume/route.js"
+      ],
+      "entrypoint": "server/app/api/ask-resume/route.js",
+      "name": "app/api/ask-resume/route",
+      "page": "/api/ask-resume/route",
+      "matchers": [
+        {
+          "regexp": "^/api/ask\\-resume$",
+          "originalSource": "/api/ask-resume"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "6BLEZ7eRL-3JdiIBAwpsu",
         "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "pCjkF6c36ItfBxaFLIdANGM5Rjb9L3zE6EuPrYMLr0A=",
         "__NEXT_PREVIEW_MODE_ID": "2dc86a315cf39c10e1756f4667a4ca06",
         "__NEXT_PREVIEW_MODE_SIGNING_KEY": "1a3f813e21a505d540803bbdc71ee3f52fadfff579b7734db39ab42b9e40a007",
