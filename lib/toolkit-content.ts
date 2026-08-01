@@ -88,6 +88,7 @@ export const TOOLKIT_DOCS: ToolkitDoc[] = [
   { id: "js-gallery", name: "JavaScript Snippets - 70 Ready-made", category: "JavaScript", keywords: "modal accordion tabs dropdown sidebar hamburger slider carousel typing scramble password validation debounce throttle fetch search pagination drag drop upload counter clock stopwatch quote uuid localstorage query params formdata custom event download event delegation reduce map promise all memoize flatten group by retry deep clone sort once interview prep closure currying pipe binary search dfs event loop polyfill bind call apply lru cache" },
   { id: "svg-css", name: "SVG to CSS Converter", category: "Utilities", keywords: "data uri background image encoder" },
   { id: "img-convert", name: "Image Format Converter", category: "Utilities", keywords: "png jpeg jpg webp convert image" },
+  { id: "img-compress", name: "Image Size Compressor", category: "Utilities", keywords: "compress image reduce size kb mb webp jpeg png resize quality" },
   { id: "svg-cleanup", name: "SVG Optimizer + Cleanup", category: "Utilities", keywords: "svg optimize cleanup react" },
   { id: "html-jsx", name: "HTML to JSX / JSX to HTML", category: "JavaScript", keywords: "convert markup react" },
   { id: "css-tw", name: "CSS to Tailwind Converter", category: "CSS", keywords: "tailwind convert" },

@@ -222,12 +222,12 @@ function ToolkitPage() {
         onClick={() => markRecent(tool.id)}
         onMouseEnter={() => setSpotlightId(tool.id)}
         onFocus={() => setSpotlightId(tool.id)}
-        className={"group relative rounded-[22px] border p-3.5 text-left transition-all hover:-translate-y-0.5 " + (emphasized ? "border-accent/45 bg-background md:col-span-2" : "border-border bg-card hover:border-accent/60")}
+        className={"group relative block w-full min-w-0 self-start overflow-hidden rounded-[20px] border p-3 text-left transition-all hover:-translate-y-0.5 " + (emphasized ? "border-accent/45 bg-background md:col-span-2 md:p-3.5" : "border-border bg-card hover:border-accent/60")}
       >
         <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-accent/50 to-transparent opacity-0 transition group-hover:opacity-100" />
         <div className="flex items-start justify-between gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-accent/15 text-accent">
-            <Icon className="h-4.5 w-4.5" />
+          <div className={"grid place-items-center rounded-xl bg-accent/15 text-accent " + (emphasized ? "h-9 w-9" : "h-8 w-8")}>
+            <Icon className={emphasized ? "h-4.5 w-4.5" : "h-4 w-4"} />
           </div>
           <button
             type="button"
@@ -242,7 +242,7 @@ function ToolkitPage() {
             <Star className="h-4 w-4" fill={isFav ? "currentColor" : "none"} />
           </button>
         </div>
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-2.5 flex items-center gap-2">
           {emphasized ? (
             <span className="rounded-full bg-accent/12 px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.24em] text-accent">
               Start here
@@ -250,14 +250,78 @@ function ToolkitPage() {
           ) : null}
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{tool.category}</span>
         </div>
-        <div className="mt-2 font-display text-[1.02rem] font-semibold leading-6">{tool.name}</div>
-        <div className="mt-3 flex items-center gap-2 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+        <div className={"mt-2 min-w-0 font-display font-semibold break-words " + (emphasized ? "text-[1.02rem] leading-6" : "text-[0.96rem] leading-5")}>{tool.name}</div>
+        <div className="mt-2.5 flex items-center gap-2 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
           <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-accent">
             Open
           </span>
-          <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
-            Preview
-          </span>
+          {emphasized ? (
+            <span className="rounded-full border border-border px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide text-muted-foreground">
+              Preview
+            </span>
+          ) : null}
+        </div>
+      </Link>
+    );
+  };
+
+  const renderShelfCard = (tool: Tool, featured = false) => {
+    const Icon = tool.icon;
+    const isFav = favs.includes(tool.id);
+
+    return (
+      <Link
+        key={tool.id}
+        href={`/toolkit/${tool.id}`}
+        onClick={() => markRecent(tool.id)}
+        onMouseEnter={() => setSpotlightId(tool.id)}
+        onFocus={() => setSpotlightId(tool.id)}
+        className={
+          "group relative block h-full w-full min-w-0 overflow-hidden rounded-[20px] border bg-background/92 text-left transition-all hover:-translate-y-0.5 hover:border-accent/45 " +
+          (featured ? "border-accent/35 p-4" : "border-border p-3.5")
+        }
+      >
+        <div className="flex h-full flex-col">
+          <div className="flex items-start justify-between gap-3">
+            <div className={"grid place-items-center rounded-xl bg-accent/12 text-accent " + (featured ? "h-9 w-9" : "h-8 w-8")}>
+              <Icon className={featured ? "h-4 w-4" : "h-3.5 w-3.5"} />
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFav(tool.id);
+              }}
+              className={"grid h-7 w-7 place-items-center rounded-full border border-transparent transition hover:border-border " + (isFav ? "text-accent" : "text-muted-foreground/60")}
+              aria-label="favorite"
+            >
+              <Star className="h-3.5 w-3.5" fill={isFav ? "currentColor" : "none"} />
+            </button>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            {featured ? (
+              <span className="rounded-full bg-accent/12 px-2 py-1 text-[9px] font-mono uppercase tracking-[0.22em] text-accent">
+                Best start
+              </span>
+            ) : null}
+            <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">{tool.category}</span>
+          </div>
+          <div className={"mt-2 min-w-0 break-words font-display font-semibold text-foreground " + (featured ? "text-[1rem] leading-6" : "text-[0.92rem] leading-5")}>
+            {tool.name}
+          </div>
+          {featured ? (
+            <div className="mt-2 min-w-0 break-words text-[12px] leading-5 text-muted-foreground line-clamp-2">
+              Open this first if you want the fastest path into {tool.category.toLowerCase()} work without comparing everything.
+            </div>
+          ) : (
+            <div className="mt-2 text-[11px] leading-5 text-muted-foreground line-clamp-2">Quick entry point.</div>
+          )}
+          <div className="mt-auto flex items-center gap-2 pt-3 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+            <span className="rounded-full bg-accent/10 px-2 py-1 text-[9px] font-mono uppercase tracking-[0.2em] text-accent">
+              Open
+            </span>
+          </div>
         </div>
       </Link>
     );
@@ -517,30 +581,58 @@ function ToolkitPage() {
           </div>
         ) : isDefaultBrowse ? (
           <div className="space-y-10">
-            {groupedFiltered.map(({ category, tools }) => (
-              <section key={category} className="overflow-hidden rounded-[28px] border border-border bg-card">
-                <div className={"bg-gradient-to-r px-5 py-5 md:px-6 " + CATEGORY_META[category].tone}>
-                  <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Category Shelf</div>
-                      <h2 className="mt-2 font-display text-2xl font-semibold md:text-3xl">{category}</h2>
-                      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{CATEGORY_META[category].blurb}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleCategoryClick(category)}
-                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-background/80 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent"
-                    >
-                      Focus {category} ({tools.length})
-                    </button>
-                  </div>
-                </div>
+            {groupedFiltered.map(({ category, tools }) => {
+              const featured = tools[0];
+              const secondary = tools.slice(1, 8);
 
-                <div className="grid gap-4 p-4 md:grid-cols-2 xl:grid-cols-4">
-                  {tools.slice(0, 8).map((tool, index) => renderToolCard(tool, index === 0))}
-                </div>
-              </section>
-            ))}
+              return (
+                <section key={category} className="rounded-[30px] border border-border bg-card p-4 md:p-5">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(260px,.3fr)_minmax(0,.7fr)]">
+                    <div className={"rounded-[24px] border border-border p-5 md:p-6 " + "bg-gradient-to-br " + CATEGORY_META[category].tone}>
+                      <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Category Shelf</div>
+                      <h2 className="mt-3 font-display text-3xl font-semibold">{category}</h2>
+                      <p className="mt-3 text-sm leading-7 text-muted-foreground">{CATEGORY_META[category].blurb}</p>
+                      <div className="mt-5 flex flex-wrap items-center gap-2">
+                        <div className="rounded-full border border-border bg-background/80 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground">
+                          {tools.length} tools
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCategoryClick(category)}
+                          className="inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-background/80 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent"
+                        >
+                          Focus {category}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[24px] border border-border bg-background/55 p-3">
+                      <div className="mb-3 flex items-center justify-between gap-3 px-1">
+                        <div>
+                          <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">Recommended Flow</div>
+                          <div className="mt-1 text-sm font-semibold text-foreground">Start with the first card, then compare the alternatives in one grid.</div>
+                        </div>
+                        <div className="hidden rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground md:block">
+                          Grid View
+                        </div>
+                      </div>
+                      <div className="grid auto-rows-[minmax(190px,1fr)] items-stretch gap-3 md:grid-cols-2 xl:grid-cols-4">
+                      {featured ? (
+                        <div className="min-w-0 md:col-span-2 xl:col-span-2">
+                          {renderShelfCard(featured, true)}
+                        </div>
+                      ) : null}
+                      {secondary.map((tool) => (
+                        <div key={tool.id} className="min-w-0">
+                          {renderShelfCard(tool)}
+                        </div>
+                      ))}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              );
+            })}
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -6241,6 +6333,378 @@ function ImageConverterTool() {
   );
 }
 
+function ImageCompressorTool() {
+  const [files, setFiles] = useState<File[]>([]);
+  const [items, setItems] = useState<Array<{
+    id: string;
+    fileName: string;
+    inputType: string;
+    inputSize: number;
+    width: number;
+    height: number;
+    outputWidth: number;
+    outputHeight: number;
+    sourceUrl: string;
+    outputUrl: string;
+    outputSize: number | null;
+    outputBlob: Blob | null;
+    error: string;
+  }>>([]);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [zipBusy, setZipBusy] = useState(false);
+  const [format, setFormat] = useState<"original" | "jpeg" | "webp" | "png">("original");
+  const [quality, setQuality] = useState(0.78);
+  const [maxWidth, setMaxWidth] = useState(1600);
+
+  useEffect(() => () => {
+    items.forEach((item) => {
+      URL.revokeObjectURL(item.sourceUrl);
+      URL.revokeObjectURL(item.outputUrl);
+    });
+  }, [items]);
+
+  const formatLabel = {
+    original: "Keep format",
+    jpeg: "JPEG",
+    webp: "WebP",
+    png: "PNG",
+  } as const;
+
+  const prettySize = (bytes: number | null) =>
+    bytes == null ? "-" : bytes < 1024 ? `${bytes} B` : bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+
+  const totalOriginal = items.reduce((sum, item) => sum + item.inputSize, 0);
+  const totalCompressed = items.reduce((sum, item) => sum + (item.outputSize ?? 0), 0);
+  const savedBytes = Math.max(0, totalOriginal - totalCompressed);
+  const savedPercent = totalOriginal > 0 ? Math.max(0, Math.round((savedBytes / totalOriginal) * 100)) : 0;
+  const hasOutput = items.some((item) => item.outputUrl);
+
+  const getTargetFormat = (file: File, nextFormat: "original" | "jpeg" | "webp" | "png") => {
+    if (nextFormat !== "original") return nextFormat;
+    if (file.type === "image/jpeg" || file.type === "image/jpg") return "jpeg";
+    if (file.type === "image/webp") return "webp";
+    if (file.type === "image/png") return "png";
+    return "webp";
+  };
+
+  const getMime = (nextFormat: "jpeg" | "webp" | "png") => ({
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    png: "image/png",
+  }[nextFormat]);
+
+  const buildOutputName = (fileName: string, nextFormat: "jpeg" | "webp" | "png") =>
+    (fileName.replace(/\.[^.]+$/, "") || "compressed-image") + "." + nextFormat;
+
+  const compressOne = async (nextFile: File, nextFormat: "original" | "jpeg" | "webp" | "png", nextQuality: number, nextMaxWidth: number) => {
+    const sourceUrl = URL.createObjectURL(nextFile);
+    const fallback = {
+      id: `${nextFile.name}-${nextFile.size}-${nextFile.lastModified}`,
+      fileName: nextFile.name,
+      inputType: nextFile.type || "image file",
+      inputSize: nextFile.size,
+      width: 0,
+      height: 0,
+      outputWidth: 0,
+      outputHeight: 0,
+      sourceUrl,
+      outputUrl: "",
+      outputSize: null,
+      outputBlob: null,
+      error: "",
+    };
+
+    let objectUrl = "";
+    try {
+      objectUrl = URL.createObjectURL(nextFile);
+      const img = new Image();
+      img.decoding = "async";
+
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error("Could not load this image."));
+        img.src = objectUrl;
+      });
+
+      const width = img.naturalWidth;
+      const height = img.naturalHeight;
+      const targetFormat = getTargetFormat(nextFile, nextFormat);
+      const scale = width > nextMaxWidth ? nextMaxWidth / width : 1;
+      const outputWidth = Math.max(1, Math.round(width * scale));
+      const outputHeight = Math.max(1, Math.round(height * scale));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = outputWidth;
+      canvas.height = outputHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Canvas is not available in this browser.");
+
+      if (targetFormat === "jpeg") {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, outputWidth, outputHeight);
+      } else {
+        ctx.clearRect(0, 0, outputWidth, outputHeight);
+      }
+
+      ctx.drawImage(img, 0, 0, outputWidth, outputHeight);
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, getMime(targetFormat), targetFormat === "png" ? undefined : nextQuality),
+      );
+      if (!blob) throw new Error("Compression failed for this image.");
+
+      return {
+        ...fallback,
+        width,
+        height,
+        outputWidth,
+        outputHeight,
+        outputUrl: URL.createObjectURL(blob),
+        outputSize: blob.size,
+        outputBlob: blob,
+      };
+    } catch (err) {
+      return {
+        ...fallback,
+        error: err instanceof Error ? err.message : "Compression failed.",
+      };
+    } finally {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    }
+  };
+
+  const rebuildItems = async (
+    nextFiles: File[],
+    nextFormat: "original" | "jpeg" | "webp" | "png",
+    nextQuality: number,
+    nextMaxWidth: number,
+  ) => {
+    if (nextFiles.length === 0) {
+      setItems((prev) => {
+        prev.forEach((item) => {
+          URL.revokeObjectURL(item.sourceUrl);
+          URL.revokeObjectURL(item.outputUrl);
+        });
+        return [];
+      });
+      return;
+    }
+
+    setBusy(true);
+    setError("");
+    const nextItems = [];
+    for (const nextFile of nextFiles) {
+      nextItems.push(await compressOne(nextFile, nextFormat, nextQuality, nextMaxWidth));
+    }
+    setItems((prev) => {
+      prev.forEach((item) => {
+        URL.revokeObjectURL(item.sourceUrl);
+        URL.revokeObjectURL(item.outputUrl);
+      });
+      return nextItems;
+    });
+    setBusy(false);
+  };
+
+  const handlePick = async (pickedList: FileList | null) => {
+    const picked = Array.from(pickedList || []).filter((file) => file.type.startsWith("image/"));
+    if (picked.length === 0) return;
+    setFiles(picked);
+    await rebuildItems(picked, format, quality, maxWidth);
+  };
+
+  const updateFormat = async (nextFormat: "original" | "jpeg" | "webp" | "png") => {
+    setFormat(nextFormat);
+    if (files.length) await rebuildItems(files, nextFormat, quality, maxWidth);
+  };
+
+  const updateQuality = async (nextQuality: number) => {
+    setQuality(nextQuality);
+    if (files.length) await rebuildItems(files, format, nextQuality, maxWidth);
+  };
+
+  const updateMaxWidth = async (nextMaxWidth: number) => {
+    setMaxWidth(nextMaxWidth);
+    if (files.length) await rebuildItems(files, format, quality, nextMaxWidth);
+  };
+
+  const downloadItem = (item: { fileName: string; inputType: string; outputUrl: string }) => {
+    const a = document.createElement("a");
+    const targetFormat = getTargetFormat({ type: item.inputType } as File, format);
+    a.href = item.outputUrl;
+    a.download = buildOutputName(item.fileName, targetFormat);
+    a.click();
+  };
+
+  const downloadAll = () => {
+    items.filter((item) => item.outputUrl).forEach((item, index) => {
+      window.setTimeout(() => downloadItem(item), index * 120);
+    });
+  };
+
+  const downloadZip = async () => {
+    const ready = items.filter((item) => item.outputBlob);
+    if (ready.length === 0) return;
+    setZipBusy(true);
+    try {
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      ready.forEach((item) => {
+        const targetFormat = getTargetFormat({ type: item.inputType } as File, format);
+        zip.file(buildOutputName(item.fileName, targetFormat), item.outputBlob as Blob);
+      });
+      const blob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "compressed-images.zip";
+      a.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setError("Could not generate ZIP download.");
+    } finally {
+      setZipBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm">
+          <ImageIcon className="h-4 w-4" /> Pick images
+          <input type="file" multiple accept="image/png,image/jpeg,image/webp,image/*" className="hidden" onChange={(e) => void handlePick(e.target.files)} />
+        </label>
+        <div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">
+          {(["original", "jpeg", "webp", "png"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => void updateFormat(f)}
+              className={"rounded-full px-3 py-1 uppercase " + (format === f ? "bg-accent text-accent-foreground" : "text-muted-foreground")}
+            >
+              {formatLabel[f]}
+            </button>
+          ))}
+        </div>
+        <div className="flex min-w-[220px] flex-1 items-center gap-3 rounded-full border border-border px-4 py-2">
+          <span className="text-[11px] font-mono uppercase text-muted-foreground">Max width</span>
+          <input type="range" min={480} max={2560} step={80} value={maxWidth} onChange={(e) => void updateMaxWidth(+e.target.value)} className="flex-1 accent-[color:var(--accent)]" />
+          <span className="w-14 text-right text-xs font-mono">{maxWidth}px</span>
+        </div>
+        {(format === "jpeg" || format === "webp" || format === "original") && (
+          <div className="flex min-w-[220px] flex-1 items-center gap-3 rounded-full border border-border px-4 py-2">
+            <span className="text-[11px] font-mono uppercase text-muted-foreground">Quality</span>
+            <input type="range" min={0.35} max={1} step={0.05} value={quality} onChange={(e) => void updateQuality(+e.target.value)} className="flex-1 accent-[color:var(--accent)]" />
+            <span className="w-10 text-right text-xs font-mono">{Math.round(quality * 100)}</span>
+          </div>
+        )}
+        {hasOutput ? (
+          <>
+            <button onClick={downloadAll} className="rounded-full border border-border px-4 py-2 text-xs font-mono uppercase hover:border-accent hover:text-accent">
+              Download all
+            </button>
+            <button onClick={() => void downloadZip()} disabled={zipBusy} className="rounded-full bg-accent px-4 py-2 text-xs font-mono uppercase text-accent-foreground disabled:opacity-60">
+              {zipBusy ? "Zipping..." : "Download ZIP"}
+            </button>
+          </>
+        ) : null}
+      </div>
+
+      {error ? (
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{error}</div>
+      ) : null}
+
+      {!items.length ? (
+        <div className="rounded-2xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
+          Upload images to reduce file size by resizing them, lowering quality, or converting them to more efficient formats like WebP.
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-3 md:grid-cols-4">
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Files</div>
+              <div className="mt-2 font-display text-2xl">{items.length}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Original Total</div>
+              <div className="mt-2 font-display text-2xl">{prettySize(totalOriginal)}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Compressed Total</div>
+              <div className="mt-2 font-display text-2xl">{prettySize(totalCompressed)}</div>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-4">
+              <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Saved</div>
+              <div className="mt-2 font-display text-2xl">{savedPercent}%</div>
+              <div className="mt-1 text-xs text-muted-foreground">{prettySize(savedBytes)} smaller</div>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {items.map((item) => {
+              const percentSaved = item.outputSize != null && item.inputSize > 0
+                ? Math.max(0, Math.round(((item.inputSize - item.outputSize) / item.inputSize) * 100))
+                : 0;
+              return (
+                <div key={item.id} className="rounded-2xl border border-border bg-card p-4">
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate font-display text-base font-semibold">{item.fileName}</div>
+                      <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">{item.inputType}</div>
+                    </div>
+                    {item.outputUrl ? (
+                      <button onClick={() => downloadItem(item)} className="rounded-full border border-border px-3 py-1 text-[10px] font-mono uppercase hover:border-accent hover:text-accent">
+                        Download
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {item.error ? (
+                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-3 text-sm text-rose-300">{item.error}</div>
+                  ) : (
+                    <>
+                      <div className="grid gap-3 lg:grid-cols-2">
+                        <div>
+                          <div className="mb-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Before</div>
+                          <img src={item.sourceUrl} alt={item.fileName} className="h-40 w-full rounded-xl border border-border object-cover" />
+                        </div>
+                        <div>
+                          <div className="mb-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">After</div>
+                          <img src={item.outputUrl} alt={`${item.fileName} compressed`} className="h-40 w-full rounded-xl border border-border object-cover" />
+                        </div>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <div className="rounded-xl border border-border bg-background/70 p-3">
+                          <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Original</div>
+                          <div className="mt-1 text-sm font-semibold">{prettySize(item.inputSize)}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{item.width} x {item.height}</div>
+                        </div>
+                        <div className="rounded-xl border border-border bg-background/70 p-3">
+                          <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Compressed</div>
+                          <div className="mt-1 text-sm font-semibold">{prettySize(item.outputSize)}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{item.outputWidth} x {item.outputHeight}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-xl border border-emerald-500/20 bg-emerald-500/8 px-3 py-2 text-xs text-emerald-300">
+                        Saved {percentSaved}% on this image.
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {busy ? <div className="text-sm text-muted-foreground">Compressing images...</div> : null}
+    </div>
+  );
+}
+
 function CurlToFetch() {
   const [t, setT] = useState(`curl -X POST https://api.example.com/users -H 'Content-Type: application/json' -d '{"name":"JB"}'`);
   const conv = useMemo(() => {
@@ -8239,6 +8703,7 @@ const TOOLS: Tool[] = [
   { id: "js-gallery", name: "JavaScript Snippets — 70 Ready-made", category: "JavaScript", keywords: "modal accordion tabs dropdown sidebar hamburger slider carousel typing scramble password validation debounce throttle fetch search pagination drag drop upload counter clock stopwatch quote uuid localstorage query params formdata custom event download event delegation reduce map promise all memoize flatten group by retry deep clone sort once interview prep closure currying pipe binary search dfs event loop polyfill bind call apply lru cache", icon: Code2, render: () => <SnippetsGallery /> },
   { id: "svg-css", name: "SVG to CSS Converter", category: "Utilities", keywords: "data uri background image encoder", icon: ImageIcon, render: () => <SvgToCssTool /> },
   { id: "img-convert", name: "Image Format Converter", category: "Utilities", keywords: "png jpeg jpg webp convert image", icon: ImageIcon, render: () => <ImageConverterTool /> },
+  { id: "img-compress", name: "Image Size Compressor", category: "Utilities", keywords: "compress image reduce size kb mb webp jpeg png resize quality", icon: ImageIcon, render: () => <ImageCompressorTool /> },
   { id: "svg-cleanup", name: "SVG Optimizer + Cleanup", category: "Utilities", keywords: "svg optimize cleanup react", icon: ImageIcon, render: () => <SvgOptimizerTool /> },
   { id: "html-jsx", name: "HTML to JSX / JSX to HTML", category: "JavaScript", keywords: "convert markup react", icon: Braces, render: () => <HtmlJsxToolFixed /> },
   { id: "css-tw", name: "CSS to Tailwind Converter", category: "CSS", keywords: "tailwind convert", icon: Wand2, render: () => <CssToTailwindTool /> },

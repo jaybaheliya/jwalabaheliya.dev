@@ -566,19 +566,28 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
       </div>
 
       <div className="fixed inset-x-0 bottom-3 z-40 px-3 pb-[env(safe-area-inset-bottom,0px)] pt-3 lg:hidden">
-        <div className="mx-auto max-w-[min(100%,22rem)] rounded-[24px] border border-border bg-background/96 p-2 shadow-[0_18px_48px_-24px_rgba(15,23,42,0.38)] backdrop-blur">
-          <div className="grid grid-cols-4 gap-2">
-            <a href="#overview" onClick={jumpToSection("overview")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "overview" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
-            Overview
+        <div className="mx-auto max-w-[min(100%,22rem)] rounded-[26px] border border-border bg-background/96 p-2 shadow-[0_18px_48px_-24px_rgba(15,23,42,0.38)] backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-3 rounded-[20px] border border-border/70 bg-card/70 px-3 py-2">
+            <div className="min-w-0">
+              <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">Quick nav</div>
+              <div className="truncate text-sm font-semibold text-foreground">{tool.name}</div>
+            </div>
+            <div className="rounded-full border border-border px-2.5 py-1 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
+              {tool.category}
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-4 gap-2">
+            <a href="#overview" onClick={jumpToSection("overview")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "overview" ? "bg-foreground text-background" : "border border-border bg-background/70 text-muted-foreground")}>
+              Overview
             </a>
-            <a href="#tool" onClick={jumpToSection("tool")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "tool" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
-            Tool
+            <a href="#tool" onClick={jumpToSection("tool")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "tool" ? "bg-foreground text-background" : "border border-border bg-background/70 text-muted-foreground")}>
+              Tool
             </a>
-            <a href="#usage" onClick={jumpToSection("usage")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "usage" ? "bg-foreground text-background" : "border border-border text-muted-foreground")}>
-            Steps
+            <a href="#usage" onClick={jumpToSection("usage")} className={"rounded-2xl px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest transition " + (activeSection === "usage" ? "bg-foreground text-background" : "border border-border bg-background/70 text-muted-foreground")}>
+              Steps
             </a>
-            <Link href="/toolkit" className="rounded-2xl border border-border px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-            All
+            <Link href="/toolkit" className="rounded-2xl border border-border bg-background/70 px-2 py-2.5 text-center text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+              All
             </Link>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { applyMode, getSavedMode } from "./theme-switcher";
 
 /**
- * ⌘K / Ctrl+K command palette.
+ * Command palette.
  * Fuzzy filter across nav jumps, contact actions, and theme swaps.
  */
 
@@ -34,37 +34,56 @@ export function CommandPalette() {
 
   const actions = useMemo<Action[]>(() => {
     const nav: Action[] = [
-      { id: "nav-top",     group: "Navigate", label: "Jump to top",           hint: "G T", run: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
-      { id: "nav-about",   group: "Navigate", label: "Jump to About",         hint: "G A", run: () => scrollTo("about") },
-      { id: "nav-work",    group: "Navigate", label: "Jump to Selected Work", hint: "G W", run: () => scrollTo("work") },
-      { id: "nav-contact", group: "Navigate", label: "Jump to Contact",       hint: "G C", run: () => scrollTo("contact") },
+      { id: "nav-top", group: "Navigate", label: "Jump to top", hint: "G T", run: () => window.scrollTo({ top: 0, behavior: "smooth" }) },
+      { id: "nav-about", group: "Navigate", label: "Jump to About", hint: "G A", run: () => scrollTo("about") },
+      { id: "nav-work", group: "Navigate", label: "Jump to Selected Work", hint: "G W", run: () => scrollTo("work") },
+      { id: "nav-contact", group: "Navigate", label: "Jump to Contact", hint: "G C", run: () => scrollTo("contact") },
     ];
     const contact: Action[] = [
       {
-        id: "copy-email", group: "Contact", label: "Copy email address", hint: "⏎",
+        id: "copy-email",
+        group: "Contact",
+        label: "Copy email address",
+        hint: "CPY",
         keywords: EMAIL,
         run: async () => {
-          try { await navigator.clipboard.writeText(EMAIL); toast.success("Email copied"); }
-          catch { toast.error("Couldn't copy — try the contact section"); }
+          try {
+            await navigator.clipboard.writeText(EMAIL);
+            toast.success("Email copied");
+          } catch {
+            toast.error("Couldn't copy. Try the contact section.");
+          }
         },
       },
-      { id: "mail",     group: "Contact", label: "Send an email",           run: () => (window.location.href = `mailto:${EMAIL}`) },
-      { id: "linkedin", group: "Contact", label: "Open LinkedIn",           run: () => window.open("https://www.linkedin.com/in/jwala-baheliya-a82a5411b", "_blank", "noopener") },
-      { id: "resume",   group: "Contact", label: "Download resume (PDF)",   run: () => window.print() },
+      { id: "mail", group: "Contact", label: "Send an email", run: () => (window.location.href = `mailto:${EMAIL}`) },
+      { id: "linkedin", group: "Contact", label: "Open LinkedIn", run: () => window.open("https://www.linkedin.com/in/jwala-baheliya-a82a5411b", "_blank", "noopener") },
+      { id: "resume", group: "Contact", label: "Download resume (PDF)", run: () => window.print() },
     ];
     const themes: Action[] = [
       {
-        id: "theme-light", group: "Theme", label: "Switch to Light mode",
+        id: "theme-light",
+        group: "Theme",
+        label: "Switch to Light mode",
         keywords: "light theme mode day",
-        run: () => { applyMode("light"); toast.success("Light mode"); },
+        run: () => {
+          applyMode("light");
+          toast.success("Light mode");
+        },
       },
       {
-        id: "theme-dark", group: "Theme", label: "Switch to Dark mode",
+        id: "theme-dark",
+        group: "Theme",
+        label: "Switch to Dark mode",
         keywords: "dark theme mode night",
-        run: () => { applyMode("dark"); toast.success("Dark mode"); },
+        run: () => {
+          applyMode("dark");
+          toast.success("Dark mode");
+        },
       },
       {
-        id: "theme-toggle", group: "Theme", label: "Toggle Light / Dark",
+        id: "theme-toggle",
+        group: "Theme",
+        label: "Toggle Light / Dark",
         keywords: "toggle theme mode",
         run: () => {
           const next = getSavedMode() === "dark" ? "light" : "dark";
@@ -76,18 +95,16 @@ export function CommandPalette() {
     const util: Action[] = [
       { id: "reload", group: "Utility", label: "Reload page", run: () => window.location.reload() },
     ];
+
     return [...nav, ...contact, ...themes, ...util];
   }, []);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return actions;
-    return actions.filter((a) =>
-      `${a.label} ${a.group} ${a.keywords ?? ""}`.toLowerCase().includes(s)
-    );
+    return actions.filter((a) => `${a.label} ${a.group} ${a.keywords ?? ""}`.toLowerCase().includes(s));
   }, [q, actions]);
 
-  // Global shortcut
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
@@ -102,7 +119,6 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
-  // Reset on open + focus input
   useEffect(() => {
     if (!open) return;
     setQ("");
@@ -116,10 +132,10 @@ export function CommandPalette() {
     };
   }, [open]);
 
-  // Reset index when filter changes
-  useEffect(() => { setI(0); }, [q]);
+  useEffect(() => {
+    setI(0);
+  }, [q]);
 
-  // Keep highlighted item in view
   useEffect(() => {
     if (!open) return;
     const el = listRef.current?.querySelector<HTMLElement>(`[data-idx="${i}"]`);
@@ -130,7 +146,6 @@ export function CommandPalette() {
     const a = filtered[idx];
     if (!a) return;
     setOpen(false);
-    // Defer so overflow-lock unwinds before scroll actions
     setTimeout(() => a.run(), 40);
   };
 
@@ -139,17 +154,17 @@ export function CommandPalette() {
       <button
         onClick={() => setOpen(true)}
         aria-label="Open command palette"
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[55] px-3 py-1.5 rounded-full border border-border bg-background/80 backdrop-blur-md font-mono text-[11px] tracking-widest uppercase text-muted-foreground hover:text-foreground hover:border-foreground transition-colors shadow-lg"
+        className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+6.4rem)] left-1/2 z-[55] flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-background/88 px-3 py-1.5 shadow-lg backdrop-blur-md transition-colors hover:border-foreground hover:text-foreground sm:bottom-4"
       >
-        Press{" "}
-        <kbd className="mx-1 px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">⌘</kbd>
-        <kbd className="px-1.5 py-0.5 rounded bg-muted text-foreground border border-border">K</kbd>{" "}
-        to command
+        <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground sm:hidden">Command</span>
+        <span className="hidden font-mono text-[11px] uppercase tracking-widest text-muted-foreground sm:inline">Press</span>
+        <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-foreground sm:inline-flex">⌘</kbd>
+        <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-foreground sm:inline-flex">K</kbd>
+        <span className="hidden font-mono text-[11px] uppercase tracking-widest text-muted-foreground sm:inline">to command</span>
       </button>
     );
   }
 
-  // Group filtered items for section labels
   const groups: Record<string, Action[]> = {};
   filtered.forEach((a) => {
     (groups[a.group] ??= []).push(a);
@@ -158,7 +173,7 @@ export function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-start justify-center px-4 pt-[12vh] bg-background/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex items-start justify-center bg-background/70 px-4 pt-[12vh] backdrop-blur-sm"
       onClick={() => setOpen(false)}
       role="dialog"
       aria-modal="true"
@@ -167,23 +182,30 @@ export function CommandPalette() {
       <div
         onClick={(e) => e.stopPropagation()}
         data-lenis-prevent
-        className="slide-up-fade w-full max-w-xl bg-card border border-border rounded-2xl shadow-2xl overflow-hidden"
+        className="slide-up-fade w-full max-w-xl overflow-hidden rounded-2xl border border-border bg-card shadow-2xl"
       >
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
           <span className="font-mono text-xs text-muted-foreground">›</span>
           <input
             ref={inputRef}
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "ArrowDown") { e.preventDefault(); setI((n) => Math.min(filtered.length - 1, n + 1)); }
-              else if (e.key === "ArrowUp") { e.preventDefault(); setI((n) => Math.max(0, n - 1)); }
-              else if (e.key === "Enter") { e.preventDefault(); runAt(i); }
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setI((n) => Math.min(filtered.length - 1, n + 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setI((n) => Math.max(0, n - 1));
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                runAt(i);
+              }
             }}
-            placeholder="Search actions, sections, themes…"
-            className="flex-1 bg-transparent outline-none font-sans text-sm placeholder:text-muted-foreground"
+            placeholder="Search actions, sections, themes..."
+            className="flex-1 bg-transparent font-sans text-sm outline-none placeholder:text-muted-foreground"
           />
-          <kbd className="hidden sm:inline-flex px-1.5 py-0.5 rounded bg-muted border border-border font-mono text-[10px] text-muted-foreground">
+          <kbd className="hidden rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-flex">
             ESC
           </kbd>
         </div>
@@ -191,12 +213,12 @@ export function CommandPalette() {
         <div ref={listRef} className="max-h-[52vh] overflow-y-auto p-2">
           {filtered.length === 0 ? (
             <div className="py-10 text-center font-mono text-xs text-muted-foreground">
-              No matches. Try &quot;work&quot;, &quot;email&quot;, or &quot;theme&quot;.
+              No matches. Try "work", "email", or "theme".
             </div>
           ) : (
             Object.entries(groups).map(([g, items]) => (
               <div key={g} className="mb-2 last:mb-0">
-                <div className="px-3 py-1.5 font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+                <div className="px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
                   {g}
                 </div>
                 {items.map((a) => {
@@ -209,21 +231,16 @@ export function CommandPalette() {
                       onMouseEnter={() => setI(idx)}
                       onClick={() => runAt(idx)}
                       className={
-                        "w-full flex items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors " +
+                        "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors " +
                         (active ? "bg-accent text-accent-foreground" : "text-foreground/85 hover:bg-muted")
                       }
                     >
                       <span className="truncate">{a.label}</span>
-                      {a.hint && (
-                        <span
-                          className={
-                            "font-mono text-[10px] tracking-widest " +
-                            (active ? "text-accent-foreground/70" : "text-muted-foreground")
-                          }
-                        >
+                      {a.hint ? (
+                        <span className={"font-mono text-[10px] tracking-widest " + (active ? "text-accent-foreground/70" : "text-muted-foreground")}>
                           {a.hint}
                         </span>
-                      )}
+                      ) : null}
                     </button>
                   );
                 })}
@@ -232,17 +249,17 @@ export function CommandPalette() {
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-4 py-2 border-t border-border font-mono text-[10px] tracking-widest uppercase text-muted-foreground">
+        <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           <span>
-            <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-foreground">↑↓</kbd>{" "}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-foreground">↑↓</kbd>{" "}
             navigate
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-foreground">⏎</kbd>{" "}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-foreground">↵</kbd>{" "}
             run
           </span>
           <span>
-            <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-foreground">esc</kbd>{" "}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-foreground">esc</kbd>{" "}
             close
           </span>
         </div>
