@@ -188,23 +188,39 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
 
   return (
     <div className="min-h-screen overflow-x-clip bg-background text-foreground">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-border/70 bg-background/78 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 md:px-6">
-          <div className="flex items-center gap-4">
-            <Link href="/toolkit" className="inline-flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs font-mono uppercase tracking-widest text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
-              <ArrowLeft className="h-3.5 w-3.5" /> Toolkit
+          <div className="flex min-w-0 items-center gap-3 md:gap-4">
+            <Link href="/toolkit" className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-card/70 px-4 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground transition hover:border-foreground/30 hover:text-foreground">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Toolkit
             </Link>
-            <div className="hidden md:block text-sm text-muted-foreground">Docs-style tool pages for SEO and direct sharing</div>
+            <div className="hidden min-w-0 items-center gap-3 md:flex">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-border bg-card/70 text-accent">
+                <Wand2 className="h-4.5 w-4.5" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">{tool.category} tool page</div>
+                <div className="truncate text-sm font-semibold text-foreground">{tool.name}</div>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <a href="mailto:jaybaheliya@gmail.com" className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+            <button
+              onClick={() => void copyLink()}
+              className="hidden h-11 items-center gap-2 rounded-full border border-border bg-card/70 px-4 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground transition hover:border-foreground/30 hover:text-foreground md:inline-flex"
+            >
+              {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {copied ? "Copied" : "Copy link"}
+            </button>
+            <a href="mailto:jaybaheliya@gmail.com" className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground shadow-[0_18px_40px_-24px_rgba(0,0,0,0.45)] transition hover:opacity-90">
               Hire me
             </a>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1800px] overflow-x-clip lg:flex">
+      <div className="mx-auto max-w-[1800px] overflow-x-clip pt-[73px] lg:flex">
         <div className="border-b border-border px-4 py-4 lg:hidden">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
@@ -228,33 +244,31 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
         </div>
 
         <aside
-          className="relative hidden shrink-0 border-r border-border transition-[width] duration-300 ease-out lg:block"
-          style={{ width: leftRailOpen ? 280 : 18 }}
+          className="relative hidden shrink-0 border-r border-border/70 transition-[width] duration-300 ease-out lg:block"
+          style={{ width: leftRailOpen ? 300 : 44 }}
         >
-          <button
-            onClick={() => setLeftRailOpen((current) => !current)}
-            className={
-              "absolute top-6 z-20 hidden h-16 w-7 items-center justify-center border border-border bg-background text-muted-foreground transition hover:w-8 hover:text-foreground lg:inline-flex " +
-              (leftRailOpen
-                ? "right-0 translate-x-full rounded-r-2xl border-l-0"
-                : "right-0 rounded-none border-x-0 border-y-0 bg-transparent hover:bg-muted/30")
-            }
-            aria-label={leftRailOpen ? "Hide left navigation" : "Show left navigation"}
-          >
-            <PanelLeft className={"h-4 w-4 transition-transform duration-300 " + (leftRailOpen ? "" : "rotate-180")} />
-          </button>
           <div
             className={
-              "sticky top-[65px] h-[calc(100vh-65px)] overflow-auto px-5 py-6 transition-all duration-300 ease-out " +
+              "fixed top-[65px] left-[max(0px,calc((100vw-1800px)/2))] z-30 h-[calc(100vh-65px)] overflow-y-auto border-r border-border/70 bg-background/95 px-5 py-6 shadow-[18px_0_50px_-42px_rgba(0,0,0,0.65)] backdrop-blur-xl transition-all duration-300 ease-out " +
               (leftRailOpen ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0 pointer-events-none")
             }
+            style={{ width: 300 }}
           >
-            <div className="mb-5 flex items-center gap-2">
-              {[Boxes, Layers3, Wand2].map((Icon, index) => (
-                <div key={index} className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
-                  <Icon className="h-4 w-4" />
-                </div>
-              ))}
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {[Boxes, Layers3, Wand2].map((Icon, index) => (
+                  <div key={index} className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setLeftRailOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
+                aria-label="Hide left navigation"
+              >
+                <PanelLeft className="h-4 w-4" />
+              </button>
             </div>
             <div className="mb-5 rounded-2xl border border-border bg-card p-4">
               <div className="text-[10px] font-mono uppercase tracking-[0.24em] text-muted-foreground">Frontend Toolkit</div>
@@ -302,7 +316,18 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
           </div>
         </aside>
 
-        <main className="min-w-0 px-4 py-6 pb-36 md:px-8 md:py-8 md:pb-32 lg:px-10 lg:pb-8 xl:px-12">
+        {!leftRailOpen && (
+          <button
+            onClick={() => setLeftRailOpen(true)}
+            className="fixed left-4 top-1/2 z-40 hidden -translate-y-1/2 items-center gap-2 rounded-full border border-border bg-background/96 px-3 py-2 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground shadow-[0_18px_48px_-24px_rgba(15,23,42,0.42)] backdrop-blur-xl transition hover:border-foreground/30 hover:text-foreground lg:inline-flex"
+            aria-label="Show left navigation"
+          >
+            <PanelLeft className="h-4 w-4 rotate-180" />
+            Browse
+          </button>
+        )}
+
+        <main className="min-w-0 flex-1 px-4 py-6 pb-36 md:px-8 md:py-8 md:pb-32 lg:px-10 lg:pb-8 xl:px-12">
           <div className="w-full max-w-none">
             <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground">{tool.category}</div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-6xl">{tool.name}</h1>
@@ -488,33 +513,31 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
         </main>
 
         <aside
-          className="relative hidden shrink-0 border-l border-border transition-[width] duration-300 ease-out xl:block"
-          style={{ width: rightRailOpen ? 240 : 18 }}
+          className="relative hidden shrink-0 border-l border-border/70 transition-[width] duration-300 ease-out xl:block"
+          style={{ width: rightRailOpen ? 260 : 44 }}
         >
-          <button
-            onClick={() => setRightRailOpen((current) => !current)}
-            className={
-              "absolute top-6 z-20 hidden h-16 w-7 items-center justify-center border border-border bg-background text-muted-foreground transition hover:w-8 hover:text-foreground xl:inline-flex " +
-              (rightRailOpen
-                ? "left-0 -translate-x-full rounded-l-2xl border-r-0"
-                : "left-0 rounded-none border-x-0 border-y-0 bg-transparent hover:bg-muted/30")
-            }
-            aria-label={rightRailOpen ? "Hide right navigation" : "Show right navigation"}
-          >
-            <PanelRight className={"h-4 w-4 transition-transform duration-300 " + (rightRailOpen ? "" : "rotate-180")} />
-          </button>
           <div
             className={
-              "sticky top-[65px] h-[calc(100vh-65px)] overflow-auto px-6 py-8 transition-all duration-300 ease-out " +
+              "fixed top-[65px] right-[max(0px,calc((100vw-1800px)/2))] z-30 h-[calc(100vh-65px)] overflow-y-auto border-l border-border/70 bg-background/95 px-6 py-8 shadow-[-18px_0_50px_-42px_rgba(0,0,0,0.65)] backdrop-blur-xl transition-all duration-300 ease-out " +
               (rightRailOpen ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0 pointer-events-none")
             }
+            style={{ width: 260 }}
           >
-            <div className="mb-6 flex gap-2">
-              {[Sparkles, Copy, ExternalLink].map((Icon, index) => (
-                <div key={index} className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
-                  <Icon className="h-4 w-4" />
-                </div>
-              ))}
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <div className="flex gap-2">
+                {[Sparkles, Copy, ExternalLink].map((Icon, index) => (
+                  <div key={index} className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-card text-muted-foreground">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={() => setRightRailOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground transition hover:border-foreground/30 hover:text-foreground"
+                aria-label="Hide right navigation"
+              >
+                <PanelRight className="h-4 w-4" />
+              </button>
             </div>
             <div className="text-sm font-semibold text-foreground">On this page</div>
             <div className="mt-4 space-y-3 text-sm text-muted-foreground">
@@ -529,6 +552,17 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
             </div>
           </div>
         </aside>
+
+        {!rightRailOpen && (
+          <button
+            onClick={() => setRightRailOpen(true)}
+            className="fixed right-4 top-1/2 z-40 hidden -translate-y-1/2 items-center gap-2 rounded-full border border-border bg-background/96 px-3 py-2 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground shadow-[0_18px_48px_-24px_rgba(15,23,42,0.42)] backdrop-blur-xl transition hover:border-foreground/30 hover:text-foreground xl:inline-flex"
+            aria-label="Show right navigation"
+          >
+            Page Nav
+            <PanelRight className="h-4 w-4 rotate-180" />
+          </button>
+        )}
       </div>
 
       <div className="fixed inset-x-0 bottom-3 z-40 px-3 pb-[env(safe-area-inset-bottom,0px)] pt-3 lg:hidden">
