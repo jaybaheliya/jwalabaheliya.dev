@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Copy, Check, Palette, Type, Square, Smartphone, Code2, Ruler, Wand2, Gauge, Hash, FileCode, Braces, Image as ImageIcon, Zap } from "lucide-react";
+import { ArrowLeft, Copy, Check, Palette, Type, Square, Smartphone, Code2, Ruler, Wand2, Gauge, Hash, FileCode, Braces, Image as ImageIcon, Zap, Layout, Tag } from "lucide-react";
 import { RateCalculator } from "@/components/rate-calculator";
 import { BookCall } from "@/components/book-call";
 import { GithubContributions } from "@/components/github-contributions";
@@ -16,6 +16,9 @@ import { MultiLayerShadowTool } from "@/components/multi-layer-shadow";
 import { NextImageCalcTool } from "@/components/next-image-calc";
 import { KeyframeAnimationBuilder } from "@/components/keyframe-animation-builder";
 import { CssToTailwindTool } from "@/components/css-to-tailwind";
+import { BentoGridStudio } from "@/components/bento-grid-studio";
+import { CronBuilderTool } from "@/components/cron-builder-tool";
+import { MetaStudioTool } from "@/components/meta-studio-tool";
 
 
 
@@ -133,6 +136,18 @@ function ToolsPage() {
 
       <SectionShell id="css-tw" tag="/16" icon={<Wand2 className="h-4 w-4" />} title="CSS to Tailwind Converter">
         <CssToTailwindTool />
+      </SectionShell>
+
+      <SectionShell id="bento-grid" tag="/17" icon={<Layout className="h-4 w-4" />} title="Bento Grid & Flexbox Layout Studio">
+        <BentoGridStudio />
+      </SectionShell>
+
+      <SectionShell id="cron-builder" tag="/18" icon={<Gauge className="h-4 w-4" />} title="Vercel & GitHub Actions Cron Builder">
+        <CronBuilderTool />
+      </SectionShell>
+
+      <SectionShell id="meta-studio" tag="/19" icon={<Tag className="h-4 w-4" />} title="Next.js Metadata & Social Card Studio">
+        <MetaStudioTool />
       </SectionShell>
 
       <footer className="border-t border-border/60 mt-16 py-10 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">

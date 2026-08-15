@@ -131,6 +131,9 @@ export const TOOLKIT_DOCS: ToolkitDoc[] = [
   { id: "pdf-to-word", name: "PDF to WORD Converter", category: "Utilities", keywords: "pdf word docx text convert" },
   { id: "pdf-split", name: "Split PDF file", category: "Utilities", keywords: "pdf split extract pages" },
   { id: "pdf-to-jpg", name: "PDF to JPG", category: "Utilities", keywords: "pdf jpg images export pages" },
+  { id: "bento-grid", name: "Bento Grid & Flexbox Layout Studio", category: "Layout", keywords: "bento grid layout vercel apple layout flexbox tailwind" },
+  { id: "cron-builder", name: "Vercel & GitHub Actions Cron Builder", category: "Utilities", keywords: "cron vercel github actions schedule expression schedule" },
+  { id: "meta-studio", name: "Next.js Metadata & Social Card Studio", category: "Utilities", keywords: "nextjs metadata open graph og twitter seo social preview" },
 ];
 
 export const TOOLKIT_DOCS_BY_ID = Object.fromEntries(

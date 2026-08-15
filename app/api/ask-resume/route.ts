@@ -6,7 +6,7 @@ const RESUME_CONTEXT = `You are an assistant that answers questions about Jwala 
 Name: Jwala Baheliya
 Role: Senior Frontend Developer (8+ years)
 Location: Mumbai, India
-Email: jwala.baheliya@gmail.com
+Email: jaybaheliya@gmail.com
 LinkedIn: https://www.linkedin.com/in/jwala-baheliya-a82a5411b
 
 Summary: Senior frontend developer with 8+ years turning Figma / Adobe XD designs into production-ready websites for premium brands. Strong on responsive design, performance, accessibility, and clean component architecture.

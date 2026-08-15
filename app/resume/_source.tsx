@@ -26,8 +26,8 @@ function ResumePage() {
         <h1 className="font-display text-4xl font-bold tracking-tight">Jwala Baheliya</h1>
         <p className="mt-1 text-lg text-neutral-700">Senior Frontend Developer - 8+ years</p>
         <p className="mt-2 text-sm text-neutral-500">
-          Mumbai, India - <a className="underline" href="mailto:jwala.baheliya@gmail.com">jwala.baheliya@gmail.com</a> -{" "}
-          <a className="underline" href="https://www.linkedin.com/">LinkedIn</a>
+          Mumbai, India - <a className="underline" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a> -{" "}
+          <a className="underline" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/">LinkedIn</a>
         </p>
       </header>
 

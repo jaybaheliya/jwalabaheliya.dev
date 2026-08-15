@@ -17,6 +17,9 @@ import { MultiLayerShadowTool } from "@/components/multi-layer-shadow";
 import { NextImageCalcTool } from "@/components/next-image-calc";
 import { KeyframeAnimationBuilder } from "@/components/keyframe-animation-builder";
 import { CssToTailwindTool } from "@/components/css-to-tailwind";
+import { BentoGridStudio } from "@/components/bento-grid-studio";
+import { CronBuilderTool } from "@/components/cron-builder-tool";
+import { MetaStudioTool } from "@/components/meta-studio-tool";
 
 
 
@@ -8796,6 +8799,9 @@ const TOOLS: Tool[] = [
   { id: "pdf-to-word", name: "PDF to WORD Converter", category: "Utilities", keywords: "pdf word docx text convert", icon: FileText, render: () => <PdfToWordTool /> },
   { id: "pdf-split", name: "Split PDF file", category: "Utilities", keywords: "pdf split extract pages", icon: FileText, render: () => <SplitPdfTool /> },
   { id: "pdf-to-jpg", name: "PDF to JPG", category: "Utilities", keywords: "pdf jpg images export pages", icon: ImageIcon, render: () => <PdfToJpgTool /> },
+  { id: "bento-grid", name: "Bento Grid & Flexbox Layout Studio", category: "Layout", keywords: "bento grid layout vercel apple layout flexbox tailwind", icon: Layout, render: () => <BentoGridStudio /> },
+  { id: "cron-builder", name: "Vercel & GitHub Actions Cron Builder", category: "Utilities", keywords: "cron vercel github actions schedule expression schedule", icon: Timer, render: () => <CronBuilderTool /> },
+  { id: "meta-studio", name: "Next.js Metadata & Social Card Studio", category: "Utilities", keywords: "nextjs metadata open graph og twitter seo social preview", icon: Tag, render: () => <MetaStudioTool /> },
 ];
 
 export function ToolkitToolRenderer({ id }: { id: string }) {
