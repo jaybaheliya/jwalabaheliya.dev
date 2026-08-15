@@ -494,7 +494,7 @@ function Nav() {
 function Hero() {
   const t = HERO_COPY.en;
   return (
-    <section id="top" className="relative overflow-x-clip pt-24 pb-12 sm:pt-36 sm:pb-20 md:pt-52 md:pb-32">
+    <section id="top" className="relative overflow-x-clip pt-24 pb-12 sm:pt-36 sm:pb-20 md:pt-32 md:pb-32">
       {/* aurora */}
       <div
         aria-hidden
@@ -507,7 +507,7 @@ function Hero() {
         style={{ background: "radial-gradient(circle, var(--accent), transparent 60%)", animationDelay: "-6s" }}
       />
 
-      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 sm:gap-10 sm:px-6 md:px-10 lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-12">
+      <div className="mx-auto grid max-w-[1400px] gap-8 px-4 sm:gap-10 sm:px-6 md:px-10 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:gap-12">
         <div className="min-w-0">
           <div className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full border border-border bg-card/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-md sm:text-[11px] sm:tracking-widest">
             <span className="relative flex h-2 w-2">
@@ -721,7 +721,7 @@ function DevStatusCard() {
         className="absolute -inset-6 rounded-[2.5rem] opacity-40 blur-3xl"
         style={{ background: "radial-gradient(circle, var(--accent), transparent 70%)" }}
       />
-      <div className="relative w-[calc(100vw-2rem)] max-w-[21.5rem] overflow-hidden rounded-[1.4rem] border border-border/60 bg-card/88 shadow-2xl backdrop-blur-xl sm:w-[23rem] sm:rounded-[1.6rem] md:w-[27rem] md:rounded-[1.75rem] lg:w-[28.5rem]">
+      <div className="relative w-[calc(100vw-2rem)] max-w-[21.5rem] overflow-hidden rounded-[1.4rem] border border-border/60 bg-card/88 shadow-2xl backdrop-blur-xl sm:w-[24rem] sm:max-w-none sm:rounded-[1.6rem] md:w-[30rem] md:rounded-[1.75rem] lg:w-[32.5rem]">
         {/* Title bar */}
         <div className="flex items-center justify-between border-b border-border/60 bg-background/40 px-2.5 py-2 sm:px-4 sm:py-3">
           <div className="flex items-center gap-1.5">
@@ -739,7 +739,7 @@ function DevStatusCard() {
 
         {/* Body with scanlines */}
         <div className="relative">
-          <pre className="relative z-10 min-h-[11rem] whitespace-pre px-3 py-3 font-mono text-[9.5px] leading-relaxed text-foreground/90 xs:text-[10px] sm:min-h-[13.5rem] sm:px-4 sm:py-3.5 sm:text-[11.5px] md:min-h-[14.5rem] md:px-4.5 md:text-[12px]">
+          <pre className="relative z-10 min-h-[11rem] whitespace-pre px-3 py-3 font-mono text-[9.5px] leading-relaxed text-foreground/90 xs:text-[10px] sm:min-h-[13.5rem] sm:px-4 sm:py-3.5 sm:text-[10.5px] md:min-h-[14.5rem] md:px-4 md:text-[11px] lg:text-[11px]">
             {TERMINAL_LINES.slice(0, li).map((l, i) => (
               <TermLine key={i} line={l} shown={l.text.length} />
             ))}
