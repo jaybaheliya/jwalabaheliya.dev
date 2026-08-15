@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Copy, Check, Palette, Type, Square, Smartphone, Code2, Ruler, Wand2, Gauge, Hash } from "lucide-react";
+import { ArrowLeft, Copy, Check, Palette, Type, Square, Smartphone, Code2, Ruler, Wand2, Gauge, Hash, FileCode, Braces, Image as ImageIcon, Zap } from "lucide-react";
 import { RateCalculator } from "@/components/rate-calculator";
 import { BookCall } from "@/components/book-call";
 import { GithubContributions } from "@/components/github-contributions";
@@ -9,6 +9,13 @@ import { ResumeToggle } from "@/components/resume-toggle";
 import { SkillMatchScanner } from "@/components/skill-match";
 import { BusinessCard } from "@/components/business-card";
 import { Playground } from "@/components/playground";
+import { SvgOptimizer } from "@/components/svg-optimizer";
+import { JsonToZodTool } from "@/components/json-to-zod";
+import { FluidClampTool } from "@/components/fluid-clamp";
+import { MultiLayerShadowTool } from "@/components/multi-layer-shadow";
+import { NextImageCalcTool } from "@/components/next-image-calc";
+import { KeyframeAnimationBuilder } from "@/components/keyframe-animation-builder";
+import { CssToTailwindTool } from "@/components/css-to-tailwind";
 
 
 
@@ -40,10 +47,16 @@ function ToolsPage() {
             ["color", "Color"],
             ["typography", "Typography"],
             ["shadow", "Shadow"],
-            ["responsive", "Responsive"],
             ["gradient", "Gradient"],
+            ["responsive", "Responsive"],
             ["units", "Units"],
             ["lorem", "Lorem"],
+            ["svg", "SVG Optimizer"],
+            ["json-zod", "JSON → Zod"],
+            ["clamp", "Fluid Clamp"],
+            ["multi-shadow", "Ambient Shadow"],
+            ["next-img", "Next Image"],
+            ["keyframe", "Keyframe Studio"],
           ].map(([id, label]) => (
             <a key={id} href={`#${id}`} className="rounded-full border border-border px-3 py-1.5 hover:border-accent hover:text-accent transition">{label}</a>
           ))}
@@ -92,6 +105,34 @@ function ToolsPage() {
 
       <SectionShell id="lorem" tag="/09" icon={<Hash className="h-4 w-4" />} title="Lorem Ipsum Generator">
         <LoremGenerator />
+      </SectionShell>
+
+      <SectionShell id="svg" tag="/10" icon={<FileCode className="h-4 w-4" />} title="SVG Optimizer & Converter">
+        <SvgOptimizer />
+      </SectionShell>
+
+      <SectionShell id="json-zod" tag="/11" icon={<Braces className="h-4 w-4" />} title="JSON to Zod Schema Generator">
+        <JsonToZodTool />
+      </SectionShell>
+
+      <SectionShell id="clamp" tag="/12" icon={<Ruler className="h-4 w-4" />} title="CSS Clamp() Fluid Formula Builder">
+        <FluidClampTool />
+      </SectionShell>
+
+      <SectionShell id="multi-shadow" tag="/13" icon={<Square className="h-4 w-4" />} title="Multi-Layer Ambient Shadow Studio">
+        <MultiLayerShadowTool />
+      </SectionShell>
+
+      <SectionShell id="next-img" tag="/14" icon={<ImageIcon className="h-4 w-4" />} title="Next.js <Image /> & Aspect Ratio Calculator">
+        <NextImageCalcTool />
+      </SectionShell>
+
+      <SectionShell id="keyframe" tag="/15" icon={<Zap className="h-4 w-4" />} title="Keyframe Micro-Interaction Studio">
+        <KeyframeAnimationBuilder />
+      </SectionShell>
+
+      <SectionShell id="css-tw" tag="/16" icon={<Wand2 className="h-4 w-4" />} title="CSS to Tailwind Converter">
+        <CssToTailwindTool />
       </SectionShell>
 
       <footer className="border-t border-border/60 mt-16 py-10 text-center font-mono text-[11px] uppercase tracking-widest text-muted-foreground">

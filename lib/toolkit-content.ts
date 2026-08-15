@@ -19,6 +19,7 @@ export type ToolkitDoc = {
 export const TOOLKIT_ROUTE_ALIASES: Record<string, string> = {
   "js-snippets": "js-gallery",
   skeleton: "img-placeholder",
+  "svg-optimizer": "svg-cleanup",
 };
 
 export const TOOLKIT_CATEGORY_ORDER: ToolkitCategory[] = [
@@ -89,7 +90,12 @@ export const TOOLKIT_DOCS: ToolkitDoc[] = [
   { id: "svg-css", name: "SVG to CSS Converter", category: "Utilities", keywords: "data uri background image encoder" },
   { id: "img-convert", name: "Image Format Converter", category: "Utilities", keywords: "png jpeg jpg webp convert image" },
   { id: "img-compress", name: "Image Size Compressor", category: "Utilities", keywords: "compress image reduce size kb mb webp jpeg png resize quality" },
-  { id: "svg-cleanup", name: "SVG Optimizer + Cleanup", category: "Utilities", keywords: "svg optimize cleanup react" },
+  { id: "svg-cleanup", name: "SVG Optimizer & Converter", category: "Utilities", keywords: "svg optimizer clean minify react jsx converter data uri" },
+  { id: "json-zod", name: "JSON to Zod Schema Generator", category: "JavaScript", keywords: "json zod schema validation typescript interface" },
+  { id: "fluid-clamp-builder", name: "CSS Clamp() Fluid Formula Builder", category: "CSS", keywords: "clamp fluid typography spacing responsive vw rem" },
+  { id: "ambient-shadow", name: "Multi-Layer Ambient Shadow Studio", category: "CSS", keywords: "box shadow stripe apple elevation ambient glow" },
+  { id: "next-img-calc", name: "Next.js <Image /> & Aspect Ratio Calculator", category: "Utilities", keywords: "nextjs image aspect ratio cls layout width height" },
+  { id: "keyframe-studio", name: "Keyframe Micro-Interaction Studio", category: "CSS", keywords: "keyframes animation motion bounce pulse tailwind" },
   { id: "html-jsx", name: "HTML to JSX / JSX to HTML", category: "JavaScript", keywords: "convert markup react" },
   { id: "css-tw", name: "CSS to Tailwind Converter", category: "CSS", keywords: "tailwind convert" },
   { id: "tw-sort", name: "Tailwind Class Sorter / Merger", category: "Utilities", keywords: "tailwind sort dedupe classes" },

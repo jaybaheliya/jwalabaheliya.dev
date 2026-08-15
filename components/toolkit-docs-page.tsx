@@ -142,7 +142,7 @@ export function ToolkitDocsPage({ tool }: { tool: ToolkitDoc }) {
   const [copied, setCopied] = useState(false);
   const [activeSection, setActiveSection] = useState<"overview" | "tool" | "usage">("overview");
   const [leftRailOpen, setLeftRailOpen] = useState(true);
-  const [rightRailOpen, setRightRailOpen] = useState(true);
+  const [rightRailOpen, setRightRailOpen] = useState(false);
   const relatedTools = useMemo(
     () => TOOLKIT_DOCS.filter((item) => item.category === tool.category && item.id !== tool.id).slice(0, 3),
     [tool.category, tool.id],

@@ -17,8 +17,8 @@ const SUGGESTIONS = [
 // gateway is unreachable.
 const FACTS: { match: RegExp; answer: string }[] = [
   { match: /(experience|years|how long)/i, answer: "Jwala has **8+ years** of frontend experience — currently Senior Frontend Developer at Bombay DC, previously HRMantra and Technofra." },
-  { match: /(hire|available|availability|open to|freelance|contract|join)/i, answer: "**Yes — open to opportunities.** Based in Mumbai, IST. Reach him at **jwala.baheliya@gmail.com**." },
-  { match: /(contact|email|reach|phone)/i, answer: "📧 **jwala.baheliya@gmail.com** — fastest way to reach Jwala." },
+  { match: /(hire|available|availability|open to|freelance|contract|join)/i, answer: "**Yes — open to opportunities.** Based in Mumbai, IST. Reach him at **jaybaheliya@gmail.com**." },
+  { match: /(contact|email|reach|phone)/i, answer: "📧 **jaybaheliya@gmail.com** — fastest way to reach Jwala." },
   { match: /(next\.?js|nextjs)/i, answer: "Yes — Next.js is part of his core stack alongside React, TypeScript, and TanStack." },
   { match: /(react|typescript|ts\b)/i, answer: "Core stack: **React, TypeScript, Next.js, TanStack, Tailwind, Framer Motion, Three.js**." },
   { match: /(skill|stack|tech|tools)/i, answer: "**Frontend:** React, Next.js, TypeScript, Tailwind, Framer Motion, Three.js, GSAP, Redux, Zustand, Vite. **Design:** Figma, design systems, accessibility, motion." },
@@ -31,7 +31,7 @@ const FACTS: { match: RegExp; answer: string }[] = [
 
 function offlineAnswer(q: string): string {
   for (const f of FACTS) if (f.match.test(q)) return f.answer;
-  return "I'm on offline mode right now — email **jwala.baheliya@gmail.com** and he'll get back within a day. You can also ask about his *experience, stack, brands, or availability*.";
+  return "I'm on offline mode right now — email **jaybaheliya@gmail.com** and he'll get back within a day. You can also ask about his *experience, stack, brands, or availability*.";
 }
 
 export function AskResume() {

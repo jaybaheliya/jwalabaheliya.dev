@@ -10,6 +10,13 @@ import {
 import { Loader2, FileText, Image as ImageIcon, Terminal, Lock, Tag, ScrollText, Percent } from "lucide-react";
 import { SnippetsGallery } from "@/components/toolkit-snippets-extra";
 import { Playground } from "@/components/playground";
+import { SvgOptimizer } from "@/components/svg-optimizer";
+import { JsonToZodTool } from "@/components/json-to-zod";
+import { FluidClampTool } from "@/components/fluid-clamp";
+import { MultiLayerShadowTool } from "@/components/multi-layer-shadow";
+import { NextImageCalcTool } from "@/components/next-image-calc";
+import { KeyframeAnimationBuilder } from "@/components/keyframe-animation-builder";
+import { CssToTailwindTool } from "@/components/css-to-tailwind";
 
 
 
@@ -7090,27 +7097,7 @@ function ComponentsLibrary() {
 }
 
 function SvgOptimizerTool() {
-  const [svg, setSvg] = useState(`<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g class="icon-root" data-name="demo">
-    <rect width="120" height="120" rx="24" fill="#111827"/>
-    <path fill-rule="evenodd" clip-rule="evenodd" d="M30 60c0-16.569 13.431-30 30-30s30 13.431 30 30-13.431 30-30 30-30-13.431-30-30Z" fill="#f59e0b"/>
-  </g>
-</svg>`);
-  const out = useMemo(() => {
-    try {
-      const doc = new DOMParser().parseFromString(svg.trim(), "image/svg+xml");
-      const root = doc.documentElement;
-      if (doc.querySelector("parsererror") || root.nodeName !== "svg") throw new Error("Invalid SVG");
-      root.querySelectorAll("*").forEach((el) => ["class", "data-name", "id", "style", "xml:space", "xmlns:xlink"].forEach((a) => el.removeAttribute(a)));
-      root.removeAttribute("width"); root.removeAttribute("height"); root.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-      const clean = root.outerHTML.replace(/>\s+</g, "><").replace(/\s{2,}/g, " ").trim();
-      const jsx = clean.replace(/class=/g, "className=").replace(/fill-rule=/g, "fillRule=").replace(/clip-rule=/g, "clipRule=").replace(/stroke-width=/g, "strokeWidth=").replace(/stroke-linecap=/g, "strokeLinecap=").replace(/stroke-linejoin=/g, "strokeLinejoin=");
-      return { clean, jsx, preview: clean, error: "" };
-    } catch {
-      return { clean: "", jsx: "", preview: "", error: "SVG parsing failed." };
-    }
-  }, [svg]);
-  return <div className="grid gap-4 lg:grid-cols-2"><div className="space-y-3"><textarea value={svg} onChange={(e) => setSvg(e.target.value)} rows={14} className="w-full rounded-xl border border-border bg-background p-3 font-mono text-xs" />{out.error ? <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-400">{out.error}</div> : <CodeBlock code={out.clean} lang="svg" />}</div><div className="space-y-3"><Preview dark={false} className="overflow-hidden [&_svg]:max-h-56 [&_svg]:max-w-full"><div dangerouslySetInnerHTML={{ __html: out.preview }} /></Preview><CodeBlock code={out.jsx} lang="jsx" /></div></div>;
+  return <SvgOptimizer />;
 }
 
 function HtmlJsxTool() {
@@ -7214,40 +7201,7 @@ function HtmlJsxToolFixed() {
   return <div className="space-y-3"><div className="inline-flex rounded-full border border-border p-1 text-[11px] font-mono">{([["html-jsx", "HTML → JSX"], ["jsx-html", "JSX → HTML"]] as const).map(([id, label]) => <button key={id} onClick={() => setMode(id)} className={"rounded-full px-3 py-1 " + (mode === id ? "bg-accent text-accent-foreground" : "text-muted-foreground")}>{label}</button>)}</div><div className="grid gap-4 lg:grid-cols-2"><textarea value={value} onChange={(e) => setValue(e.target.value)} rows={12} className="rounded-xl border border-border bg-background p-3 font-mono text-xs" /><CodeBlock code={out} lang={mode === "html-jsx" ? "jsx" : "html"} /></div></div>;
 }
 
-function CssToTailwindTool() {
-  const [css, setCss] = useState(`display: flex;
-align-items: center;
-justify-content: space-between;
-padding: 16px 24px;
-gap: 12px;
-border-radius: 16px;
-background: #111827;
-color: #ffffff;`);
-  const out = useMemo(() => {
-    const lines = css.split(";").map((l) => l.trim()).filter(Boolean);
-    const px = (v: string) => { const n = Number(v.replace("px", "")); return Number.isFinite(n) ? n / 4 : null; };
-    return lines.map((line) => {
-      const [propRaw, valueRaw] = line.split(":").map((x) => x.trim());
-      const prop = propRaw?.toLowerCase(); const value = valueRaw?.toLowerCase();
-      if (!prop || !value) return "";
-      if (prop === "display" && value === "flex") return "flex";
-      if (prop === "display" && value === "grid") return "grid";
-      if (prop === "align-items" && value === "center") return "items-center";
-      if (prop === "justify-content" && value === "center") return "justify-center";
-      if (prop === "justify-content" && value === "space-between") return "justify-between";
-      if (prop === "gap") return "gap-" + px(value);
-      if (prop === "border-radius") return px(value) === 4 ? "rounded-xl" : `rounded-[${value}]`;
-      if (prop === "padding") { const parts = value.split(/\s+/); if (parts.length === 2) return `py-${px(parts[0])} px-${px(parts[1])}`; if (parts.length === 1) return `p-${px(parts[0])}`; }
-      if (prop === "background" || prop === "background-color") return value.startsWith("#") ? `bg-[${value}]` : "";
-      if (prop === "color") return value.startsWith("#") ? `text-[${value}]` : "";
-      if (prop === "width") return value === "100%" ? "w-full" : "";
-      if (prop === "height") return value === "100%" ? "h-full" : "";
-      if (prop === "font-weight") return value === "600" ? "font-semibold" : value === "700" ? "font-bold" : "";
-      return `/* ${line} */`;
-    }).filter(Boolean).join(" ");
-  }, [css]);
-  return <div className="grid gap-4 lg:grid-cols-2"><textarea value={css} onChange={(e) => setCss(e.target.value)} rows={12} className="rounded-xl border border-border bg-background p-3 font-mono text-xs" /><CodeBlock code={out} lang="tailwind" /></div>;
-}
+/* CssToTailwindTool imported from @/components/css-to-tailwind */
 
 function TailwindSorterTool() {
   const [value, setValue] = useState("text-white px-4 flex rounded-xl py-2 px-4 items-center bg-black justify-between text-sm");
@@ -8807,7 +8761,12 @@ const TOOLS: Tool[] = [
   { id: "svg-css", name: "SVG to CSS Converter", category: "Utilities", keywords: "data uri background image encoder", icon: ImageIcon, render: () => <SvgToCssTool /> },
   { id: "img-convert", name: "Image Format Converter", category: "Utilities", keywords: "png jpeg jpg webp convert image", icon: ImageIcon, render: () => <ImageConverterTool /> },
   { id: "img-compress", name: "Image Size Compressor", category: "Utilities", keywords: "compress image reduce size kb mb webp jpeg png resize quality", icon: ImageIcon, render: () => <ImageCompressorTool /> },
-  { id: "svg-cleanup", name: "SVG Optimizer + Cleanup", category: "Utilities", keywords: "svg optimize cleanup react", icon: ImageIcon, render: () => <SvgOptimizerTool /> },
+  { id: "svg-cleanup", name: "SVG Optimizer & Converter", category: "Utilities", keywords: "svg optimizer clean minify react jsx converter data uri", icon: ImageIcon, render: () => <SvgOptimizerTool /> },
+  { id: "json-zod", name: "JSON to Zod Schema Generator", category: "JavaScript", keywords: "json zod schema validation typescript interface", icon: Braces, render: () => <JsonToZodTool /> },
+  { id: "fluid-clamp-builder", name: "CSS Clamp() Fluid Formula Builder", category: "CSS", keywords: "clamp fluid typography spacing responsive vw rem", icon: Ruler, render: () => <FluidClampTool /> },
+  { id: "ambient-shadow", name: "Multi-Layer Ambient Shadow Studio", category: "CSS", keywords: "box shadow stripe apple elevation ambient glow", icon: Square, render: () => <MultiLayerShadowTool /> },
+  { id: "next-img-calc", name: "Next.js <Image /> & Aspect Ratio Calculator", category: "Utilities", keywords: "nextjs image aspect ratio cls layout width height", icon: ImageIcon, render: () => <NextImageCalcTool /> },
+  { id: "keyframe-studio", name: "Keyframe Micro-Interaction Studio", category: "CSS", keywords: "keyframes animation motion bounce pulse tailwind", icon: Zap, render: () => <KeyframeAnimationBuilder /> },
   { id: "html-jsx", name: "HTML to JSX / JSX to HTML", category: "JavaScript", keywords: "convert markup react", icon: Braces, render: () => <HtmlJsxToolFixed /> },
   { id: "css-tw", name: "CSS to Tailwind Converter", category: "CSS", keywords: "tailwind convert", icon: Wand2, render: () => <CssToTailwindTool /> },
   { id: "tw-sort", name: "Tailwind Class Sorter / Merger", category: "Utilities", keywords: "tailwind sort dedupe classes", icon: Type, render: () => <TailwindSorterTool /> },
