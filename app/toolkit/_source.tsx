@@ -122,6 +122,7 @@ function ToolkitPage() {
   const [favs, setFavs] = useState<string[]>([]);
   const [recent, setRecent] = useState<string[]>([]);
   const [spotlightId, setSpotlightId] = useState("flex");
+  const [shelfView, setShelfView] = useState<Record<string, "list" | "grid">>({});
   const resultsRef = useRef<HTMLElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -321,6 +322,63 @@ function ToolkitPage() {
             <span className="rounded-full bg-accent/10 px-2 py-1 text-[9px] font-mono uppercase tracking-[0.2em] text-accent">
               Open
             </span>
+          </div>
+        </div>
+      </Link>
+    );
+  };
+
+  const renderShelfListItem = (tool: Tool, featured = false) => {
+    const Icon = tool.icon;
+    const isFav = favs.includes(tool.id);
+
+    return (
+      <Link
+        key={tool.id}
+        href={`/toolkit/${tool.id}`}
+        onClick={() => markRecent(tool.id)}
+        onMouseEnter={() => setSpotlightId(tool.id)}
+        onFocus={() => setSpotlightId(tool.id)}
+        className={
+          "group flex w-full min-w-0 items-start gap-3 rounded-[18px] border bg-background/92 transition-all hover:-translate-y-0.5 hover:border-accent/45 " +
+          (featured ? "border-accent/35 px-4 py-4" : "border-border px-3.5 py-3")
+        }
+      >
+        <div className={"grid shrink-0 place-items-center rounded-xl bg-accent/12 text-accent " + (featured ? "h-10 w-10" : "h-8 w-8")}>
+          <Icon className={featured ? "h-4 w-4" : "h-3.5 w-3.5"} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                {featured ? (
+                  <span className="rounded-full bg-accent/12 px-2 py-1 text-[9px] font-mono uppercase tracking-[0.2em] text-accent">
+                    Best start
+                  </span>
+                ) : null}
+                <span className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground">{tool.category}</span>
+              </div>
+              <div className={"mt-2 min-w-0 break-words font-display font-semibold text-foreground " + (featured ? "text-[1rem] leading-6" : "text-[0.92rem] leading-5")}>
+                {tool.name}
+              </div>
+              <div className="mt-1.5 text-[12px] leading-5 text-muted-foreground line-clamp-2">
+                {featured
+                  ? `Start here first if you want the fastest path into ${tool.category.toLowerCase()} work.`
+                  : "Quick entry point for this workflow."}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleFav(tool.id);
+              }}
+              className={"grid h-7 w-7 shrink-0 place-items-center rounded-full border border-transparent transition hover:border-border " + (isFav ? "text-accent" : "text-muted-foreground/60")}
+              aria-label="favorite"
+            >
+              <Star className="h-3.5 w-3.5" fill={isFav ? "currentColor" : "none"} />
+            </button>
           </div>
         </div>
       </Link>
@@ -584,50 +642,95 @@ function ToolkitPage() {
             {groupedFiltered.map(({ category, tools }) => {
               const featured = tools[0];
               const secondary = tools.slice(1, 8);
+              const currentView = shelfView[category] ?? "list";
+              const compactListLayout = secondary.length > 0 && secondary.length <= 2;
 
               return (
-                <section key={category} className="rounded-[30px] border border-border bg-card p-4 md:p-5">
-                  <div className="grid gap-4 xl:grid-cols-[minmax(260px,.3fr)_minmax(0,.7fr)]">
-                    <div className={"rounded-[24px] border border-border p-5 md:p-6 " + "bg-gradient-to-br " + CATEGORY_META[category].tone}>
-                      <div className="text-[10px] font-mono uppercase tracking-[0.28em] text-muted-foreground">Category Shelf</div>
-                      <h2 className="mt-3 font-display text-3xl font-semibold">{category}</h2>
-                      <p className="mt-3 text-sm leading-7 text-muted-foreground">{CATEGORY_META[category].blurb}</p>
-                      <div className="mt-5 flex flex-wrap items-center gap-2">
-                        <div className="rounded-full border border-border bg-background/80 px-3 py-1.5 text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground">
+                <section key={category} className="rounded-[30px] border border-border/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(248,250,252,0.98))] p-4 shadow-[0_18px_50px_-36px_rgba(15,23,42,0.15)] md:p-5">
+                  <div className="grid items-start gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
+                    <div className={"self-start rounded-[24px] border border-border/80 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)] md:p-5 " + "bg-gradient-to-br " + CATEGORY_META[category].tone}>
+                      <div className="text-[9px] font-mono uppercase tracking-[0.32em] text-muted-foreground">Category Shelf</div>
+                      <h2 className="mt-3 font-display text-[1.9rem] leading-none font-semibold tracking-tight">{category}</h2>
+                      <p className="mt-3 text-[12px] leading-6 text-muted-foreground">{CATEGORY_META[category].blurb}</p>
+                      <div className="mt-4 flex flex-wrap items-center gap-2">
+                        <div className="rounded-full border border-border/80 bg-background/85 px-2.5 py-1.5 text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">
                           {tools.length} tools
                         </div>
                         <button
                           type="button"
                           onClick={() => handleCategoryClick(category)}
-                          className="inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-background/80 px-4 py-2 text-[11px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:text-accent"
+                          className="inline-flex min-h-9 items-center justify-center rounded-full border border-border/80 bg-background/85 px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-muted-foreground transition hover:border-accent hover:bg-background hover:text-accent"
                         >
                           Focus {category}
                         </button>
                       </div>
                     </div>
 
-                    <div className="rounded-[24px] border border-border bg-background/55 p-3">
+                    <div className="rounded-[24px] border border-border/80 bg-background/72 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
                       <div className="mb-3 flex items-center justify-between gap-3 px-1">
                         <div>
-                          <div className="text-[10px] font-mono uppercase tracking-[0.22em] text-muted-foreground">Recommended Flow</div>
-                          <div className="mt-1 text-sm font-semibold text-foreground">Start with the first card, then compare the alternatives in one grid.</div>
+                          <div className="text-[9px] font-mono uppercase tracking-[0.3em] text-muted-foreground">Recommended Flow</div>
+                          <div className="mt-1 text-[12px] font-semibold text-foreground">
+                            {currentView === "list"
+                              ? "Start with the first item, then scan the rest in a tighter list."
+                              : "Start with the first card, then compare the alternatives in one grid."}
+                          </div>
                         </div>
-                        <div className="hidden rounded-full border border-border bg-card px-3 py-1.5 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground md:block">
-                          Grid View
+                        <div className="inline-flex rounded-full border border-border/80 bg-card/90 p-1 text-[10px] font-mono uppercase tracking-[0.2em] text-muted-foreground shadow-[0_10px_24px_-20px_rgba(15,23,42,0.25)]">
+                          <button
+                            type="button"
+                            onClick={() => setShelfView((prev) => ({ ...prev, [category]: "list" }))}
+                            className={"rounded-full px-3 py-1 transition " + (currentView === "list" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                          >
+                            List
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShelfView((prev) => ({ ...prev, [category]: "grid" }))}
+                            className={"rounded-full px-3 py-1 transition " + (currentView === "grid" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                          >
+                            Grid
+                          </button>
                         </div>
                       </div>
-                      <div className="grid auto-rows-[minmax(190px,1fr)] items-stretch gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      {featured ? (
-                        <div className="min-w-0 md:col-span-2 xl:col-span-2">
-                          {renderShelfCard(featured, true)}
+                      {currentView === "list" ? (
+                        compactListLayout ? (
+                          <div className="grid items-start gap-3 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
+                            {featured ? (
+                              <div className="min-w-0">
+                                {renderShelfListItem(featured, true)}
+                              </div>
+                            ) : null}
+                            <div className="grid gap-3">
+                              {secondary.map((tool) => renderShelfListItem(tool))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {featured ? (
+                              <div className="min-w-0">
+                                {renderShelfListItem(featured, true)}
+                              </div>
+                            ) : null}
+                            <div className="grid gap-3 lg:grid-cols-2">
+                              {secondary.map((tool) => renderShelfListItem(tool))}
+                            </div>
+                          </div>
+                        )
+                      ) : (
+                        <div className="grid auto-rows-[minmax(190px,1fr)] items-stretch gap-3 md:grid-cols-2 xl:grid-cols-4">
+                          {featured ? (
+                            <div className="min-w-0 md:col-span-2 xl:col-span-2">
+                              {renderShelfCard(featured, true)}
+                            </div>
+                          ) : null}
+                          {secondary.map((tool) => (
+                            <div key={tool.id} className="min-w-0">
+                              {renderShelfCard(tool)}
+                            </div>
+                          ))}
                         </div>
-                      ) : null}
-                      {secondary.map((tool) => (
-                        <div key={tool.id} className="min-w-0">
-                          {renderShelfCard(tool)}
-                        </div>
-                      ))}
-                      </div>
+                      )}
                     </div>
                   </div>
                 </section>

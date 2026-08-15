@@ -72,6 +72,8 @@ const PROJECTS = [
   {
     tag: "Real Estate · Flagship",
     title: "Rustomjee",
+    image: "https://www.rustomjee.com/assets/shared/meta/share/share-image.jpeg",
+    fallbackSplash: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1600&ar=16:9&fit=crop",
     problem:
       "Corporate site for one of Mumbai's leading luxury real-estate developers — needed to translate high-end brand design into a fast, responsive marketing site.",
     solution:
@@ -89,6 +91,7 @@ const PROJECTS = [
   {
     tag: "BFSI",
     title: "Kotak Investment Banking",
+    fallbackSplash: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1600&ar=16:9&fit=crop",
     problem:
       "Institutional-grade site for Kotak's investment banking arm — content-heavy pages, strict brand guidelines and HTML email campaigns to support.",
     solution:
@@ -106,6 +109,7 @@ const PROJECTS = [
   {
     tag: "Conglomerate",
     title: "Godrej",
+    fallbackSplash: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1600&ar=16:9&fit=crop",
     problem:
       "Corporate presence for one of India's largest conglomerates — multiple product lines and audiences under a single umbrella brand.",
     solution:
@@ -123,6 +127,7 @@ const PROJECTS = [
   {
     tag: "Real Estate",
     title: "Shapoorji Pallonji Real Estate",
+    fallbackSplash: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=1600&ar=16:9&fit=crop",
     problem:
       "Marketing site for SP Real Estate and the Joyville Homes brand — needed rich project galleries and lead-capture flows.",
     solution:
@@ -139,7 +144,8 @@ const PROJECTS = [
   },
   {
     tag: "Retail · Shopify",
-    title: "VIP Bags (in progress)",
+    title: "VIP Bags",
+    fallbackSplash: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?q=80&w=1600&ar=16:9&fit=crop",
     problem:
       "E-commerce experience for VIP Bags on Shopify — theme customisation and Liquid templating.",
     solution:
@@ -157,6 +163,7 @@ const PROJECTS = [
   {
     tag: "FMCG · International",
     title: "Mezete & Kasih Food",
+    fallbackSplash: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1600&ar=16:9&fit=crop",
     problem:
       "Brand websites for international FMCG clients (Mezete and Kasih Food, Jordan) with rich product storytelling.",
     solution:
@@ -609,24 +616,24 @@ function DottedSphere() {
 }
 
 const ORBIT_SKILLS: { label: string; ring: 0 | 1 | 2 }[] = [
-  { label: "React",      ring: 0 },
-  { label: "Next.js",    ring: 0 },
+  { label: "React", ring: 0 },
+  { label: "Next.js", ring: 0 },
   { label: "TypeScript", ring: 0 },
-  { label: "Tailwind",   ring: 1 },
-  { label: "GSAP",       ring: 1 },
-  { label: "Framer",     ring: 1 },
-  { label: "SCSS",       ring: 1 },
-  { label: "Figma",      ring: 2 },
-  { label: "Node.js",    ring: 2 },
-  { label: "HTML5",      ring: 2 },
-  { label: "a11y",       ring: 2 },
-  { label: "SEO",        ring: 2 },
+  { label: "Tailwind", ring: 1 },
+  { label: "GSAP", ring: 1 },
+  { label: "Framer", ring: 1 },
+  { label: "SCSS", ring: 1 },
+  { label: "Figma", ring: 2 },
+  { label: "Node.js", ring: 2 },
+  { label: "HTML5", ring: 2 },
+  { label: "a11y", ring: 2 },
+  { label: "SEO", ring: 2 },
 ];
 
 function SkillOrbit() {
   const rings = [
-    { r: 170, cls: "orbit-rotate",      items: ORBIT_SKILLS.filter((s) => s.ring === 0) },
-    { r: 225, cls: "orbit-rotate-rev",  items: ORBIT_SKILLS.filter((s) => s.ring === 1) },
+    { r: 170, cls: "orbit-rotate", items: ORBIT_SKILLS.filter((s) => s.ring === 0) },
+    { r: 225, cls: "orbit-rotate-rev", items: ORBIT_SKILLS.filter((s) => s.ring === 1) },
     { r: 285, cls: "orbit-rotate-fast", items: ORBIT_SKILLS.filter((s) => s.ring === 2) },
   ];
   return (
@@ -672,12 +679,14 @@ const TERMINAL_LINES: Line[] = [
   { kind: "cmd", text: "whoami" },
   { kind: "out", text: "jwala baheliya — senior frontend developer" },
   { kind: "cmd", text: "cat stats.json" },
-  { kind: "out", text: `{
-  "years":      8,
-  "specialty":  ["React", "Next.js", "TS"],
-  "shipped":    "20+ brand sites",
-  "available":  true
-}`, tone: "muted" },
+  {
+    kind: "out", text: `{
+  "years":     8,
+  "specialty": ["HTML5", "CSS3", "JS", "React", "Next.js"],
+  "shipped":   "20+ brand sites",
+  "available": true
+}`, tone: "muted"
+  },
   { kind: "cmd", text: "echo $STATUS" },
   { kind: "out", text: "open to senior frontend roles · remote / Mumbai", tone: "accent" },
 ];
@@ -712,15 +721,15 @@ function DevStatusCard() {
         className="absolute -inset-6 rounded-[2.5rem] opacity-40 blur-3xl"
         style={{ background: "radial-gradient(circle, var(--accent), transparent 70%)" }}
       />
-      <div className="relative w-[16.75rem] overflow-hidden rounded-[1.4rem] border border-border/60 bg-card/88 shadow-2xl backdrop-blur-xl sm:w-[19rem] sm:rounded-[1.6rem] md:w-[24rem] md:rounded-[1.75rem]">
+      <div className="relative w-[calc(100vw-2rem)] max-w-[21.5rem] overflow-hidden rounded-[1.4rem] border border-border/60 bg-card/88 shadow-2xl backdrop-blur-xl sm:w-[23rem] sm:rounded-[1.6rem] md:w-[27rem] md:rounded-[1.75rem] lg:w-[28.5rem]">
         {/* Title bar */}
-        <div className="flex items-center justify-between border-b border-border/60 bg-background/40 px-3 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex items-center justify-between border-b border-border/60 bg-background/40 px-2.5 py-2 sm:px-4 sm:py-3">
           <div className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
             <span className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
             <span className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
           </div>
-          <div className="font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground sm:text-[10px] sm:tracking-[0.3em]">
+          <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground sm:text-[10px] sm:tracking-[0.3em]">
             ~/jwala — zsh
           </div>
           <div className="flex items-center gap-1 font-mono text-[9px] text-accent sm:text-[10px]">
@@ -730,7 +739,7 @@ function DevStatusCard() {
 
         {/* Body with scanlines */}
         <div className="relative">
-          <pre className="relative z-10 min-h-[12rem] whitespace-pre-wrap px-3.5 py-3 font-mono text-[11.5px] leading-relaxed text-foreground/90 sm:min-h-[14rem] sm:px-4 sm:py-4 sm:text-[12px] md:min-h-[15rem] md:px-5 md:text-[12.5px]">
+          <pre className="relative z-10 min-h-[11rem] whitespace-pre px-3 py-3 font-mono text-[9.5px] leading-relaxed text-foreground/90 xs:text-[10px] sm:min-h-[13.5rem] sm:px-4 sm:py-3.5 sm:text-[11.5px] md:min-h-[14.5rem] md:px-4.5 md:text-[12px]">
             {TERMINAL_LINES.slice(0, li).map((l, i) => (
               <TermLine key={i} line={l} shown={l.text.length} />
             ))}
@@ -751,12 +760,12 @@ function DevStatusCard() {
         {/* Key stats with icons */}
         <div className="grid grid-cols-3 border-t border-border/60 bg-background/40 text-foreground">
           <StatCell icon={<Briefcase className="h-3.5 w-3.5" />} value="8+" label="years" />
-          <StatCell icon={<Sparkles  className="h-3.5 w-3.5" />} value="React · Next" label="specialty" divider />
-          <StatCell icon={<Clock     className="h-3.5 w-3.5" />} value="Now" label="available" />
+          <StatCell icon={<Sparkles className="h-3.5 w-3.5" />} value="HTML · React" label="specialty" divider />
+          <StatCell icon={<Clock className="h-3.5 w-3.5" />} value="Now" label="available" />
         </div>
 
         {/* Meta strip */}
-        <div className="flex items-center justify-between border-t border-border/60 bg-background/60 px-3 py-2 font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground sm:px-4 sm:text-[10px] sm:tracking-[0.25em]">
+        <div className="flex items-center justify-between border-t border-border/60 bg-background/60 px-2.5 py-2 font-mono text-[8.5px] uppercase tracking-[0.14em] text-muted-foreground sm:px-4 sm:text-[10px] sm:tracking-[0.25em]">
           <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> Mumbai · Remote</span>
           <span className="inline-flex items-center gap-1"><Code2 className="h-3 w-3 text-accent" /> v8.0</span>
         </div>
@@ -769,12 +778,12 @@ function StatCell({
   icon, value, label, divider,
 }: { icon: React.ReactNode; value: string; label: string; divider?: boolean }) {
   return (
-    <div className={`px-3 py-3 ${divider ? "border-x border-border/60" : ""}`}>
-      <div className="flex items-center gap-1.5 text-accent">
+    <div className={`px-2 py-2.5 sm:px-3 sm:py-3 ${divider ? "border-x border-border/60" : ""}`}>
+      <div className="flex items-center gap-1 text-accent sm:gap-1.5">
         {icon}
-        <span className="font-mono text-[13px] font-semibold leading-none">{value}</span>
+        <span className="font-mono text-[11px] font-semibold leading-none sm:text-[13px] md:text-[13.5px]">{value}</span>
       </div>
-      <div className="mt-1 font-mono text-[9.5px] uppercase tracking-[0.2em] text-muted-foreground">
+      <div className="mt-1 font-mono text-[8.5px] uppercase tracking-[0.14em] text-muted-foreground sm:text-[9.5px] sm:tracking-[0.18em]">
         {label}
       </div>
     </div>
@@ -799,8 +808,8 @@ function TermLine({ line, shown, caret }: { line: Line; shown: number; caret?: b
   }
   const cls =
     line.tone === "accent" ? "text-accent" :
-    line.tone === "muted"  ? "text-foreground/70" :
-    "text-foreground/85";
+      line.tone === "muted" ? "text-foreground/70" :
+        "text-foreground/85";
   return (
     <div className={cls}>
       {text}
@@ -933,7 +942,7 @@ function Projects() {
               </button>
               <Link
                 href="/work/$slug"
-               
+
                 className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-border/60 bg-background/40 py-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground transition-colors hover:border-accent hover:text-accent"
               >
                 Read full case study →
@@ -949,9 +958,18 @@ function Projects() {
 
 /* ---------------- Project Case-Study Modal ---------------- */
 
-function screenshotFor(url: string) {
+function screenshotFor(url?: string, provider = 0) {
   if (!url) return "";
-  return `https://image.thum.io/get/width/1400/crop/900/noanimate/${url}`;
+  const targetUrl = url.trim().startsWith("http") ? url.trim() : `https://${url.trim()}`;
+  if (provider === 0) {
+    // Dynamically fetches the website's official OpenGraph shared image (og:image)
+    return `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&embed=image.url`;
+  }
+  if (provider === 1) {
+    // Dynamic website screenshot fallback
+    return `https://api.microlink.io/?url=${encodeURIComponent(targetUrl)}&screenshot=true&meta=false&embed=screenshot.url`;
+  }
+  return "";
 }
 
 function ProjectModal({
@@ -964,10 +982,12 @@ function ProjectModal({
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const [imgOk, setImgOk] = useState(true);
+  const [provider, setProvider] = useState(0);
 
   useEffect(() => {
     if (!project) return;
     setImgOk(true);
+    setProvider(0);
     const previousActive = document.activeElement as HTMLElement | null;
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -1005,11 +1025,25 @@ function ProjectModal({
 
   if (!project) return null;
 
-  const shot = screenshotFor(project.links.live);
+  const targetUrl = project.links.live || project.links.code || "";
+  const projectImg = (project as { image?: string; fallbackSplash?: string }).image;
+  const projectSplash = (project as { image?: string; fallbackSplash?: string }).fallbackSplash;
+  const shot =
+    provider === 0
+      ? projectImg || projectSplash || screenshotFor(targetUrl, 0)
+      : screenshotFor(targetUrl, 1);
+
+  const handleImgError = () => {
+    if (provider < 1) {
+      setProvider((p) => p + 1);
+    } else {
+      setImgOk(false);
+    }
+  };
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center overflow-y-auto bg-background/80 p-3 backdrop-blur-md sm:items-center sm:p-6 animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-background/80 backdrop-blur-md animate-fade-in"
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -1021,126 +1055,129 @@ function ProjectModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="case-study-title"
-        className="relative w-full max-w-4xl rounded-3xl border border-border/70 bg-card/95 shadow-2xl backdrop-blur-xl animate-scale-in"
+        className="relative flex max-h-[88vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-border/70 bg-card/95 shadow-2xl backdrop-blur-xl animate-scale-in"
       >
         <button
           ref={closeRef}
           type="button"
           onClick={onClose}
           aria-label="Close case study"
-          className="absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full border border-border/70 bg-background/80 text-foreground transition-colors hover:border-accent hover:text-accent"
+          className="absolute right-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full border border-border/70 bg-background/80 text-foreground transition-colors hover:border-accent hover:text-accent shadow-md"
         >
           <span aria-hidden className="text-lg leading-none">×</span>
         </button>
 
-        <div className="relative aspect-[16/10] w-full overflow-hidden rounded-t-3xl border-b border-border/70 bg-gradient-to-br from-accent/20 via-background to-background">
-          {shot && imgOk ? (
-            <img
-              src={shot}
-              alt={`${project.title} — live site screenshot`}
-              loading="lazy"
-              decoding="async"
-              onError={() => setImgOk(false)}
-              className="h-full w-full object-cover object-top"
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="relative aspect-[16/9] sm:aspect-[16/10] w-full overflow-hidden border-b border-border/70 bg-gradient-to-br from-accent/20 via-background to-background">
+            {shot && imgOk ? (
+              <img
+                key={`${project.title}-${provider}`}
+                src={shot}
+                alt={`${project.title} — live site screenshot`}
+                loading="lazy"
+                decoding="async"
+                onError={handleImgError}
+                className="h-full w-full object-cover object-top transition-opacity duration-300"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center p-6 text-center">
+                <span className="font-display text-4xl font-bold tracking-tight text-accent/80 md:text-7xl">
+                  {project.title}
+                </span>
+              </div>
+            )}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card via-card/60 to-transparent"
             />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <span className="font-display text-5xl font-bold tracking-tight text-accent/80 md:text-7xl">
-                {project.title}
-              </span>
-            </div>
-          )}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-card via-card/60 to-transparent"
-          />
-        </div>
-
-        <div className="grid gap-8 p-6 md:grid-cols-[1.4fr_1fr] md:p-10">
-          <div>
-            <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">
-              {project.tag}
-            </div>
-            <h3
-              id="case-study-title"
-              className="mt-3 font-display text-3xl font-bold tracking-tight md:text-4xl"
-            >
-              {project.title}
-            </h3>
-            <div className="mt-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-              {project.role} · {project.year}
-            </div>
-
-            <div className="mt-6 space-y-5 text-[15px] leading-relaxed">
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  The problem
-                </div>
-                <p className="mt-1 text-foreground/90">{project.problem}</p>
-              </div>
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  My approach
-                </div>
-                <p className="mt-1 text-foreground/90">{project.solution}</p>
-              </div>
-              <div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                  Outcomes
-                </div>
-                <ul className="mt-2 space-y-2 text-foreground/90">
-                  {project.outcomes?.map((o) => (
-                    <li key={o} className="flex items-start gap-2">
-                      <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                      <span>{o}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
           </div>
 
-          <aside className="space-y-6 rounded-2xl border border-border/60 bg-background/40 p-5">
+          <div className="grid gap-6 p-5 sm:gap-8 sm:p-8 md:grid-cols-[1.4fr_1fr] md:p-10">
             <div>
-              <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                Tech stack
+              <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-accent">
+                {project.tag}
               </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {project.stack.map((s) => (
-                  <span
-                    key={s}
-                    className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground/90"
+              <h3
+                id="case-study-title"
+                className="mt-3 font-display text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl"
+              >
+                {project.title}
+              </h3>
+              <div className="mt-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+                {project.role} · {project.year}
+              </div>
+
+              <div className="mt-6 space-y-5 text-[14px] leading-relaxed sm:text-[15px]">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    The problem
+                  </div>
+                  <p className="mt-1 text-foreground/90">{project.problem}</p>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    My approach
+                  </div>
+                  <p className="mt-1 text-foreground/90">{project.solution}</p>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Outcomes
+                  </div>
+                  <ul className="mt-2 space-y-2 text-foreground/90">
+                    {project.outcomes?.map((o) => (
+                      <li key={o} className="flex items-start gap-2">
+                        <span aria-hidden className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                        <span>{o}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <aside className="space-y-6 rounded-2xl border border-border/60 bg-background/40 p-4 sm:p-5">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Tech stack
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {project.stack.map((s) => (
+                    <span
+                      key={s}
+                      className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-foreground/90"
+                    >
+                      {s}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2 border-t border-border/60 pt-5 font-mono text-[11px] uppercase tracking-widest">
+                {project.links.live && (
+                  <a
+                    href={project.links.live}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="flex items-center justify-between rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-foreground transition-colors hover:border-accent hover:text-accent"
                   >
-                    {s}
-                  </span>
-                ))}
+                    <span>Visit live site</span>
+                    <span aria-hidden>↗</span>
+                  </a>
+                )}
+                {project.links.code && (
+                  <a
+                    href={project.links.code}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="flex items-center justify-between rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
+                  >
+                    <span>Related site</span>
+                    <span aria-hidden>↗</span>
+                  </a>
+                )}
               </div>
-            </div>
-            <div className="space-y-2 border-t border-border/60 pt-5 font-mono text-[11px] uppercase tracking-widest">
-              {project.links.live && (
-                <a
-                  href={project.links.live}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="flex items-center justify-between rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-foreground transition-colors hover:border-accent hover:text-accent"
-                >
-                  <span>Visit live site</span>
-                  <span aria-hidden>↗</span>
-                </a>
-              )}
-              {project.links.code && (
-                <a
-                  href={project.links.code}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="flex items-center justify-between rounded-xl border border-border/70 bg-card/60 px-3 py-2.5 text-muted-foreground transition-colors hover:border-accent hover:text-foreground"
-                >
-                  <span>Related site</span>
-                  <span aria-hidden>↗</span>
-                </a>
-              )}
-            </div>
-          </aside>
+            </aside>
+          </div>
         </div>
       </div>
     </div>
