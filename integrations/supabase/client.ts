@@ -31,11 +31,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+const DEFAULT_SUPABASE_URL = "https://fbtcqmntbvetyzbokkxx.supabase.co";
+const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZidGNxbW50YnZldHl6Ym9ra3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzODk1MTAsImV4cCI6MjA5OTk2NTUxMH0.gRneSc2wiKEQJ0E7tIfuC9B4O0p0wfHxBN2bbUVluaA";
+
 function getSupabaseEnv(): SupabaseEnv {
   return {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL,
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || DEFAULT_SUPABASE_URL,
     publishableKey:
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || DEFAULT_SUPABASE_KEY,
   };
 }
 
