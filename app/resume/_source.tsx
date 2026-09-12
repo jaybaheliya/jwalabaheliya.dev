@@ -40,8 +40,10 @@ function ResumePage() {
             <span className="font-medium text-neutral-700">Email: </span>
             <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a>
           </span>
-          <span className="text-neutral-300">•</span>
-          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/" target="_blank" rel="noreferrer">LinkedIn</a>
+          <span>
+            <span className="font-medium text-neutral-700">LinkedIn: </span>
+            <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/">https://www.linkedin.com/in/jwala-baheliya-a82a5411b/</a>
+          </span>
           <span className="text-neutral-300">•</span>
           <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">Portfolio</a>
           <span className="text-neutral-300">•</span>
@@ -61,10 +63,10 @@ function ResumePage() {
         <div className="space-y-1.5">
           <SkillRow label="Frontend & Frameworks" items="HTML5, CSS3, SCSS / Sass, JavaScript (ES6+), TypeScript, React.js, Next.js, Tailwind CSS, Bootstrap, jQuery, Shopify Liquid" />
           <SkillRow label="Motion & Animation" items="GSAP (ScrollTrigger), Lottie, SVG & CSS Animations, Micro-interactions" />
-          <SkillRow label="Architecture & Web Vitals" items="Component Architecture, Responsive Web Design, Web Performance Optimization, Core Web Vitals, Web Accessibility (WCAG), RESTful APIs, Cross-Browser Compatibility, BEM" />
+          <SkillRow label="Architecture & Web Vitals" items="Component Architecture, Responsive Web Design, Web Performance Optimization, Core Web Vitals, Web Accessibility (WCAG), RESTful APIs, Cross-Browser Compatibility, BEM Methodology" />
           <SkillRow label="Design & Prototyping" items="Figma, Adobe XD, Adobe Photoshop, Adobe Illustrator, Design Systems, Pixel-Perfect UI Implementation" />
           <SkillRow label="Developer Tools" items="Git, GitHub, Vite, Webpack, npm, Chrome DevTools, FileZilla, PuTTY" />
-          <SkillRow label="AI-Assisted Engineering" items="GitHub Copilot, ChatGPT, Claude AI, Figma MCP Server (Design-to-Code Automation, Code Generation, Rapid Prototyping)" />
+          <SkillRow label="AI-Assisted Engineering" items="GitHub Copilot, ChatGPT, Claude AI, Figma MCP Server (Design-to-Code Automation, Code Generation)" />
           <SkillRow label="Backend & Practices" items="PHP, ASP.NET (Basic), Agile / Scrum Workflow, Cross-Functional Team Collaboration, Clean Code Principles" />
         </div>
       </Section>
@@ -75,7 +77,7 @@ function ResumePage() {
           org="Bombay Design Centre"
           period="Apr 2021 – Present"
           points={[
-            <>Translated <strong>Figma and Adobe XD</strong> designs into pixel-accurate, responsive web applications and marketing platforms for <strong>15+ premier enterprise brands</strong> including Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji, and RMZ.</>,
+            <>Translated <strong>Figma and Adobe XD</strong> designs into pixel-accurate, responsive web applications and marketing platforms for <strong>15+ premier enterprise brands</strong> including VIP Bags, Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji, and RMZ.</>,
             <>Engineered modern web interfaces using <strong>React.js, Next.js, TypeScript, and Tailwind CSS</strong>; optimized website performance resulting in <strong>20% faster load times</strong>, consistent <strong>Lighthouse scores of 90+</strong>, and a <strong>15% increase in user retention</strong>.</>,
             <>Developed responsive <strong>HTML email marketing campaigns for Kotak</strong> reaching <strong>100K+ users</strong> with 100% cross-client inbox fidelity; collaborated closely with UI/UX designers and backend teams.</>,
           ]}
@@ -117,7 +119,7 @@ function ResumePage() {
           <span className="text-neutral-400 font-bold">•</span>
           <BrandLink href="https://www.rmz.com/">RMZ</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
-           <BrandLink href="https://www.rustomjee.com/">Rustomjee</BrandLink>
+          <BrandLink href="https://www.rustomjee.com/">Rustomjee</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
           <BrandLink href="https://www.yesbank.in/">Yes Bank</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
@@ -138,6 +140,8 @@ function ResumePage() {
           <BrandLink href="https://www.employeevibes.com/">Employee Vibes</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
           <BrandLink href="https://www.bitsdesign.edu.in/">Bits Design School</BrandLink>
+          <span className="text-neutral-400 font-bold">•</span>
+          <BrandLink href="https://bombaydc.com/">BombayDC</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
           <BrandLink href="https://www.asign.art/">Asign Art</BrandLink>
         </p>
