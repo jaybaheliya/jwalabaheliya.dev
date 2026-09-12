@@ -434,6 +434,14 @@ html.crt body {
   html.resume-print [data-lenis], html.resume-print .lenis, html.resume-print .lenis-smooth { overflow: visible !important; }
   html.resume-print .print\:hidden { display: none !important; }
   html.resume-print aside, html.resume-print nav, html.resume-print [role="dialog"], html.resume-print .fixed { display: none !important; }
+  html.resume-print section, html.resume-print .break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  html.resume-print h1, html.resume-print h2, html.resume-print h3 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+  }
   html.resume-print a {
     color: inherit !important;
     text-decoration: none !important;
@@ -443,7 +451,7 @@ html.crt body {
   }
   @page {
     size: A4 portrait;
-    margin: 8mm 10mm;
+    margin: 6mm 8mm;
   }
 }
 

@@ -46,7 +46,7 @@ function ResumePage() {
       </Section>
 
       <Section title="Technical Skills">
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <SkillRow label="Frontend & Frameworks" items="HTML5, CSS3, SCSS / Sass, JavaScript (ES6+), TypeScript, React.js, Next.js, Tailwind CSS, Bootstrap, jQuery, Shopify Liquid" />
           <SkillRow label="Architecture & Web Vitals" items="Component Architecture, Responsive Web Design, Web Performance Optimization, Core Web Vitals, Web Accessibility (WCAG), RESTful APIs, Cross-Browser Compatibility, BEM" />
           <SkillRow label="Design & Prototyping" items="Figma, Adobe XD, Adobe Photoshop, Adobe Illustrator, Design Systems, Pixel-Perfect UI Implementation" />
@@ -129,26 +129,28 @@ function ResumePage() {
         </p>
       </Section>
 
-      <Section title="Education">
-        <p className="text-[12px] text-neutral-700">
-          <span className="font-medium">B.Sc. Information Technology</span> — Mumbai University, 2015{" "}
-          <span className="text-neutral-500">(Grade A · CGPA 6.07)</span>
-        </p>
-      </Section>
+      <div className="grid grid-cols-2 gap-6">
+        <Section title="Education">
+          <p className="text-[12px] text-neutral-800">
+            <span className="font-semibold text-neutral-900">B.Sc. Information Technology</span> — Mumbai University, 2015{" "}
+            <span className="text-neutral-500">(Grade A · CGPA 6.07)</span>
+          </p>
+        </Section>
 
-      <Section title="Recognition">
-        <p className="text-[12px] text-neutral-700">
-          Kyoorius Design Award, 2023 – team contribution at Bombay Design Centre
-        </p>
-      </Section>
+        <Section title="Recognition">
+          <p className="text-[12px] text-neutral-800">
+            Kyoorius Design Award, 2023 – team contribution at Bombay Design Centre
+          </p>
+        </Section>
+      </div>
 
       <div className="grid grid-cols-2 gap-6">
         <Section title="Languages">
-          <p className="text-[12px] text-neutral-700">English · Hindi · Marathi</p>
+          <p className="text-[12px] text-neutral-800">English · Hindi · Marathi</p>
         </Section>
 
         <Section title="Interests">
-          <p className="text-[12px] text-neutral-700">UI/UX Trends · Design Systems · Creative Coding</p>
+          <p className="text-[12px] text-neutral-800">UI/UX Trends · Design Systems · Creative Coding</p>
         </Section>
       </div>
     </main>
@@ -157,27 +159,27 @@ function ResumePage() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-3.5">
-      <h2 className="mb-1.5 flex items-center gap-3 font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-900">
+    <section className="mb-2.5 print:mb-2 break-inside-avoid">
+      <h2 className="mb-1 flex items-center gap-3 font-mono text-[10.5px] font-bold uppercase tracking-[0.2em] text-neutral-900">
         <span className="shrink-0">{title}</span>
         <span className="h-0 flex-1 border-b border-neutral-300" />
       </h2>
-      <div className="space-y-2">{children}</div>
+      <div className="space-y-1.5">{children}</div>
     </section>
   );
 }
 
 function Job({ role, org, period, points }: { role: string; org: string; period: string; points: React.ReactNode[] }) {
   return (
-    <div>
+    <div className="break-inside-avoid">
       <div className="flex items-baseline justify-between gap-4">
         <div>
-          <div className="font-display text-[14.5px] font-semibold text-neutral-900">{role}</div>
+          <div className="font-display text-[14px] font-semibold text-neutral-900">{role}</div>
           <div className="text-[12px] text-neutral-600">{org}</div>
         </div>
-        <div className="whitespace-nowrap font-mono text-[10.5px] uppercase tracking-widest text-neutral-600">{period}</div>
+        <div className="whitespace-nowrap font-mono text-[10px] uppercase tracking-widest text-neutral-600">{period}</div>
       </div>
-      <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[12px] leading-[1.5] text-neutral-800">
+      <ul className="mt-0.5 list-disc space-y-0.5 pl-4 text-[11.5px] leading-[1.45] text-neutral-800">
         {points.map((p, i) => <li key={i}>{p}</li>)}
       </ul>
     </div>
