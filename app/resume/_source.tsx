@@ -54,7 +54,7 @@ function ResumePage() {
       <Section title="Technical Skills">
         <div className="space-y-1.5">
           <SkillRow label="Frontend & Frameworks" items="HTML5, CSS3, SCSS / Sass, JavaScript (ES6+), TypeScript, React.js, Next.js, Tailwind CSS, Bootstrap, jQuery, Shopify Liquid" />
-          <SkillRow label="Motion & Animation" items="GSAP (ScrollTrigger), Motion (Framer Motion), Lottie, SVG & CSS Animations, Micro-interactions" />
+          <SkillRow label="Motion & Animation" items="GSAP (ScrollTrigger), Lottie, SVG & CSS Animations, Micro-interactions" />
           <SkillRow label="Architecture & Web Vitals" items="Component Architecture, Responsive Web Design, Web Performance Optimization, Core Web Vitals, Web Accessibility (WCAG), RESTful APIs, Cross-Browser Compatibility, BEM" />
           <SkillRow label="Design & Prototyping" items="Figma, Adobe XD, Adobe Photoshop, Adobe Illustrator, Design Systems, Pixel-Perfect UI Implementation" />
           <SkillRow label="Developer Tools" items="Git, GitHub, Vite, Webpack, npm, Chrome DevTools, FileZilla, PuTTY" />
