@@ -449,6 +449,11 @@ html.crt body {
     position: relative !important;
     z-index: 10 !important;
   }
+  html.resume-print header a,
+  html.resume-print a.underline {
+    text-decoration: underline !important;
+    text-underline-offset: 2px !important;
+  }
   @page {
     size: A4 portrait;
     margin: 6mm 8mm;

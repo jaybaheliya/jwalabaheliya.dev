@@ -30,10 +30,10 @@ function ResumePage() {
         <p className="mt-0.5 text-[15px] font-medium text-neutral-800">Senior Frontend Developer · 8+ years</p>
         <p className="mt-1 text-[12px] text-neutral-600">
           Mumbai, India ·{" "}
-          <a className="underline hover:text-neutral-900" href="tel:+919029652067">(+91) 90296 52067</a> ·{" "}
-          <a className="underline hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a> ·{" "}
-          <a className="underline hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/" target="_blank" rel="noreferrer">LinkedIn</a> ·{" "}
-          <a className="underline hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">Portfolio</a>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="tel:+919029652067">(+91) 90296 52067</a> ·{" "}
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a> ·{" "}
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/" target="_blank" rel="noreferrer">LinkedIn</a> ·{" "}
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">Portfolio</a>
         </p>
       </header>
 
@@ -133,6 +133,7 @@ function ResumePage() {
         <Section title="Education">
           <p className="text-[12.5px] text-neutral-800">
             <span className="font-semibold text-neutral-900">B.Sc. Information Technology</span> — Mumbai University, 2015{" "}
+            <br/>
             <span className="text-neutral-500">(Grade A · CGPA 6.07)</span>
           </p>
         </Section>
