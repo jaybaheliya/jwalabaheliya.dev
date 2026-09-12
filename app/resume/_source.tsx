@@ -28,17 +28,23 @@ function ResumePage() {
           <span className="font-mono text-lg text-neutral-400">&lt;/&gt;</span>
         </div>
         <p className="mt-0.5 text-[15px] font-medium text-neutral-800">Senior Frontend Developer · 8+ years</p>
-        <p className="mt-1 flex flex-wrap items-center gap-x-2.5 text-[12px] text-neutral-600">
+        <p className="mt-1 flex flex-wrap items-center gap-x-2 text-[12px] text-neutral-600">
           <span>Mumbai, India</span>
           <span className="text-neutral-300">•</span>
-          <a className="underline underline-offset-2 hover:text-neutral-900" href="tel:+919029652067">(+91) 90296 52067</a>
+          <span>
+            <span className="font-medium text-neutral-700">Phone: </span>
+            <a className="underline underline-offset-2 hover:text-neutral-900" href="tel:+919029652067">(+91) 90296 52067</a>
+          </span>
           <span className="text-neutral-300">•</span>
-          <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a>
+          <span>
+            <span className="font-medium text-neutral-700">Email: </span>
+            <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a>
+          </span>
           <span className="text-neutral-300">•</span>
           <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/" target="_blank" rel="noreferrer">LinkedIn</a>
           <span className="text-neutral-300">•</span>
           <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">Portfolio</a>
-           <span className="text-neutral-300">•</span>
+          <span className="text-neutral-300">•</span>
           <a className="underline underline-offset-2 hover:text-neutral-900" href="https://github.com/jaybaheliya?tab=repositories" target="_blank" rel="noreferrer">Github</a>
         </p>
       </header>
@@ -96,7 +102,8 @@ function ResumePage() {
 
       <Section title="Selected Brands">
         <p className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[12.5px] leading-relaxed text-neutral-700">
-          <BrandLink href="https://www.rustomjee.com/">Rustomjee</BrandLink>
+        
+          <BrandLink href="https://vipbags.com/">VIP Bags</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
           <BrandLink href="https://www.godrej.com/">Godrej</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
@@ -110,7 +117,7 @@ function ResumePage() {
           <span className="text-neutral-400 font-bold">•</span>
           <BrandLink href="https://www.rmz.com/">RMZ</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
-          <BrandLink href="https://vipbags.com/">VIP Bags</BrandLink>
+           <BrandLink href="https://www.rustomjee.com/">Rustomjee</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
           <BrandLink href="https://www.yesbank.in/">Yes Bank</BrandLink>
           <span className="text-neutral-400 font-bold">•</span>
