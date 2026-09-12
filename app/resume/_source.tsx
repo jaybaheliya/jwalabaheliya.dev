@@ -40,14 +40,19 @@ function ResumePage() {
             <span className="font-medium text-neutral-700">Email: </span>
             <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a>
           </span>
+           <span className="text-neutral-300">•</span>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://github.com/jaybaheliya?tab=repositories" target="_blank" rel="noreferrer">Github</a>
+           <span className="text-neutral-300">•</span>
           <span>
             <span className="font-medium text-neutral-700">LinkedIn: </span>
             <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/">https://www.linkedin.com/in/jwala-baheliya-a82a5411b/</a>
           </span>
-          <span className="text-neutral-300">•</span>
-          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">Portfolio</a>
-          <span className="text-neutral-300">•</span>
-          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://github.com/jaybaheliya?tab=repositories" target="_blank" rel="noreferrer">Github</a>
+           <span className="text-neutral-300">•</span>
+          <span>
+            <span className="font-medium text-neutral-700">Portfolio: </span>
+            <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/">https://jwalabaheliya-dev.vercel.app/</a>
+          </span>
+         
         </p>
       </header>
 
@@ -194,7 +199,7 @@ function Job({ role, org, period, points }: { role: string; org: string; period:
       <div className="flex items-baseline justify-between gap-4">
         <div>
           <span className="font-display text-[14.5px] font-semibold text-neutral-900">{role}</span>
-          <span className="text-[12px] text-neutral-600">&nbsp;({org})&nbsp;</span>
+          <span className="text-[12px] text-neutral-600">&nbsp;&nbsp;({org})&nbsp;</span>
         </div>
         <div className="whitespace-nowrap font-mono text-[10.5px] uppercase tracking-widest text-neutral-600">{period}</div>
       </div>
