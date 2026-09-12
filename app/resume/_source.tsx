@@ -28,20 +28,17 @@ function ResumePage() {
           <span className="font-mono text-lg text-neutral-400">&lt;/&gt;</span>
         </div>
         <p className="mt-0.5 text-[15px] font-medium text-neutral-800">Senior Frontend Developer · 8+ years</p>
-        <div className="mt-1.5 space-y-0.5 text-[12px] text-neutral-700">
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-0.5">
-            <span><strong className="font-semibold text-neutral-900">Location:</strong> Mumbai, India</span>
-            <span className="text-neutral-300">•</span>
-            <span><strong className="font-semibold text-neutral-900">Phone:</strong> <a className="underline underline-offset-2 hover:text-neutral-900" href="tel:+919029652067">(+91) 90296 52067</a></span>
-            <span className="text-neutral-300">•</span>
-            <span><strong className="font-semibold text-neutral-900">Email:</strong> <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a></span>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-3.5 gap-y-0.5">
-            <span><strong className="font-semibold text-neutral-900">LinkedIn:</strong> <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/" target="_blank" rel="noreferrer">linkedin.com/in/jwala-baheliya</a></span>
-            <span className="text-neutral-300">•</span>
-            <span><strong className="font-semibold text-neutral-900">Portfolio:</strong> <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">jwalabaheliya-dev.vercel.app</a></span>
-          </div>
-        </div>
+        <p className="mt-1 flex flex-wrap items-center gap-x-2.5 text-[12px] text-neutral-600">
+          <span>Mumbai, India</span>
+          <span className="text-neutral-300">•</span>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="tel:+919029652067">(+91) 90296 52067</a>
+          <span className="text-neutral-300">•</span>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a>
+          <span className="text-neutral-300">•</span>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/" target="_blank" rel="noreferrer">LinkedIn</a>
+          <span className="text-neutral-300">•</span>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">Portfolio</a>
+        </p>
       </header>
 
       <Section title="Summary">
