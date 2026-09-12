@@ -38,6 +38,8 @@ function ResumePage() {
           <a className="underline underline-offset-2 hover:text-neutral-900" href="https://www.linkedin.com/in/jwala-baheliya-a82a5411b/" target="_blank" rel="noreferrer">LinkedIn</a>
           <span className="text-neutral-300">•</span>
           <a className="underline underline-offset-2 hover:text-neutral-900" href="https://jwalabaheliya-dev.vercel.app/" target="_blank" rel="noreferrer">Portfolio</a>
+           <span className="text-neutral-300">•</span>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://github.com/jaybaheliya?tab=repositories" target="_blank" rel="noreferrer">Github</a>
         </p>
       </header>
 
@@ -52,6 +54,7 @@ function ResumePage() {
       <Section title="Technical Skills">
         <div className="space-y-1.5">
           <SkillRow label="Frontend & Frameworks" items="HTML5, CSS3, SCSS / Sass, JavaScript (ES6+), TypeScript, React.js, Next.js, Tailwind CSS, Bootstrap, jQuery, Shopify Liquid" />
+          <SkillRow label="Motion & Animation" items="GSAP (ScrollTrigger), Motion (Framer Motion), Lottie, SVG & CSS Animations, Micro-interactions" />
           <SkillRow label="Architecture & Web Vitals" items="Component Architecture, Responsive Web Design, Web Performance Optimization, Core Web Vitals, Web Accessibility (WCAG), RESTful APIs, Cross-Browser Compatibility, BEM" />
           <SkillRow label="Design & Prototyping" items="Figma, Adobe XD, Adobe Photoshop, Adobe Illustrator, Design Systems, Pixel-Perfect UI Implementation" />
           <SkillRow label="Developer Tools" items="Git, GitHub, Vite, Webpack, npm, Chrome DevTools, FileZilla, PuTTY" />
@@ -155,7 +158,7 @@ function ResumePage() {
         </Section>
 
         <Section title="Interests">
-          <p className="text-[12.5px] text-neutral-800">UI/UX Trends · Design Systems · Creative Coding</p>
+          <p className="text-[12.5px] text-neutral-800">UI/UX Trends · PC Games · Creative Coding</p>
         </Section>
       </div>
     </main>
@@ -179,8 +182,8 @@ function Job({ role, org, period, points }: { role: string; org: string; period:
     <div className="break-inside-avoid">
       <div className="flex items-baseline justify-between gap-4">
         <div>
-          <div className="font-display text-[14.5px] font-semibold text-neutral-900">{role}</div>
-          <div className="text-[12px] text-neutral-600">{org}</div>
+          <span className="font-display text-[14.5px] font-semibold text-neutral-900">{role}</span>
+          <span className="text-[12px] text-neutral-600">&nbsp;({org})&nbsp;</span>
         </div>
         <div className="whitespace-nowrap font-mono text-[10.5px] uppercase tracking-widest text-neutral-600">{period}</div>
       </div>
