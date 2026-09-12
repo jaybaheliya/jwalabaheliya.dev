@@ -9,7 +9,7 @@ function ResumePage() {
   }, []);
 
   return (
-    <main className="mx-auto max-w-[840px] bg-white px-6 sm:px-8 py-6 text-neutral-900 print:max-w-none print:p-0">
+    <main className="mx-auto max-w-[840px] bg-white px-5 sm:px-7 py-5 text-neutral-900 print:max-w-none print:p-0">
       <div className="mb-4 flex items-start justify-between gap-6 border-b border-neutral-300 pb-4 print:hidden">
         <Link href="/" className="text-xs uppercase tracking-widest text-neutral-500 hover:text-neutral-900">
           {"<- Portfolio"}

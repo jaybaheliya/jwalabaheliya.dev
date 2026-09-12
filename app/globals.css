@@ -456,7 +456,7 @@ html.crt body {
   }
   @page {
     size: A4 portrait;
-    margin: 6mm 8mm;
+    margin: 4mm 6mm;
   }
 }
 
