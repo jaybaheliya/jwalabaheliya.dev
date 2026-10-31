@@ -58,9 +58,7 @@ function ResumePage() {
 
       <Section title="Summary">
         <p className="text-[13px] leading-relaxed text-neutral-800">
-          Senior frontend developer with 8+ years turning Figma / Adobe XD designs into production-ready
-          websites for Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji, RMZ and more. Strong on
-          responsive design, performance, accessibility and clean component architecture.
+          Senior Frontend Developer with 8+ years of experience building responsive, accessible, and high-performance web applications. Proficient in HTML5, CSS3, SCSS, JavaScript, React.js, Next.js, and TypeScript, with expertise in Figma-to-code, reusable components, REST API integration, Core Web Vitals, and cross-browser compatibility. Experienced in collaborating with design and backend teams to deliver scalable enterprise solutions.
         </p>
       </Section>
 
