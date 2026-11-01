@@ -940,13 +940,6 @@ function Projects() {
                   <span className="text-accent">Quick view →</span>
                 </div>
               </button>
-              <Link
-                href="/work/$slug"
-
-                className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-border/60 bg-background/40 py-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground transition-colors hover:border-accent hover:text-accent"
-              >
-                Read full case study →
-              </Link>
             </Reveal>
           ))}
         </div>
