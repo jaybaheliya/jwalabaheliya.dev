@@ -24,7 +24,7 @@ const HERO_COPY = {
     h1b: "crafting",
     h1accent: "clean, responsive",
     h1c: "web experiences.",
-    body: "8+ years turning Figma and Adobe XD designs into production-ready websites — for Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji and more, currently at Bombay Design Centre.",
+    body: "8+ years building responsive, accessible, and high-performance web applications — for VIP Bags, Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji, and more. Currently at Bombay Design Centre.",
     cta1: "View projects",
     cta2: "Resume",
     cta3: "Contact me",
@@ -62,10 +62,10 @@ const BRANDS = [
 ];
 
 const METRICS = [
-  { k: "8+", v: "Years as a frontend developer" },
-  { k: "20+", v: "Websites shipped for global brands" },
-  { k: "3", v: "Companies — Bombay Design Centre, HRMantra, Technofra" },
-  { k: "1", v: "Kyoorius Design Award, 2023" },
+  { k: "8+", v: "Years of frontend development" },
+  { k: "15+", v: "Enterprise brands — Rustomjee, Godrej, Kotak, Tata Chemicals & more" },
+  { k: "90+", v: "Lighthouse scores — 20% faster load times, 15% better retention" },
+  { k: "1", v: "Kyoorius Design Award, 2023 — team contribution at Bombay Design Centre" },
 ];
 
 const PROJECTS = [
@@ -186,21 +186,18 @@ const EXPERIENCE = [
     org: "Bombay Design Centre",
     period: "Apr 2021 — Present",
     points: [
-      "Translate Figma and Adobe XD designs into seamless, responsive websites for brands like Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji, RMZ and more.",
-      "Build with HTML, CSS, SCSS, JavaScript, PHP and React with Next.js — following clean-code and BEM practices.",
-      "Collaborate with designers, backend developers and stakeholders to ship fully functional websites with cross-browser compatibility.",
-      "Optimise performance, run testing and debugging cycles, and keep pace with the latest frontend trends.",
-      "Developed HTML email marketing campaigns for Kotak and prepared status reports for onsite coordinators.",
+      "Translated Figma and Adobe XD designs into pixel-accurate, responsive web applications and marketing platforms for 15+ premier enterprise brands including VIP Bags, Rustomjee, Godrej, Kotak, Tata Chemicals, Shapoorji Pallonji, and RMZ.",
+      "Engineered modern web interfaces using React.js, Next.js, TypeScript, and Tailwind CSS; optimized website performance resulting in 20% faster load times, consistent Lighthouse scores of 90+, and a 15% increase in user retention.",
+      "Developed responsive HTML email marketing campaigns for Kotak reaching 100K+ users with 100% cross-client inbox fidelity; collaborated closely with UI/UX designers and backend teams.",
     ],
   },
   {
     role: "UI Developer",
-    org: "HRMantra — The Ultimate HR Software Solution",
+    org: "HRMantra — HR & Payroll Platform",
     period: "May 2019 — Apr 2021",
     points: [
-      "Focused on UI development and web design for HRMantra's HR & payroll platform.",
-      "Developed and maintained dynamic websites and web applications.",
-      "Worked across HTML, CSS, JavaScript and other core web technologies.",
+      "Led UI development and frontend design for HRMantra's enterprise SaaS HR & payroll software serving 250K+ active employees, delivering intuitive multi-module workflows that reduced task completion time by 25%.",
+      "Developed and maintained dynamic, accessible web interfaces using HTML5, CSS3, and JavaScript with a focus on cross-browser stability and reusable code.",
     ],
   },
   {
@@ -208,49 +205,60 @@ const EXPERIENCE = [
     org: "Technofra Pvt Ltd",
     period: "Jul 2016 — May 2019",
     points: [
-      "Designed and implemented visually compelling user interfaces for a diverse client portfolio.",
-      "Built and maintained dynamic websites and web applications using HTML, CSS, JavaScript and ASP.NET.",
+      "Designed and deployed visually compelling, responsive user interfaces across 20+ consumer and business web applications, elevating mobile responsiveness and user engagement.",
+      "Built scalable frontend features using HTML, CSS, JavaScript, and ASP.NET, reducing page asset weight by 30% while ensuring cross-browser consistency and high reliability.",
     ],
   },
 ];
 
 const SKILLS: Record<string, string[]> = {
-  "Frontend Technologies": [
+  "Frontend & Frameworks": [
     "HTML5",
     "CSS3",
-    "Sass / SCSS",
+    "SCSS / Sass",
     "JavaScript (ES6+)",
-    "TypeScript (Basic)",
+    "TypeScript",
     "React.js",
     "Next.js",
     "Tailwind CSS",
     "Bootstrap",
-    "Responsive Design",
-    "BEM",
-    "REST APIs",
-    "JSON",
-    "AJAX",
+    "jQuery",
+    "Shopify Liquid",
   ],
-  "Frontend Concepts": [
-    "Component-based architecture",
-    "API integration",
-    "Cross-browser compatibility",
-    "Accessibility (WCAG)",
-    "Performance optimization",
-    "Reusable UI components",
-    "Debugging & testing",
+  "Motion & Animation": [
+    "GSAP (ScrollTrigger)",
+    "Lottie",
+    "SVG & CSS Animations",
+    "Micro-interactions",
   ],
-  "Tools & Platforms": ["Git", "GitHub", "Vite", "Figma", "Adobe XD", "Photoshop", "Illustrator"],
-  "Libraries & Frameworks": ["React.js", "Next.js", "Tailwind CSS", "jQuery"],
-  "AI & Productivity": ["ChatGPT", "GitHub Copilot", "Claude AI"],
-  Additional: ["PHP", "ASP.NET (Basic)", "UI/UX collaboration", "Agile", "Clean code"],
+  "Architecture & Web Vitals": [
+    "Component Architecture",
+    "Responsive Web Design",
+    "Performance Optimization",
+    "Core Web Vitals",
+    "Web Accessibility (WCAG)",
+    "RESTful APIs",
+    "Cross-Browser Compatibility",
+    "BEM Methodology",
+  ],
+  "Design & Prototyping": [
+    "Figma",
+    "Adobe XD",
+    "Adobe Photoshop",
+    "Adobe Illustrator",
+    "Design Systems",
+    "Pixel-Perfect UI Implementation",
+  ],
+  "Developer Tools": ["Git", "GitHub", "Vite", "Webpack", "npm", "Chrome DevTools", "FileZilla", "PuTTY"],
+  "AI-Assisted Engineering": ["GitHub Copilot", "ChatGPT", "Claude AI", "Figma MCP Server"],
+  "Backend & Practices": ["PHP", "ASP.NET (Basic)", "Agile / Scrum Workflow", "Cross-Functional Collaboration", "Clean Code Principles"],
 };
 
 const ACHIEVEMENTS = [
-  { k: "Award", v: "Kyoorius Design Award 2023 — recognised for outstanding contributions in web design." },
-  { k: "Education", v: "B.Sc. Information Technology · Mumbai University, 2013 (First Division)" },
+  { k: "Award", v: "Kyoorius Design Award, 2023 — team contribution at Bombay Design Centre." },
+  { k: "Education", v: "B.Sc. Information Technology — Mumbai University, 2015 (Grade A · CGPA 6.07)" },
   { k: "Languages", v: "English · Hindi · Marathi" },
-  { k: "Interests", v: "Music · PC games · Exploring UI/UX trends across the web" },
+  { k: "Interests", v: "UI/UX Trends · PC Games · Creative Coding" },
 ];
 
 const MORE_PROJECTS = [
@@ -518,13 +526,13 @@ function Hero() {
           </div>
           <div className="mb-5 ml-1"><ViewCounter storageKey="home" label="recruiters viewed this week" /></div>
 
-          <h1 className="font-display text-[13vw] font-bold leading-[0.95] tracking-tight break-words sm:text-[8vw] md:text-[6.5vw] lg:text-[5.5vw]">
+          <h1 className="font-display text-[11vw] font-bold leading-[0.95] tracking-tight break-words sm:text-[7vw] md:text-[5.5vw] lg:text-[4.5vw]">
             <TextScramble as="span" text={t.h1a} />
             <br />
             {t.h1b} <span className="text-accent">{t.h1accent}</span> {t.h1c}
           </h1>
 
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg md:mt-8 md:text-xl">
+          <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground sm:text-base md:mt-7 md:text-lg">
             {t.body}
           </p>
 
@@ -836,7 +844,7 @@ function TrustBar() {
             {row.map((b, i) => (
               <span
                 key={i}
-                className="font-display text-2xl font-semibold tracking-tight text-muted-foreground/70 md:text-3xl"
+                className="font-display text-xl font-semibold tracking-tight text-muted-foreground/70 md:text-2xl"
               >
                 {b}
                 <span className="mx-6 text-accent">·</span>
@@ -853,14 +861,14 @@ function TrustBar() {
 
 function Metrics() {
   return (
-    <section className="py-20 md:py-28">
+    <section className="py-14 md:py-20">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <SectionLabel n="01">By the numbers</SectionLabel>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {METRICS.map((m) => (
-            <Reveal key={m.v}>
-              <div className="rounded-3xl border border-border/60 bg-card/40 p-6 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-accent/60">
-                <div className="font-display text-5xl font-bold tracking-tight text-accent md:text-6xl">
+            <Reveal key={m.v} className="h-full">
+              <div className="flex h-full flex-col justify-between rounded-2xl border border-border/60 bg-card/40 p-6 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-accent/60">
+                <div className="font-display text-4xl font-bold tracking-tight text-accent md:text-5xl">
                   {m.k}
                 </div>
                 <div className="mt-3 text-sm leading-relaxed text-muted-foreground">{m.v}</div>
@@ -878,10 +886,10 @@ function Metrics() {
 function Projects() {
   const [active, setActive] = useState<(typeof PROJECTS)[number] | null>(null);
   return (
-    <section id="work" className="py-24 md:py-32">
+    <section id="work" className="py-16 md:py-24">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <SectionLabel n="02">Featured work · Case studies</SectionLabel>
-        <h2 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+        <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">
           Projects that moved a real metric.
         </h2>
         <p className="mt-4 max-w-2xl text-muted-foreground">
@@ -1181,10 +1189,10 @@ function ProjectModal({
 
 function Experience() {
   return (
-    <section id="experience" className="border-t border-border/60 py-24 md:py-32">
+    <section id="experience" className="border-t border-border/60 py-16 md:py-24">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <SectionLabel n="03">Experience</SectionLabel>
-        <h2 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+        <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">
           Eight years of shipping — with the numbers to back it.
         </h2>
 
@@ -1230,10 +1238,10 @@ function Experience() {
 
 function Skills() {
   return (
-    <section id="skills" className="border-t border-border/60 py-24 md:py-32">
+    <section id="skills" className="border-t border-border/60 py-16 md:py-24">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <SectionLabel n="04">Toolkit</SectionLabel>
-        <h2 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+        <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">
           The stack I reach for.
         </h2>
         <p className="mt-4 max-w-2xl text-muted-foreground">
@@ -1244,7 +1252,7 @@ function Skills() {
         <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {Object.entries(SKILLS).map(([cat, items]) => (
             <Reveal key={cat}>
-              <div className="h-full rounded-3xl border border-border/60 bg-card/40 p-6 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-accent/60">
+              <div className="flex h-full flex-col rounded-2xl border border-border/60 bg-card/40 p-5 backdrop-blur-md transition-all hover:-translate-y-1 hover:border-accent/60">
                 <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-accent">
                   {cat}
                 </div>
@@ -1274,10 +1282,10 @@ function Skills() {
 
 function Achievements() {
   return (
-    <section className="border-t border-border/60 py-24 md:py-32">
+    <section className="border-t border-border/60 py-16 md:py-24">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <SectionLabel n="05">Recognition & signals</SectionLabel>
-        <h2 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+        <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">
           Beyond the day job.
         </h2>
 
@@ -1302,30 +1310,29 @@ function Achievements() {
 
 function About() {
   return (
-    <section id="about" className="border-t border-border/60 py-24 md:py-32">
+    <section id="about" className="border-t border-border/60 py-16 md:py-24">
       <div className="mx-auto grid max-w-[1400px] gap-12 px-6 md:px-10 lg:grid-cols-[auto_1fr_1.4fr] lg:items-start">
         <Portrait />
         <div>
           <SectionLabel n="06">About</SectionLabel>
-          <h2 className="font-display text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+          <h2 className="font-display text-3xl font-bold leading-tight tracking-tight md:text-4xl">
             I build interfaces that <span className="text-accent">earn their weight</span>.
           </h2>
         </div>
-        <div className="space-y-6 text-[17px] leading-relaxed text-foreground/90">
+        <div className="space-y-5 text-base leading-relaxed text-foreground/90">
           <p>
-            Highly skilled and meticulous frontend developer with 8 years of experience creating
-            innovative, user-friendly websites. Proficient in HTML, CSS, JavaScript and responsive
-            design, with strong problem-solving abilities and a keen eye for detail.
+            Senior Frontend Developer with 8+ years of experience building responsive, accessible,
+            and high-performance web applications. Proficient in HTML5, CSS3, SCSS, JavaScript, React.js,
+            Next.js, and TypeScript, with expertise in Figma-to-code, reusable components, and Core Web Vitals.
           </p>
           <p>
-            Day-to-day, I translate Figma and Adobe XD designs into seamless, responsive websites —
-            working across HTML, SCSS, JavaScript, PHP and React with Next.js. I care about clean
-            markup, cross-browser compatibility, accessibility and performance.
+            Day-to-day, I translate Figma and Adobe XD designs into pixel-accurate, responsive web applications
+            and marketing platforms for 15+ premier enterprise brands. I focus on component architecture,
+            web performance optimization (consistent 90+ Lighthouse scores), and cross-browser consistency.
           </p>
           <p>
-            Collaborative team player with excellent communication skills. Dedicated to delivering
-            exceptional results through clean and efficient code — currently based in Mumbai, open
-            to remote roles.
+            Collaborative team player experienced in working with design and backend teams to deliver scalable
+            enterprise solutions. Currently based in Mumbai, open to remote and senior frontend roles.
           </p>
         </div>
       </div>
@@ -1367,10 +1374,10 @@ function Portrait() {
 
 function MoreProjects() {
   return (
-    <section className="border-t border-border/60 py-24 md:py-32">
+    <section className="border-t border-border/60 py-16 md:py-24">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <SectionLabel n="07">More work</SectionLabel>
-        <h2 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+        <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight md:text-4xl">
           A wider slice of what I've shipped.
         </h2>
         <p className="mt-4 max-w-2xl text-muted-foreground">
@@ -1428,7 +1435,7 @@ function Testimonials() {
   }, []);
   const t = TESTIMONIALS[i];
   return (
-    <section id="kind-words" className="relative border-t border-border/60 py-24 md:py-32">
+    <section id="kind-words" className="relative border-t border-border/60 py-16 md:py-24">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <div className="mb-8 flex items-center justify-between gap-6">
           <h2 className="font-display text-2xl font-semibold tracking-tight md:text-4xl">
@@ -1488,10 +1495,10 @@ function Contact() {
   };
 
   return (
-    <section id="contact" className="border-t border-border/60 py-24 md:py-32">
+    <section id="contact" className="border-t border-border/60 py-16 md:py-24">
       <div className="mx-auto max-w-[1400px] px-6 md:px-10">
         <SectionLabel n="09">Contact</SectionLabel>
-        <h2 className="max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight md:text-6xl">
+        <h2 className="max-w-3xl font-display text-3xl font-bold leading-tight tracking-tight md:text-5xl">
           Let's ship something worth shipping.
         </h2>
         <p className="mt-4 max-w-xl text-muted-foreground">
