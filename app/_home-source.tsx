@@ -497,6 +497,44 @@ function Nav() {
   );
 }
 
+const CYCLING_ROLES = ["Web", "UI", "Frontend"];
+
+function RoleCycler() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % CYCLING_ROLES.length);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <span className="inline-grid [grid-template-areas:'stack'] overflow-hidden align-baseline">
+      {/* Invisible ghost layer reservation: widest word keeps layout width completely static */}
+      <span className="[grid-area:stack] invisible pointer-events-none select-none aria-hidden">
+        Frontend
+      </span>
+      {CYCLING_ROLES.map((role, i) => {
+        const isActive = i === index;
+        return (
+          <span
+            key={role}
+            className={`[grid-area:stack] transition-all duration-500 ease-out ${
+              isActive
+                ? "opacity-100 translate-y-0 filter-none"
+                : "opacity-0 translate-y-4 blur-[2px] pointer-events-none"
+            }`}
+          >
+            {role}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 /* ---------------- Hero ---------------- */
 
 function Hero() {
@@ -527,7 +565,7 @@ function Hero() {
           <div className="mb-5 ml-1"><ViewCounter storageKey="home" label="recruiters viewed this week" /></div>
 
           <h1 className="font-display text-[11vw] font-bold leading-[0.95] tracking-tight break-words sm:text-[7vw] md:text-[5.5vw] lg:text-[4.5vw]">
-            <TextScramble as="span" text={t.h1a} />
+            <span>Senior <RoleCycler /> developer</span>
             <br />
             {t.h1b} <span className="text-accent">{t.h1accent}</span> {t.h1c}
           </h1>
