@@ -41,7 +41,7 @@ function ResumePage() {
             <a className="underline underline-offset-2 hover:text-neutral-900" href="mailto:jaybaheliya@gmail.com">jaybaheliya@gmail.com</a>
           </span>
            <span className="text-neutral-300">•</span>
-          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://github.com/jaybaheliya?tab=repositories" target="_blank" rel="noreferrer">Github</a>
+          <a className="underline underline-offset-2 hover:text-neutral-900" href="https://github.com/jaybaheliya" target="_blank" rel="noreferrer">Github</a>
            <span className="text-neutral-300">•</span>
           <span>
             <span className="font-medium text-neutral-700">LinkedIn: </span>
